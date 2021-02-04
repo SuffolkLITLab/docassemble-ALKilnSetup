@@ -2,7 +2,7 @@
 
 A docassemble extension for testing the AssemblyLine automated integrated testing framework.
 
-## Author
-
-mb.restless.tech@gmail.com
-
+# TODO
+1. Add all fields in combination with show-ifs
+1. Add testing framework
+1. Add tests

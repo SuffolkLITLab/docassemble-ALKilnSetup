@@ -45,7 +45,7 @@ def find_package_data(where='.', package='', exclude=standard_exclude, exclude_d
 setup(name='docassemble.ALAutomatedTestingTests',
       version='0.0.1',
       description=('A docassemble extension for testing the AssemblyLine automated integrated testing framework.'),
-      long_description='# docassemble.ALAutomatedTestingTests\n\nA docassemble extension for testing the AssemblyLine automated integrated testing framework.\n\n## Author\n\nmb.restless.tech@gmail.com\n\n',
+      long_description='# docassemble.ALAutomatedTestingTests\r\n\r\nA docassemble extension for testing the AssemblyLine automated integrated testing framework.\r\n\r\n# TODO\r\n1. Add all fields in combination with show-ifs\r\n1. Add testing framework\r\n1. Add tests\r\n',
       long_description_content_type='text/markdown',
       author='',
       author_email='example@example.com',
