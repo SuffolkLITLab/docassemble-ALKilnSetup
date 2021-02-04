@@ -3,10 +3,83 @@ metadata:
   short title: Test ALKiln
   comment: Test the automated integrated testing library for AssemblyLine
 ---
+# Do not edit this block
+comment: |
+  # Fields to include
+  
+  ## Regular:
+  - [ ] Radio (yes/no)
+  - [ ] Radio (other)
+  - [ ] Checkbox (none of)
+  - [ ] Checkbox (yes/no)
+  - [ ] Checkbox (other)
+  - [ ] Buttons (yes/no)
+  - [ ] Buttons (other)
+  - [ ] Buttons (continue)
+  - [ ] Dropdown
+  - [ ] Text area
+  - [x] Text input (type text)
+  - [ ] Text input (type date)
+  
+  ## Showif:
+  - [ ] Radio (yes/no)
+  - [ ] Radio (other)
+  - [ ] Checkbox (none of)
+  - [ ] Checkbox (yes/no)
+  - [ ] Checkbox (other)
+  - [ ] Buttons (yes/no)
+  - [ ] Buttons (other)
+  - [ ] Buttons (continue)
+  - [ ] Dropdown
+  - [ ] Text area
+  - [ ] Text input (type text)
+  - [ ] Text input (type date)
+  
+  # Other things to include:
+  - [ ] Terms
+  - [ ] Button that's a link
+  - [ ] A link
+  - [ ] A phrase
+  - [ ] Button that's not a continue button
+
+  # Situations to test:
+  - [ ] Continue button field is listed in the table before other unrequired fields on the page (for the story table)
+  - [ ] Test not filling in an unrequired field?
+  
+  # Questions
+  1. Should we test required fields? We do need unrequired ones for testing the story table
+---
 mandatory: True
 id: interview order
 code: |
+  page_1
+  page_2
+  page_3
   end
+---
+# Person 1
+continue button field: page_1
+id: page 1
+question: |
+  Some fields
+fields:
+  - Test regular text field: regular_text_field
+---
+# Person 2
+continue button field: page_2
+id: page 2
+question: |
+  Some fields
+fields:
+  - something else we will understand: good_var_name
+---
+# Person 3
+continue button field: page_3
+id: page 3
+question: |
+  Some fields
+fields:
+  - something else we will understand: good_var_name
 ---
 id: the end
 event: end
