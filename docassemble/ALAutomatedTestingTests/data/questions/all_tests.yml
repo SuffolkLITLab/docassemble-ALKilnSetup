@@ -69,7 +69,7 @@ fields:
 continue button field: page_2
 id: page 2
 question: |
-  Some fields
+  Some fields lalal
 fields:
   - something else we will understand: good_var_name
 ---
