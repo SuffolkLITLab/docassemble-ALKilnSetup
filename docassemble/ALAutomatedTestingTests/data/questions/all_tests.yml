@@ -22,18 +22,18 @@ comment: |
   - [ ] Text input (type date)
   
   ## Showif:
-  - [ ] Radio (yes/no)
+  - [x] Radio (yes/no)
   - [ ] Radio (other)
-  - [ ] Checkbox (none of)
+  - [x] Checkbox (none of)
   - [ ] Checkbox (yes/no)
-  - [ ] Checkbox (other)
-  - [ ] Buttons (yes/no)
+  - [x] Checkbox (other)
+  - [x] Buttons (yes/no)
   - [ ] Buttons (other)
   - [ ] Buttons (continue)
-  - [ ] Dropdown
+  - [x] Dropdown
   - [ ] Text area
-  - [ ] Text input (type text)
-  - [ ] Text input (type date)
+  - [x] Text input (type text)
+  - [x] Text input (type date)
   
   # Other things to include:
   - [ ] Terms
@@ -52,9 +52,11 @@ comment: |
 mandatory: True
 id: interview order
 code: |
+  radio_button_yes_no
   page_1
   page_2
   page_3
+  
   end
 ---
 # Person 1
@@ -69,9 +71,43 @@ fields:
 continue button field: page_2
 id: page 2
 question: |
-  Some fields lalal
+  Test showif dropdown 
 fields:
-  - something else we will understand: good_var_name
+  - Show if dropdown: dropdown_toshow  
+    choices: 
+    - choice1: value1_dropdown 
+    - choice2: value2_dropdown 
+    - choice3: value3_dropdown  
+  - Text input: text_input_showif  
+    show if:
+      variable: dropdown_toshow  
+      is: value1_dropdown 
+  - "radio button yes no": radio_button_yes_no 
+    datatype: yesnoradio
+    show if: 
+      variable: dropdown_toshow  
+      is: value1_dropdown 
+  - "Add show if text input: dates": show_if_dates
+    datatype: date
+    show if:
+      variable: dropdown_toshow
+      is: value1_dropdown 
+  - "Add show if yes no check box (other)": checkbox_other
+    datatype: checkboxes
+    choices:
+      - showif checkbox other 1 
+      - showif checkbox other 2 
+      - showif checkbox other 3 
+    show if:
+      variable: dropdown_toshow
+      is: value1_dropdown 
+  
+
+---
+code: |
+  page_1 = 123
+  page_3 = 123
+    
 ---
 # Person 3
 continue button field: page_3
@@ -85,3 +121,5 @@ id: the end
 event: end
 question: |
   Congradulations! Tests have passed!
+  
+ 
