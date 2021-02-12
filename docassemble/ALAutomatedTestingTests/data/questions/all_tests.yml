@@ -22,7 +22,7 @@ comment: |
   - [x] Text input (type date)
   
   ## Showif:
-  - [ ] Radio (yes/no)
+  - [x] Radio (yes/no)
   - [ ] Radio (other)
   - [ ] Checkbox (none of)
   - [ ] Checkbox (yes/no)
@@ -37,10 +37,10 @@ comment: |
   
   # Other things to include:
   - [ ] Terms
-  - [ ] Button that's a link
-  - [ ] A link
+  - [x] Button that's a link
+  - [x] A link
   - [ ] A phrase
-  - [ ] Button that's not a continue button
+  - [x] Button that's not a continue button
 
   # Situations to test:
   - [ ] Continue button field is listed in the table before other unrequired fields on the page (for the story table)
@@ -53,6 +53,7 @@ mandatory: True
 id: interview order
 code: |
   page_1
+  link_button
   regular_yes_no_button_cont
   regular_button_other_cont
   regular_continue_button
@@ -65,6 +66,9 @@ continue button field: page_1
 id: page 1
 question: |
   Some fields
+subquestion: |
+  Testing out mornal links: 
+  [Reload the page](${ interview_url() })
 fields:
   # Regular radio buttons
   - Test regular yes/no radio button: regular_radio_yes_no
@@ -72,9 +76,9 @@ fields:
   - Test regular radio button (other): regular_radio_other
     datatype: radio
     choices: 
-      - Choice 1
-      - Choice 2
-      - Choice 3 
+      - Regular radio button option 1
+      - Regular radio button option 2
+      - Regular radio button option 3
   # Regular checkboxes
   - note: Check the regular yes/no checkbox options. 
   - Regular yes/no checkbox option 1: regular_yes_no_checkbox_1
@@ -102,9 +106,35 @@ fields:
   - Test regular dropdown: regular_dropdown
     datatype: dropdown
     choices:
-      - regular_dropdown_option_1
-      - regular_dropdown_option_2
-  # Showif radio button
+      - regular dropdown option 1
+      - regular dropdown option 2
+  # Showif radio buttons
+  - Test showif radio button (yes/no) [select "YES" to trigger showif]: showif_radio_yes_no
+    datatype: yesnoradio
+  - Showif radio button (yes/no) yes selection test (just write something random here; if you triggered this field it means that the showif yes/no radio button worked): showif_radio_yes_no_affirmative
+    show if: showif_radio_yes_no 
+  - Test showif radio button (other) [choose option 1 to trigger showif - CURRENTLY NOT WORKING, PLEASE SEE CODE]: showif_radio_other
+    datatype: radio
+    choices:
+      - showif radio button (other) option 1
+      - showif radio button (other) option 2
+      - showif radio button (other) option 3
+  #- Test showif radio button (other) option 1 selection (just write something random here; if you triggered this field it means that the showif other radio button worked): showif_radio_other_option_1_worked
+    #showif:
+       #variable: showif_radio_other
+       #is: showif radio button (other) option 1
+---
+# Person 1
+# Button that's a link
+continue_button_field: link_button_cont
+question: |
+  Test out the "docassemble.org" button (hitting back once you've successfully loaded docassemble.org should bring you back to this interview). This is for testing out a button that's a link/a button that's not a continue button. 
+field: link_button
+action buttons: 
+  - label: Go to docassemble.org
+    action: https://docassemble.org
+    color: warning
+    icon: sign-out-alt
 ---
 # Person 1
 # Regular yes-no buttons
