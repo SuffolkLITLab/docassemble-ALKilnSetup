@@ -23,11 +23,11 @@ comment: |
   
   ## Showif:
   - [x] Radio (yes/no)
-  - [ ] Radio (other)
-  - [x] Checkbox (none of)
-  - [ ] Checkbox (yes/no)
-  - [x] Checkbox (other)
-  - [x] Buttons (yes/no)
+  - [x] Radio (other)
+  - [ ] Checkbox (none of)
+  - [x] Checkbox (yes/no)
+  - [ ] Checkbox (other)
+  - [ ] Buttons (yes/no)
   - [ ] Buttons (other)
   - [ ] Buttons (continue)
   - [x] Dropdown
@@ -92,7 +92,7 @@ fields:
     show if:
       variable: dropdown_toshow
       is: value1_dropdown 
-  - "Add show if yes no check box (other)": checkbox_other
+  - "Add show if check box (other)": checkbox_other
     datatype: checkboxes
     choices:
       - showif checkbox other 1 
@@ -101,7 +101,15 @@ fields:
     show if:
       variable: dropdown_toshow
       is: value1_dropdown 
+  - "Add show if yes no check box": checkbox_yesno 
+    datatype: yesno 
+    show if:
+      variable: dropdown_toshow
+      is: value1_dropdown
+    
   
+
+ 
 
 ---
 code: |
