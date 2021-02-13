@@ -23,7 +23,7 @@ comment: |
   
   ## Showif:
   - [x] Radio (yes/no)
-  - [ ] Radio (other)
+  - [x] Radio (other)
   - [ ] Checkbox (none of)
   - [ ] Checkbox (yes/no)
   - [ ] Checkbox (other)
@@ -36,10 +36,9 @@ comment: |
   - [ ] Text input (type date)
   
   # Other things to include:
-  - [ ] Terms
+  - [x] Terms
   - [x] Button that's a link
   - [x] A link
-  - [ ] A phrase
   - [x] Button that's not a continue button
 
   # Situations to test:
@@ -52,6 +51,7 @@ comment: |
 mandatory: True
 id: interview order
 code: |
+  term_continue_button
   page_1
   link_button
   regular_yes_no_button_cont
@@ -67,7 +67,7 @@ id: page 1
 question: |
   Some fields
 subquestion: |
-  Testing out mornal links: 
+  Testing out normal links: 
   [Reload the page](${ interview_url() })
 fields:
   # Regular radio buttons
@@ -113,16 +113,16 @@ fields:
     datatype: yesnoradio
   - Showif radio button (yes/no) yes selection test (just write something random here; if you triggered this field it means that the showif yes/no radio button worked): showif_radio_yes_no_affirmative
     show if: showif_radio_yes_no 
-  - Test showif radio button (other) [choose option 1 to trigger showif - CURRENTLY NOT WORKING, PLEASE SEE CODE]: showif_radio_other
+  - Test showif radio button (other) [choose option 1 to trigger showif]: showif_radio_other
     datatype: radio
     choices:
-      - showif radio button (other) option 1
-      - showif radio button (other) option 2
-      - showif radio button (other) option 3
-  #- Test showif radio button (other) option 1 selection (just write something random here; if you triggered this field it means that the showif other radio button worked): showif_radio_other_option_1_worked
-    #showif:
-       #variable: showif_radio_other
-       #is: showif radio button (other) option 1
+      - showif radio button (other) option 1: op1
+      - showif radio button (other) option 2: op2
+      - showif radio button (other) option 3: op3
+  - Test showif radio button (other): showif_radio_other_option_1_worked
+    show if:
+       variable: showif_radio_other
+       is: op1
 ---
 # Person 1
 # Button that's a link
@@ -158,6 +158,15 @@ buttons:
 continue button field: regular_continue_button
 question: |
   Test regular button (continue)
+---
+# Person 1 
+# Terms
+continue button field: term_continue_button
+question: |
+  Term test! Click on the word {term} to test if it's working as intended. 
+terms: 
+  term: |
+    A term is a word that you click on if you don't know what the definition is. 
 ---
 # Person 2
 continue button field: page_2
