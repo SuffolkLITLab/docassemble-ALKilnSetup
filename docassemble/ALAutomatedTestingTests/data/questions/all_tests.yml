@@ -56,16 +56,13 @@ code: |
   page_2
   page_3
   page_4
-  page_5
   end
 ---
 # Person 1
 continue button field: page_1
 id: page 1
 question: |
-  Page: 1
-  <br>
-  Example: Text Field
+  Some fields
 fields:
   - Test regular text field: regular_text_field
 ---
@@ -73,9 +70,7 @@ fields:
 continue button field: page_2
 id: page 2
 question: |
-  Page: 2
-  <br>
-  Example: Text Field
+  Some fields
 fields:
   - something else we will understand: good_var_name
 ---
@@ -83,58 +78,32 @@ fields:
 continue button field: page_3
 id: page 3
 question: |
-  Page: 3
-  <br>
-  Example: Text Field
+  Some fields
 fields:
   - something else we will understand: good_var_name
 ---
 objects:
   protagonist: Individual
   antagonist: Individual
-  actors: DAList
 ---
 code: |
   protagonist.name.first = "Harry"
   protagonist.name.last = "Potter"
   antagonist.name.first = "Tom"
   antagonist.name.last = "Riddle"
-  actors.append(protagonist)
-  actors.append(antagonist)
-  actors.auto_gather = False
-  actors.gathered = True
 ---
 mandatory: True
 # Person 4
 continue button field: page_4
 id: page 4
 question: |
-  Page: 4
-  <br>
   Example: object_checkboxes
-subquestion: |
-  Who are the villains, if any?
 fields:
-  no label: villain
+  no label: selected_object_checkbox
   datatype: object_checkboxes
   choices:
     - protagonist
     - antagonist
----
-mandatory: True
-# Person 5
-continue button field: page_5
-id: page 5
-question: |
-  Page: 5
-  <br>
-  Example: object_checkboxes with DAList
-subquestion: |
-  Who are the villains, if any?
-fields:
-  no label: villain
-  datatype: object_checkboxes
-  choices: actors
 ---
 id: the end
 event: end
