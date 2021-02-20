@@ -17,12 +17,13 @@ code: |
   #intro
   installer.token
   installer.set_github_auth()
+  installer.playground_url
   installer.email
-  installer.interview_url
   installer.send_da_auth_secrets()
   
   check_stuff
 ---
+# TODO: Add link to docs where we explain how the library makes a project, etc.
 id: intro
 question: |
   Welcome
@@ -41,7 +42,7 @@ subquestion: |
   
   To do that, we will need you to do these things:
   
-  1. Make an account on your docassemble server that will do the testing. You can use your own account.
+  1. Make an account on your docassemble server that will handle the testing. You can use your own account.
   1. Give us the authentication information for that account.
   1. Give us the url of the interview when it's being run from the Playground.
   1. Give us that interview's GitHub repository's url address.
@@ -50,14 +51,14 @@ subquestion: |
   
 continue button field: intro
 ---
+# TODO: Add instructions on how to find the GitHub repo url on Packages page
 id: github auth
 question: |
   GitHub authorization
 subquestion: |
   In order to change files in your GitHub repository, we need your permission. This information will be encrypted end-to-end and on the server. No one other than you will have access to it.
 fields:
-  - Username: installer.user_name
-  - Repo name: installer.repo_name
+  - URL of the interview's GitHub repository: installer.repo_url
   - Personal access token: installer.token
     datatype: password
 ---
@@ -78,7 +79,7 @@ question: |
 subquestion: |
   Hit 'Save and Run' in the YAML file you want to test. What is in the url?
 fields:
-  - URL address: installer.interview_url
+  - URL address: installer.playground_url
 ---
 event: check_stuff
 question: |

@@ -25,6 +25,7 @@ class TestInstaller(DAObject):
   def send_da_auth_secrets( self ):
     """Set GitHub repo secrets the tests need to log into the da server and
     create projects to run interviews to test."""
+    self.set_github_auth()
     self.put_secret( secret_name='PLAYGROUND_EMAIL', secret_value=self.email )
     self.put_secret( secret_name='PLAYGROUND_PASSWORD', secret_value=self.password )
     self.set_da_server_info()
@@ -40,6 +41,7 @@ class TestInstaller(DAObject):
     encrypted = sealed_box.encrypt( secret_value.encode( "utf-8" ))
     # Base64 the encrypted secret
     base64_encrypted = b64encode( encrypted ).decode( "utf-8" )
+    #log( 'base64_encrypted', 'console' )
     #log( base64_encrypted, 'console' )
     
     secret_url = self.github_repo_base + "/actions/secrets/" + secret_name
@@ -77,8 +79,19 @@ class TestInstaller(DAObject):
     self.set_key_values()
     return self
   
-  def get_github_info_from_url( self, repo_url='' ):
-    """Use repo address to parse out user name and repo name."""
+  def get_github_info_from_url( self ):
+    """Use repo address to parse out user name and repo name. Needs self.repo_url"""
+    matches = re.match(r"https:\/\/github.com\/([^\/]*)\/([^\/]*)", self.repo_url)
+    if matches:
+      self.user_name = matches.groups(1)[0]
+      self.repo_name = matches.groups(1)[1]
+    else:
+      self.user_name = None
+      self.repo_name = None
+    #log( 'self.user_name', 'console' )
+    #log( self.user_name, 'console' )
+    #log( 'self.repo_name', 'console' )
+    #log( self.repo_name, 'console' )
     return self
   
   def set_key_values( self ):
@@ -98,21 +111,21 @@ class TestInstaller(DAObject):
     return self
     
   def set_da_server_info( self ):
-    server_match = re.match( r"^(.+)\/interview\?i=docassemble\.playground", self.interview_url)
+    """Use the interview url to get the user's Playground id."""
+    # Can probably do both in one match, but maybe we want to get granular with
+    # our error messages...?
+    server_match = re.match( r"^(.+)\/interview\?i=docassemble\.playground", self.playground_url)
     if server_match is None:
       self.server_url = None
     else:
       self.server_url = server_match.group(1)
       
-    id_match = re.match( r"^.+(?:interview\?i=docassemble\.playground)(\d+)(?:.*)$", self.interview_url )
+    id_match = re.match( r"^.+(?:interview\?i=docassemble\.playground)(\d+)(?:.*)$", self.playground_url )
     if id_match is None:
       self.playground_id = None
     else:
       self.playground_id = id_match.group(1)
     
-    log( self.server_url, 'console' )
-    log( self.playground_id, 'console' )
-    #return { "server_url": self.server_url, "playground_id": self.playground_id }
     return self
 #
 #  def get_files( self ):
