@@ -46,7 +46,7 @@ subquestion: |
   1. Give us the authentication information for that account.
   1. Give us the url of the interview when it's being run from the Playground.
   1. Give us that interview's GitHub repository's url address.
-  1. [Create a GitHub personal access token for your GitHub account](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token).
+  1. [Create a GitHub personal access token for your GitHub account and give it 'repo' level permissions](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token).
   1. Give us that personal access token.
   
 continue button field: intro
