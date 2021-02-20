@@ -11,18 +11,17 @@ objects:
 ---
 mandatory: True
 code: |
-  # TODO
-  # √set_github_auth()
-  # send_secrets()
-  # create_branch()
+  # process files
   # make_pull_request()
   
-  intro
+  #intro
   installer.token
   installer.set_github_auth()
+  installer.email
+  installer.interview_url
+  installer.send_da_auth_secrets()
   
-  #user_interview_url
-  #installer.set_server_info( user_interview_url )
+  check_stuff
 ---
 id: intro
 question: |
@@ -62,11 +61,38 @@ fields:
   - Personal access token: installer.token
     datatype: password
 ---
+id: da auth
+question: |
+  Docassemble Login
+subquestion: |
+  Use the information for the account that should run the tests.
+fields:
+  - Email: installer.email
+  - Password: installer.password
+    datatype: password
+---
+# TODO: Use url to parse out id
 id: server info
 question: |
   What is your interview's address?
 subquestion: |
-  Hit 'Save and Run' in your YAML file. What is in the url?
+  Hit 'Save and Run' in the YAML file you want to test. What is in the url?
 fields:
-  - URL address: user_interview_url
+  - URL address: installer.interview_url
+---
+event: check_stuff
+question: |
+  Check the result
+subquestion: |
+  1. If PR - see the PR that was made and merge it in
+  1. Go to (link to repo's actions page) and see the example test being run.
+  1. If it fails the firs time, [rerun the test (job)](https://docs.github.com/en/actions/managing-workflow-runs/re-running-a-workflow). If it fails again:
+      1. Check the `.github/workflows/run_interview_tests.yml` to make sure your docassemble server name is in there correctly.
+      1. Edit the values of [the repository secrets](https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-a-repository) manually, making sure that they are for the correct account on the correct server.
+      1. If tests still fail, [make an issue in our testing package's repository](https://github.com/plocket/docassemble-cucumber/issues).
+  1. When that test run is over, try [running the workflow manually from the actions menu](https://docs.github.com/en/actions/managing-workflow-runs/manually-running-a-workflow#running-a-workflow-on-github)
+  
+  If everything passes, all should be well and you should be ready to write your first tests. If you're still having trouble, [make an issue in our testing package's repository](https://github.com/plocket/docassemble-cucumber/issues).
+  
+# TODO: Add link to testing docs when they're ready
 ---
