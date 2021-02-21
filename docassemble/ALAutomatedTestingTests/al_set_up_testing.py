@@ -4,7 +4,7 @@ from nacl import encoding, public
 import codecs
 from base64 import b64encode
 import json
-from docassemble.base.util import log
+from docassemble.base.util import log, zip_file
 from docassemble.base.core import DAObject
 #from docassemble.base.util import DAFileList, DAFile
 
@@ -127,11 +127,57 @@ class TestInstaller(DAObject):
       self.playground_id = id_match.group(1)
     
     return self
+  
+  def create_branch( self ):
+    # get the name of the default branch
+    # https://stackoverflow.com/a/16501903/14144258
+    repo_url = self.github_repo_base
+    repo_response = requests.request("GET", repo_url, data="", headers={})
+    repo_json = json.loads( repo_response.text )
+    self.default_branch = repo_json[ 'default_branch' ]
+    #log( 'self.default_branch', 'console' )
+    #log( self.default_branch, 'console' )
+    default_branch_search = "refs/heads/" + self.default_branch
+    
+    # https://stackoverflow.com/questions/9506181/github-api-create-branch
+    # Get refs and shas of all branches
+    heads_url = self.github_repo_base + "/git/refs/heads"
+    heads_response = requests.request("GET", heads_url, data="", headers={})
+    heads_json = json.loads( heads_response.text )
+    log( 'self.heads_json', 'console' )
+    log( self.heads_json, 'console' )
+    
+    # Pick the default branch
+    for branch_data in heads_json:
+      log( 'branch_data', 'console' )
+      log( branch_data, 'console' )
+      if branch_data.ref == default_branch_search:
+        self.branch = branch_data
+    
+    
+    return self
+  
+  def create_file( self ):
+    # https://docs.github.com/en/rest/reference/repos#create-or-update-file-contents
+    # https://docs.github.com/en/rest/reference/repos#contents
+    # https://stackoverflow.com/questions/20045572/create-folder-using-github-api
+    # https://stackoverflow.com/questions/22312545/github-api-to-create-a-file
+    
+    # Create a commit?
+    # https://docs.github.com/en/rest/reference/git#list-matching-references
+    
+    # Check mergability of a PR
+    # https://docs.github.com/en/rest/guides/getting-started-with-the-git-database-api#checking-mergeability-of-pull-requests
+    return self
 #
 #  def get_files( self ):
+#    # We have the files in the templates folder
+#    # though the hidden files are... invisible...
+#    # and the .feature file is uneditable...
 #    pass
 #
 #  def transform_files( self ):
+#    # Don't need this as Mako does the job
 #    pass
 #
 #  def push_to_new_branch( self ):
