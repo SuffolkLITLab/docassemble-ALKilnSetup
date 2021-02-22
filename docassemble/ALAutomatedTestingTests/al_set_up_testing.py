@@ -1,3 +1,4 @@
+from github import Github
 import requests
 import re
 from nacl import encoding, public
@@ -9,6 +10,12 @@ from docassemble.base.core import DAObject
 #from docassemble.base.util import DAFileList, DAFile
 
 # reference:
+# Mostly: https://pygithub.readthedocs.io/en/latest/introduction.html
+# commit: https://pygithub.readthedocs.io/en/latest/github_objects/Repository.html#github.Repository.Repository.create_git_commit
+# branch? https://pygithub.readthedocs.io/en/latest/github_objects/Repository.html#github.Repository.Repository.create_git_ref
+# pull: https://pygithub.readthedocs.io/en/latest/github_objects/Repository.html#github.Repository.Repository.create_pull
+# repo key: https://pygithub.readthedocs.io/en/latest/github_objects/Repository.html#github.Repository.Repository.get_keys
+
 # https://gist.github.com/JeffPaine/3145490
 # https://docs.github.com/en/free-pro-team@latest/rest/reference/issues#create-an-issue
 # https://github.com/SuffolkLITLab/docassemble-GithubFeedbackForm
@@ -60,36 +67,37 @@ class TestInstaller(DAObject):
     # Cannot get the value of the secret to see if we're setting it correctly
     # Can at least check that the secret exists
     response = requests.request( "GET", secret_url, data="", headers=secret_headers )
-    log( response.text, 'console' )
+    #log( response.text, 'console' )
     
     return self
 
   def set_github_auth( self ):
     """Set values needed for GitHub authorization.
     Needs self.user_name, self.repo_name, and self.token."""
-    self.get_github_info_from_url()  # To implement
+    self.get_github_info_from_repo_url() # gets self.user_name, self.repo_name
+    
+    # May not need user name with this library
+    self.github = Github(self.token)
+    self.user_name = self.github.get_user().name
     
     # The value for the GitHub 'Authorization' key
     auth_bytes = codecs.encode(bytes( self.user_name + ':' + self.token, 'utf8'), 'base64')
     self.basic_auth = 'Basic ' + auth_bytes.decode().strip()
     
     # The base url string needed for making requests to the repo.
+    # TODO: Might need this only for secrets now with new lib
     self.github_repo_base = "https://api.github.com/repos/" + self.user_name + "/" + self.repo_name
     
     self.set_key_values()
     return self
   
-  def get_github_info_from_url( self ):
+  def get_github_info_from_repo_url( self ):
     """Use repo address to parse out user name and repo name. Needs self.repo_url"""
     matches = re.match(r"https:\/\/github.com\/([^\/]*)\/([^\/]*)", self.repo_url)
     if matches:
-      self.user_name = matches.groups(1)[0]
       self.repo_name = matches.groups(1)[1]
     else:
-      self.user_name = None
       self.repo_name = None
-    #log( 'self.user_name', 'console' )
-    #log( self.user_name, 'console' )
     #log( 'self.repo_name', 'console' )
     #log( self.repo_name, 'console' )
     return self
@@ -129,75 +137,39 @@ class TestInstaller(DAObject):
     return self
   
   def create_branch( self ):
-    # get the name of the default branch
-    # https://stackoverflow.com/a/16501903/14144258
-    repo_url = self.github_repo_base
-    repo_response = requests.request("GET", repo_url, data="", headers={})
-    repo_json = json.loads( repo_response.text )
-    self.default_branch = repo_json[ 'default_branch' ]
-    #log( 'self.default_branch', 'console' )
-    #log( self.default_branch, 'console' )
-    default_branch_search = "refs/heads/" + self.default_branch
+    # Get default branch
+    repo = self.github.get_user().get_repo( self.repo_name )
+    default_branch_name = repo.default_branch
+    log( default_branch_name, 'console' )
+    default_branch = repo.get_branch( default_branch_name )
     
-    # https://stackoverflow.com/questions/9506181/github-api-create-branch
-    # Get refs and shas of all branches
-    heads_url = self.github_repo_base + "/git/refs/heads"
-    heads_response = requests.request("GET", heads_url, data="", headers={})
-    heads_json = json.loads( heads_response.text )
-    #log( 'heads_json', 'console' )
-    #log( heads_json, 'console' )
+    self.ref_path = "refs/heads/automated_testing"  # path of new branch
+    ref_path = self.ref_path
+    count = 1
+    max_count = 20
+    while ( count < max_count ):
+      count += 1
+      # except github.GithubException.GithubException as error:
+      try:
+        response = repo.create_git_ref( ref_path, default_branch.commit.sha )
+        break
+      except Exception as error:
+        ref_path = self.ref_path + '_' + str( count )
+        # Why does this make things get stuck on a previous page? (first page?)
+        # Some kind of exception in here? Lets hope it doesn't occur at all.
+        if count == max_count:
+          # TODO: Tell the user to delete old branches
+          installer.error = error.status # TODO: Make list of errors?
+          log( installer.error, 'console' )
     
-    # Pick the default branch
-    default_branch_data = {}
-    for branch_data in heads_json:
-      #log( 'branch_data', 'console' )
-      #log( branch_data, 'console' )
-      if branch_data[ "ref" ] == default_branch_search:
-        default_branch_data = branch_data
-    
-    # Make a branch off of that (TODO: allow pushing to default branch if desired)
-    base_sha = default_branch_data[ "object" ][ "sha" ]
-    # Why can't I do this in `init()`?
-    self.new_ref = "refs/heads/automated_testing_2"  # name of new branch
-    post_payload = '{"ref":"' + self.new_ref + '","sha":"' + base_sha + '"}'
-    post_url = self.github_repo_base + "/git/refs"
-    post_headers = {
-      'Accept': "application/vnd.github.v3+json",
-      'Authorization': self.basic_auth,
-    }
-    post_response = requests.request("POST", post_url, data=post_payload, headers=post_headers)
-    log( 'post_response.text', 'console' )
-    log( post_response.text, 'console' )
-    if post_response.status_code == 422:
-      # If the branch name is already taken
-      log( 'branch name taken', 'console' )
-      count = 1
-      ref = ''
-      while ( post_response.status_code >= 300 and count < 20 ):
-        # Add to the name of the branch until we get a unique one
-        ref = self.new_ref + '_' + str( count )
-        log( 'ref', 'console' )
-        log( ref, 'console' )
-        post_payload = '{"ref":"' + ref + '","sha":"' + base_sha + '"}'
-        post_response = requests.request("POST", post_url, data=post_payload, headers=post_headers)
-        log( 'post_response.text', 'console' )
-        log( post_response.text, 'console' )
-        count += 1
-        
-      if post_response.status_code == 422:
-        # If the response is still a "reference already exists" error
-        # Tell the user to delete old branches
-        installer.error = 422
-        return
-      
-      # Otherwise carry on
-      self.new_ref = ref
-      
-    # Need these to make commits to this branch in the future
+    self.ref_path = ref_path
+    log( self.ref_path, 'console' )
     
     return self
   
   def create_file( self ):
+    # https://pygithub.readthedocs.io/en/latest/github_objects/Repository.html#github.Repository.Repository.create_file
+    # https://pygithub.readthedocs.io/en/latest/github_objects/Repository.html#github.Repository.Repository.create_git_commit
     # https://docs.github.com/en/rest/reference/repos#create-or-update-file-contents
     # https://docs.github.com/en/rest/reference/repos#contents
     # https://stackoverflow.com/questions/20045572/create-folder-using-github-api

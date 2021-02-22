@@ -18,6 +18,7 @@ code: |
   #intro
 
   installer.token
+  intro
   installer.set_github_auth()
   #installer.playground_url
   #installer.email
