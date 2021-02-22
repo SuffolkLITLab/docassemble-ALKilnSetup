@@ -144,16 +144,56 @@ class TestInstaller(DAObject):
     heads_url = self.github_repo_base + "/git/refs/heads"
     heads_response = requests.request("GET", heads_url, data="", headers={})
     heads_json = json.loads( heads_response.text )
-    log( 'self.heads_json', 'console' )
-    log( self.heads_json, 'console' )
+    #log( 'heads_json', 'console' )
+    #log( heads_json, 'console' )
     
     # Pick the default branch
+    default_branch_data = {}
     for branch_data in heads_json:
-      log( 'branch_data', 'console' )
-      log( branch_data, 'console' )
-      if branch_data.ref == default_branch_search:
-        self.branch = branch_data
+      #log( 'branch_data', 'console' )
+      #log( branch_data, 'console' )
+      if branch_data[ "ref" ] == default_branch_search:
+        default_branch_data = branch_data
     
+    # Make a branch off of that (TODO: allow pushing to default branch if desired)
+    base_sha = default_branch_data[ "object" ][ "sha" ]
+    # Why can't I do this in `init()`?
+    self.new_ref = "refs/heads/automated_testing_2"  # name of new branch
+    post_payload = '{"ref":"' + self.new_ref + '","sha":"' + base_sha + '"}'
+    post_url = self.github_repo_base + "/git/refs"
+    post_headers = {
+      'Accept': "application/vnd.github.v3+json",
+      'Authorization': self.basic_auth,
+    }
+    post_response = requests.request("POST", post_url, data=post_payload, headers=post_headers)
+    log( 'post_response.text', 'console' )
+    log( post_response.text, 'console' )
+    if post_response.status_code == 422:
+      # If the branch name is already taken
+      log( 'branch name taken', 'console' )
+      count = 1
+      ref = ''
+      while ( post_response.status_code >= 300 and count < 20 ):
+        # Add to the name of the branch until we get a unique one
+        ref = self.new_ref + '_' + str( count )
+        log( 'ref', 'console' )
+        log( ref, 'console' )
+        post_payload = '{"ref":"' + ref + '","sha":"' + base_sha + '"}'
+        post_response = requests.request("POST", post_url, data=post_payload, headers=post_headers)
+        log( 'post_response.text', 'console' )
+        log( post_response.text, 'console' )
+        count += 1
+        
+      if post_response.status_code == 422:
+        # If the response is still a "reference already exists" error
+        # Tell the user to delete old branches
+        installer.error = 422
+        return
+      
+      # Otherwise carry on
+      self.new_ref = ref
+      
+    # Need these to make commits to this branch in the future
     
     return self
   

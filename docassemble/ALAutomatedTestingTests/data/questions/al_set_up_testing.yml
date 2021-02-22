@@ -1,6 +1,7 @@
 metadata:
-  title: Set up AssemblyLine automated testing for your docassemble package
+  title: Set up AL automated testing
   short title: Set up AL testing
+  description: Set up AssemblyLine automated testing for your docassemble package
   comment: Test the automated integrated testing library for AssemblyLine
 ---
 modules:
