@@ -19,23 +19,16 @@ mandatory: True
 code: |
   # - [ ] process files
   # - [ ] make_pull_request()
+  # - [ ] Ask about commit message and related issue #?
+  # - [ ] Ask if they want to just push to default branch?
   
   # For development
   installer.repo_url = 'https://github.com/plocket/docassemble-ALAutomatedTestingTests'
   installer.playground_url = 'https://apps-dev.suffolklitlab.org/interview?i=docassemble.playground12ALTestingGitHubAPI%3Aal_set_up_testing.yml#page1'
   
-
   installer.token  # github authorization
-  
-  installer.playground_url
-  installer.email
-  
-  
-  #installer.run_interview_tests.initialize( filename='run_interview_tests.yml' )
-  #installer.package_json.initialize( filename='package.json' )
-  #installer.example_test.initialize( filename='example_test.feature' )
-  #installer.gitignore.initialize( filename='.gitignore' )
-  #installer.env_example.initialize( filename='.env_example' )
+  installer.playground_url  # workflow and .env
+  installer.email  # da authorization
   
   create_branch
   set_da_server_info
@@ -47,6 +40,7 @@ code: |
   check_stuff
 ---
 code: |
+  # TODO: This will overwrite file in existing branch if page is refreshed instead of a new branch being created. Is that what we want?
   installer.set_github_auth()
   installer.create_branch()
   create_branch = True
@@ -57,7 +51,11 @@ code: |
 ---
 code: |
   installer.run_interview_tests_str = run_interview_tests.content
+  installer.package_json_str = package_json.content
+  installer.example_test_str = example_test.content
   installer.gitignore_str = gitignore.content
+  installer.env_example_str = env_example.content
+
   set_file_contents = True
 ---
 # TODO: Add link to docs where we explain how the library makes a project, etc.
@@ -130,7 +128,6 @@ event: check_stuff
 question: |
   Check the result
 subquestion: |
-
   1. If you made a PR, see the PR that was made and merge it in
   1. Go to (link to repo's actions page) and see the example test being run.
   1. If it fails the firs time, [rerun the test (job)](https://docs.github.com/en/actions/managing-workflow-runs/re-running-a-workflow). If it fails again:
@@ -140,56 +137,182 @@ subquestion: |
   1. When that test run is over, try [running the workflow manually from the actions menu](https://docs.github.com/en/actions/managing-workflow-runs/manually-running-a-workflow#running-a-workflow-on-github)
 
   If everything passes, all should be well and you should be ready to write your first tests. If you're still having trouble, [make an issue in our testing package's repository](https://github.com/plocket/docassemble-cucumber/issues).
-
 ---
-comment: |
-  [test runner](${ installer.run_interview_tests.url_for() })
-  attachment code: |
-    [ installer.run_interview_tests ]
----
-comment: |
-  attachments:
-    - name: GitHub test-running action
-      variable name: installer.run_interview_tests
-      filename: run_interview_tests
-      raw: True
-      content file: run_interview_tests.yml
-    - name: NPM package.json
-      variable name: installer.package_json
-      filename: package
-      raw: True
-      content file: package.json
-    - name: Example test
-      variable name: installer.example_test
-      filename: example_test
-      raw: True
-      content file: example_test.feature
-    - name: gitignore for local development
-      variable name: installer.gitignore
-      filename: .gitignore
-      raw: True
-      content file: .gitignore
-    - name: Example of a .env file for local development
-      variable name: installer.env_example
-      filename: .env_example
-      raw: True
-      content file: .env_example
----
-comment: |
-  # Including the below will only download the two hidden
-  # files and both will be PDFs
-  #manual attachment list: True
-  #allow downloading: True
-  #zip filename: thing.zip
----
-comment: |
-  attachment code: |
-    [ installer.run_interview_tests, installer.package_json, installer.example_test, installer.gitignore, installer.env_example ]
----
-template: run_interview_tests
+# TODO: Make an interview that will generate a .env for people to download or maybe just copy/paste as it's a hidden file
+template: env_example
 content: |
-  Stuff ${ installer.repo_name }
+  # Username and password to log in to a docassemble playground to run tests
+  PLAYGROUND_EMAIL=example@example.com
+  PLAYGROUND_PASSWORD=12345
+  
+  # Your PLAYGROUND_ID can be found in the url of an interview launched from that playground.
+  # It should look something like this:
+  # https://www.docassemble-server-url.com/interview?i=docassemble.playground[PLAYGROUND_ID]%3Ainterview.yml#page1
+  # Example: https://www.docassemble-server-url.com/interview?i=docassemble.playground34%3Ainterview.yml#page1. 34 is the id.
+  PLAYGROUND_ID=11111
+
+  BASE_URL=https://www.docassemble-server-url.com
+  REPO_URL=https://github.com/user_name/repo_name
+
+  # Name of the branch on the Github repo to be tested.
+  BRANCH_PATH=main
+
+  # Tests will be generated for the buttons with the text
+  # below (intended for testing different language translations)
+  # Examples: Español, Tiếng Việt, Português, 中文, Kreyòl
+  EXTRA_LANGUAGES=
+
+  # Change this to DEBUG=1 to run tests in a visible browser
+  DEBUG=
+---
+template: example_test
+content: |
+  @example_feature_tag
+  Feature: An example test
+
+  The tests in this file should cover
+  - [x] Provide a template people can use to make their own tests.
+  - [ ] Direct people to more documentation.
+  - [ ] Find the ultimate question to life, the universe, and everything.
+
+  @example_scenario_tag
+  Scenario: Server finishes reloading
+    Given I start the interview at "test"
 ---
 template: gitignore
 content: |
-  Other stuff ${ installer.repo_name }
+  tests/chromedriver
+  *DS_Store*
+  node_modules*
+  .env
+  npm-debug.log
+  error*.jpg
+  screenshot_*.jpg
+  downloads_*
+  *_lang_*.feature
+  *_report_*
+---
+template: package_json
+content: |
+  {
+    "name": "${ installer.repo_name }",
+    "version": "0.1.0",
+    "description": "",
+    "main": "",
+    "directories": {
+      "test": "tests"
+    },
+    "scripts": {
+      "test": "npm run langs_setup && npm run cucumber -- $@",
+      "cucumber_base": "./node_modules/.bin/cucumber-js --require ./node_modules/docassemble-cucumber/lib/index.js",
+      "cucumber": "run_cucumber(){ npm run cucumber_base -- \"$@\" tests/features/*.feature; }; run_cucumber",
+      "langs": "npm run langs_setup && ./node_modules/.bin/cucumber-js --require ./node_modules/docassemble-cucumber/lib/index.js tests/features/*_lang*.feature",
+      "langs_setup": "node_modules/.bin/da-langs 'tests/features/*.feature'",
+      "langs_local": "npm run langs_setup && npm run local",
+      "local": "npm run setup && npm run cucumber; npm run takedown",
+      "setup": "node_modules/.bin/da-setup",
+      "takedown": "node_modules/.bin/da-takedown"
+    },
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/${ installer.user_name }/${ installer.repo_name }.git"
+    },
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+      "url": "https://github.com/${ installer.user_name }/${ installer.repo_name }/issues"
+    },
+    "homepage": "https://github.com/${ installer.user_name }/${ installer.repo_name }#readme",
+    "dependencies": {
+      "bufferutil": "^4.0.1",
+      "chai": "^4.2.0",
+      "cucumber": "^6.0.5",
+      "docassemble-cucumber": "^1.0.0",
+      "dotenv": "^8.2.0",
+      "mocha": "^7.2.0",
+      "puppeteer": "^3.1.0",
+      "utf-8-validate": "^5.0.2"
+    }
+  }
+---
+# The closing '}}' doesn't really need to be contained.
+# It just seemed more consistent
+template: run_interview_tests
+content: |
+  name: Test the interview
+
+  on:
+    push:
+    workflow_dispatch:
+      inputs:
+        extra_languages:
+          description: 'Optional. A list of comma separated language names visible on buttons or links that change the language of the interview. Overrides the EXTRA_LANGUAGES repo secret.'
+          default: ''
+        tags:
+          description: 'Optional. Use a "tag expression" specify which tagged tests to run (https://cucumber.io/docs/cucumber/api/#tag-expressions)'
+          default: ''
+
+  jobs:
+
+    puppeteer-tests:
+      runs-on: ubuntu-latest
+
+      strategy:
+        matrix:
+          node-version: [12.x]
+
+      env:
+        PLAYGROUND_EMAIL: ${ '${{' } secrets.PLAYGROUND_EMAIL ${ '}}' }
+        PLAYGROUND_PASSWORD: ${ '${{' } secrets.PLAYGROUND_PASSWORD ${ '}}' }
+        PLAYGROUND_ID: ${ '${{' } secrets.PLAYGROUND_ID ${ '}}' }
+        BASE_URL: ${ installer.server_url }
+        BRANCH_PATH: ${ '${{' } github.ref ${ '}}' }
+        EXTRA_LANGUAGES: ${ '${{' } secrets.EXTRA_LANGUAGES ${ '}}' }
+
+      name: Run Puppeteer tests
+      steps:
+        - name: Set languages
+          run: echo "EXTRA_LANGUAGES=${ '${{' } github.event.inputs.extra_languages ${ '}}' }" >> $GITHUB_ENV
+          if: ${ '${{' } github.event.inputs.extra_languages != '' ${ '}}' }
+        - run: echo "REPO_URL=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" >> $GITHUB_ENV
+        - run: echo "Repo address is $REPO_URL"
+        - name: Checkout
+          uses: actions/checkout@v2
+        - name: Setup environment
+          uses: actions/setup-node@v1
+          with:
+            node-version: ${ '${{' } matrix.node-version ${ '}}' }
+        - run: npm install
+        - run: npm run setup
+        - run: npm run test -- ${ '${{' } github.event.inputs.tags && format('"--tags" "{0}"', github.event.inputs.tags) ${ '}}' }
+        - name: upload error artifacts
+          uses: actions/upload-artifact@v2
+          if: ${ '${{' } failure() ${ '}}' }
+          with:
+            name: errors
+            path: ./**/error*.jpg
+        - name: upload screenshot steps
+          uses: actions/upload-artifact@v2
+          # They will upload even if a previosu step has failed
+          if: ${ '${{' } always() ${ '}}' }
+          with:
+            name: screenshots
+            path: ./**/screenshot*.jpg
+        - name: upload downloads
+          uses: actions/upload-artifact@v2
+          # They will upload even if a previous step has failed
+          if: ${ '${{' } always() ${ '}}' }
+          with:
+            name: downloads
+            path: ./**/downloads_*
+        - name: upload report
+          uses: actions/upload-artifact@v2
+          # They will upload even if a previous step has failed
+          if: ${ '${{' } always() ${ '}}' }
+          with:
+            name: report
+            path: ./**/*_report_*
+        - name: Cleanup
+          if: ${ '${{' } always() ${ '}}' }
+          run: npm run takedown
+---

@@ -191,34 +191,17 @@ class TestInstaller(DAObject):
     # Check mergability of a PR
     # https://docs.github.com/en/rest/guides/getting-started-with-the-git-database-api#checking-mergeability-of-pull-requests
     
-    # > I'd just slurp the file contents into a string with open() and .read() and then use re.sub
+    # 1
+    self.repo.create_file('.env_example', 'Add .env_example', self.env_example_str, branch=self.branch_name)
+    # 2
+    self.repo.create_file('tests/features/example_test.feature', 'Add tests/features/example_test.feature', self.example_test_str, branch=self.branch_name)
+    # 3
+    self.repo.create_file('.gitignore', 'Add .gitignore', self.gitignore_str, branch=self.branch_name)
+    # 4
+    self.repo.create_file('package.json', 'Add package.json', self.package_json_str, branch=self.branch_name)
+    # 5
+    self.repo.create_file('.github/workflow/run_form_tests.yml', 'Add r.github/workflow/run_form_tests.yml', self.run_interview_tests_str, branch=self.branch_name)
     
-    #log( self.run_interview_tests, 'console' )
-    #contents = self.run_interview_tests.slurp()
-    #log( 'slurp', 'console' )
-    #log( contents, 'console' )
-    
-    # Get the folder with the files
-    #files_repo = 
-    # https://raw.githubusercontent.com/plocket/docassemble-cucumber/main/pushing_testing_files/.env-example
-    
-    #if not defined( 'installer.repo' ):
-    #  self.set_repo()
-    #repo = self.repo
-    
-    # TODO: This will overwrite file in existing branch if page is refreshed instead of interview being redone. Does it need fixing?
-    self.repo.create_file('.github/workflow/file.yml', 'add file', self.run_interview_tests_str, branch=self.branch_name)
-    
-    #self.initializeAttribute('gitignore', DAFile)
-    #self.gitignore.initialize( filename='.gitignore', attachment=True )
-    #self.gitignore.write( self.gitignore_str )
-    #self.gitignore.commit()
-    
-    self.repo.create_file('.gitignore', 'add file', self.gitignore_str, branch=self.branch_name)
-    
-    return self
-  
-  def add_file_to_branch( self ):
     return self
 #
 #  def get_files( self ):
