@@ -53,7 +53,7 @@ setup(name='docassemble.ALAutomatedTestingTests',
       url='https://docassemble.org',
       packages=find_packages(),
       namespace_packages=['docassemble'],
-      install_requires=[],
+      install_requires=['PyGithub>=1.54.1'],
       zip_safe=False,
       package_data=find_package_data(where='docassemble/ALAutomatedTestingTests/', package='docassemble.ALAutomatedTestingTests'),
      )
