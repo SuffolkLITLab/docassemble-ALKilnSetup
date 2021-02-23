@@ -17,8 +17,13 @@ objects:
 ---
 mandatory: True
 code: |
-  # process files
-  # make_pull_request()
+  # - [ ] process files
+  # - [ ] make_pull_request()
+  
+  # For development
+  installer.repo_url = 'https://github.com/plocket/docassemble-ALAutomatedTestingTests'
+  installer.playground_url = 'https://apps-dev.suffolklitlab.org/interview?i=docassemble.playground12ALTestingGitHubAPI%3Aal_set_up_testing.yml#page1'
+  
 
   installer.token  # github authorization
   
@@ -37,7 +42,7 @@ code: |
   set_file_contents
   
   #installer.send_da_auth_secrets()
-  installer.create_file()
+  installer.commit_files()
   
   check_stuff
 ---
@@ -52,10 +57,11 @@ code: |
 ---
 code: |
   installer.run_interview_tests_str = run_interview_tests.content
-  installer.gitignore = gitignore.content
+  installer.gitignore_str = gitignore.content
   set_file_contents = True
 ---
 # TODO: Add link to docs where we explain how the library makes a project, etc.
+# TODO: Add links to the actual github repo and files and folders
 id: intro
 question: |
   Welcome

@@ -177,7 +177,7 @@ class TestInstaller(DAObject):
     self.branch_name = branch_name
     return self
   
-  def create_file( self ):
+  def commit_files( self ):
     # https://pygithub.readthedocs.io/en/latest/github_objects/Repository.html#github.Repository.Repository.create_file
     # https://pygithub.readthedocs.io/en/latest/github_objects/Repository.html#github.Repository.Repository.create_git_commit
     # https://docs.github.com/en/rest/reference/repos#create-or-update-file-contents
@@ -205,32 +205,16 @@ class TestInstaller(DAObject):
     #if not defined( 'installer.repo' ):
     #  self.set_repo()
     #repo = self.repo
-    #
-    #files_to_push = repo.get_contents('pushing_testing_files')
-    #log( len(files_to_push), 'console' )
-    
-    #self.initializeAttribute('files', DAFileCollection)
-    
-    run_tests_str = self.run_interview_tests_str
-    #self.run_interview_tests = DAFile()
-    self.initializeAttribute('run_interview_tests', DAFile)
-    self.run_interview_tests.initialize( filename='run_interview_tests.yml', attachment=True )
-    self.run_interview_tests.write( run_tests_str )
-    log( self.run_interview_tests.extension, 'console' )
-    self.run_interview_tests.commit()
-    #self.files.appendObject( self.run_interview_tests )
-    
-    #gitignore_str = self.gitignore
-    ##self.gitignore = DAFile()
-    #self.initializeAttribute('gitignore', DAFile)
-    #self.gitignore.initialize( filename='.gitignore', attachment=True )
-    #self.gitignore.write( gitignore_str )
-    #log( self.gitignore.filename, 'console' )
-    #self.gitignore.commit()
-    #self.gitignore = 'blah'
     
     # TODO: This will overwrite file in existing branch if page is refreshed instead of interview being redone. Does it need fixing?
-    self.repo.create_file('some_folder/file.yml', 'add file', run_tests_str, branch=self.branch_name)
+    self.repo.create_file('.github/workflow/file.yml', 'add file', self.run_interview_tests_str, branch=self.branch_name)
+    
+    #self.initializeAttribute('gitignore', DAFile)
+    #self.gitignore.initialize( filename='.gitignore', attachment=True )
+    #self.gitignore.write( self.gitignore_str )
+    #self.gitignore.commit()
+    
+    self.repo.create_file('.gitignore', 'add file', self.gitignore_str, branch=self.branch_name)
     
     return self
   
