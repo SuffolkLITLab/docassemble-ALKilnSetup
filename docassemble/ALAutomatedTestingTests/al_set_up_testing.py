@@ -148,25 +148,29 @@ class TestInstaller(DAObject):
     default_branch_name = repo.default_branch
     default_branch = repo.get_branch( default_branch_name )
     
-    self.branch_name = "automated_testing"
-    branch_name = self.branch_name
+    self.errors = []
+    branch_name = "automated_testing"
     ref_path = "refs/heads/" + branch_name  # path of new branch
     count = 1
-    max_count = 20
+    max_count = 3
     while ( count < max_count ):
-      count += 1
       # except github.GithubException.GithubException as error:
       try:
         response = repo.create_git_ref( ref_path, default_branch.commit.sha )
         break
       except Exception as error:
-        branch_name = self.branch_name + '_' + str( count )
-        ref_path = "refs/heads/" + self.branch_name
+        count += 1
+        branch_name = branch_name + '_' + str( count )
+        ref_path = "refs/heads/" + branch_name
         # Why does this make things get stuck on a previous page? (first page?)
         # Some kind of exception in here? Lets hope it doesn't occur at all.
         if count == max_count:
           # TODO: Tell the user to delete old branches
-          installer.error = error.status # TODO: Make list of errors?
+          self.errors.append( error )
+          
+    if len(self.errors) > 0 and not self.errors[0].status == 422:
+      log( 'non-422 error', 'console' )
+      log( self.errors, 'console' )
     
     #self.ref_path = ref_path
     self.branch_name = branch_name
@@ -226,7 +230,7 @@ class TestInstaller(DAObject):
     #self.gitignore = 'blah'
     
     log( 'before', 'console' )
-    self.repo.create_file('file.yml', 'add file', run_tests_str, branch=self.branch_name)
+    #self.repo.create_file('file.yml', 'add file', run_tests_str, branch=self.branch_name)
     log( 'sent', 'console' )
     
     return self

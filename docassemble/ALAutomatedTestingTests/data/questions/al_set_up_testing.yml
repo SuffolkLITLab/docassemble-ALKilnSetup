@@ -20,13 +20,15 @@ code: |
   # process files
   # make_pull_request()
 
-  installer.token
+  installer.token  # github authorization
+  
+  installer.set_github_auth()
+  installer.create_branch()
   
   installer.playground_url
   installer.email
   
   installer.set_da_server_info()
-  installer.set_github_auth()
   
   #installer.run_interview_tests.initialize( filename='run_interview_tests.yml' )
   #installer.package_json.initialize( filename='package.json' )
@@ -39,14 +41,9 @@ code: |
   
   intro
   
-  
   #installer.send_da_auth_secrets()
-  installer.create_branch()
-  installer.create_file()
+  #installer.create_file()
   
-  #installer.server_url = '@@@@@@@@@@@@@@@'
-  #installer.repo_name = '================'
-  #installer.user_name = '&&&&&&&&&&&&&&&&'
   check_stuff
 ---
 # TODO: Add link to docs where we explain how the library makes a project, etc.
@@ -118,7 +115,6 @@ event: check_stuff
 question: |
   Check the result
 subquestion: |
-  [test runner](${ installer.run_interview_tests.url_for() })
 
   1. If you made a PR, see the PR that was made and merge it in
   1. Go to (link to repo's actions page) and see the example test being run.
@@ -132,6 +128,7 @@ subquestion: |
 
 ---
 comment: |
+  [test runner](${ installer.run_interview_tests.url_for() })
   attachment code: |
     [ installer.run_interview_tests ]
 ---
