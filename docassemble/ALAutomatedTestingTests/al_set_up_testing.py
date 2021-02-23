@@ -149,10 +149,11 @@ class TestInstaller(DAObject):
     default_branch = repo.get_branch( default_branch_name )
     
     self.errors = []
-    branch_name = "automated_testing"
+    branch_name_base = "automated_testing"
+    branch_name = branch_name_base
     ref_path = "refs/heads/" + branch_name  # path of new branch
     count = 1
-    max_count = 3
+    max_count = 20
     while ( count < max_count ):
       # except github.GithubException.GithubException as error:
       try:
@@ -160,7 +161,7 @@ class TestInstaller(DAObject):
         break
       except Exception as error:
         count += 1
-        branch_name = branch_name + '_' + str( count )
+        branch_name = branch_name_base + '_' + str( count )
         ref_path = "refs/heads/" + branch_name
         # Why does this make things get stuck on a previous page? (first page?)
         # Some kind of exception in here? Lets hope it doesn't occur at all.
@@ -174,7 +175,6 @@ class TestInstaller(DAObject):
     
     #self.ref_path = ref_path
     self.branch_name = branch_name
-    
     return self
   
   def create_file( self ):
@@ -229,9 +229,8 @@ class TestInstaller(DAObject):
     #self.gitignore.commit()
     #self.gitignore = 'blah'
     
-    log( 'before', 'console' )
-    #self.repo.create_file('file.yml', 'add file', run_tests_str, branch=self.branch_name)
-    log( 'sent', 'console' )
+    # TODO: This will overwrite file in existing branch if page is refreshed instead of interview being redone. Does it need fixing?
+    self.repo.create_file('some_folder/file.yml', 'add file', run_tests_str, branch=self.branch_name)
     
     return self
   

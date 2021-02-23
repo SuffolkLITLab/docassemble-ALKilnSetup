@@ -22,13 +22,9 @@ code: |
 
   installer.token  # github authorization
   
-  installer.set_github_auth()
-  installer.create_branch()
-  
   installer.playground_url
   installer.email
   
-  installer.set_da_server_info()
   
   #installer.run_interview_tests.initialize( filename='run_interview_tests.yml' )
   #installer.package_json.initialize( filename='package.json' )
@@ -36,15 +32,28 @@ code: |
   #installer.gitignore.initialize( filename='.gitignore' )
   #installer.env_example.initialize( filename='.env_example' )
   
-  installer.run_interview_tests_str = run_interview_tests.content
-  installer.gitignore = gitignore.content
-  
-  intro
+  create_branch
+  set_da_server_info
+  set_file_contents
   
   #installer.send_da_auth_secrets()
-  #installer.create_file()
+  installer.create_file()
   
   check_stuff
+---
+code: |
+  installer.set_github_auth()
+  installer.create_branch()
+  create_branch = True
+---
+code: |
+  installer.set_da_server_info()
+  set_da_server_info = True
+---
+code: |
+  installer.run_interview_tests_str = run_interview_tests.content
+  installer.gitignore = gitignore.content
+  set_file_contents = True
 ---
 # TODO: Add link to docs where we explain how the library makes a project, etc.
 id: intro
