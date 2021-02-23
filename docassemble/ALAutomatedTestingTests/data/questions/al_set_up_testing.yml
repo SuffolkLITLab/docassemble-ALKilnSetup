@@ -9,26 +9,44 @@ modules:
 ---
 objects:
   - installer: TestInstaller
+  #- installer.run_interview_tests: DAFile
+  #- installer.package_json: DAFile
+  #- installer.example_test: DAFile
+  #- installer.gitignore: DAFile
+  #- installer.env_example: DAFile
 ---
 mandatory: True
 code: |
   # process files
   # make_pull_request()
 
-  #intro
-
   installer.token
-  intro
+  
+  installer.playground_url
+  installer.email
+  
+  installer.set_da_server_info()
   installer.set_github_auth()
-  #installer.playground_url
-  #installer.email
+  
+  #installer.run_interview_tests.initialize( filename='run_interview_tests.yml' )
+  #installer.package_json.initialize( filename='package.json' )
+  #installer.example_test.initialize( filename='example_test.feature' )
+  #installer.gitignore.initialize( filename='.gitignore' )
+  #installer.env_example.initialize( filename='.env_example' )
+  
+  installer.run_interview_tests_str = run_interview_tests.content
+  installer.gitignore = gitignore.content
+  
+  intro
+  
+  
   #installer.send_da_auth_secrets()
   installer.create_branch()
+  installer.create_file()
   
   #installer.server_url = '@@@@@@@@@@@@@@@'
   #installer.repo_name = '================'
   #installer.user_name = '&&&&&&&&&&&&&&&&'
-  
   check_stuff
 ---
 # TODO: Add link to docs where we explain how the library makes a project, etc.
@@ -100,6 +118,8 @@ event: check_stuff
 question: |
   Check the result
 subquestion: |
+  [test runner](${ installer.run_interview_tests.url_for() })
+
   1. If you made a PR, see the PR that was made and merge it in
   1. Go to (link to repo's actions page) and see the example test being run.
   1. If it fails the firs time, [rerun the test (job)](https://docs.github.com/en/actions/managing-workflow-runs/re-running-a-workflow). If it fails again:
@@ -109,33 +129,39 @@ subquestion: |
   1. When that test run is over, try [running the workflow manually from the actions menu](https://docs.github.com/en/actions/managing-workflow-runs/manually-running-a-workflow#running-a-workflow-on-github)
 
   If everything passes, all should be well and you should be ready to write your first tests. If you're still having trouble, [make an issue in our testing package's repository](https://github.com/plocket/docassemble-cucumber/issues).
+
 ---
-attachments:
-  - name: GitHub test-running action
-    variable name: installer.run_interview_tests
-    filename: run_interview_tests
-    raw: True
-    content file: run_interview_tests.yml
-  - name: NPM package.json
-    variable name: installer.package_json
-    filename: package
-    raw: True
-    content file: package.json
-  - name: Example test
-    variable name: installer.example_test
-    filename: example_test
-    raw: True
-    content file: example_test.feature
-  - name: gitignore for local development
-    variable name: installer.gitignore
-    filename: .gitignore
-    raw: True
-    content file: .gitignore
-  - name: Example of a .env file for local development
-    variable name: installer.env_example
-    filename: .env_example
-    raw: True
-    content file: .env_example
+comment: |
+  attachment code: |
+    [ installer.run_interview_tests ]
+---
+comment: |
+  attachments:
+    - name: GitHub test-running action
+      variable name: installer.run_interview_tests
+      filename: run_interview_tests
+      raw: True
+      content file: run_interview_tests.yml
+    - name: NPM package.json
+      variable name: installer.package_json
+      filename: package
+      raw: True
+      content file: package.json
+    - name: Example test
+      variable name: installer.example_test
+      filename: example_test
+      raw: True
+      content file: example_test.feature
+    - name: gitignore for local development
+      variable name: installer.gitignore
+      filename: .gitignore
+      raw: True
+      content file: .gitignore
+    - name: Example of a .env file for local development
+      variable name: installer.env_example
+      filename: .env_example
+      raw: True
+      content file: .env_example
 ---
 comment: |
   # Including the below will only download the two hidden
@@ -148,3 +174,10 @@ comment: |
   attachment code: |
     [ installer.run_interview_tests, installer.package_json, installer.example_test, installer.gitignore, installer.env_example ]
 ---
+template: run_interview_tests
+content: |
+  Stuff ${ installer.repo_name }
+---
+template: gitignore
+content: |
+  Other stuff ${ installer.repo_name }
