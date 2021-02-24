@@ -1,9 +1,10 @@
 from github import Github
 import requests
-import re
 from nacl import encoding, public
+# TODO: Reduce to just one encryption library :/
 import codecs
 from base64 import b64encode
+import re
 import json
 from docassemble.base.util import log, zip_file, defined
 from docassemble.base.core import DAObject
@@ -79,19 +80,24 @@ class TestInstaller(DAObject):
     self.get_github_info_from_repo_url() # Gets self.repo_name
     
     # May not need user name with this library
-    self.github = Github(self.token)
-    self.user_name = self.github.get_user().name
-    self.repo = self.github.get_user().get_repo( self.repo_name )
+    try:
+      self.github = Github( self.token )
+      self.user_name = self.github.get_user().name
+      self.repo = self.github.get_user().get_repo( self.repo_name )
+    except Exception as error:
+      error.data[ 'message' ] += '. You may have copied your access token incorrectly or you may have deleted that access token.'
+      self.errors.append( error )
+      log( error.data[ 'message' ], 'console' )
+      return self
     
+    # The below is only needed because PyGithub does not handle secrets
     # The value for the GitHub 'Authorization' key
     auth_bytes = codecs.encode(bytes( self.user_name + ':' + self.token, 'utf8'), 'base64')
     self.basic_auth = 'Basic ' + auth_bytes.decode().strip()
-    
     # The base url string needed for making requests to the repo.
-    # TODO: Might need this only for secrets now with new lib
     self.github_repo_base = "https://api.github.com/repos/" + self.user_name + "/" + self.repo_name
-    
     self.set_key_values()
+    
     return self
   
   def get_github_info_from_repo_url( self ):
@@ -102,6 +108,9 @@ class TestInstaller(DAObject):
       self.repo_name = matches.groups(1)[1]
     else:
       self.repo_name = None
+      error = ErrorLikeObject( 'Cannot validate the GitHub URL "' + self.repo_url + '". If you are sure you have the whole correct URL the repository, please report a bug and include your interview URL in the report.' )
+      self.errors.append( error )
+      log( error.data[ 'message' ], 'console' )
     return self
   
   def set_key_values( self ):
@@ -124,17 +133,20 @@ class TestInstaller(DAObject):
     """Use the interview url to get the user's Playground id."""
     # Can probably do both in one match, but maybe we want to get granular with
     # our error messages...?
-    server_match = re.match( r"^(.+)\/interview\?i=docassemble\.playground(\d+).*$", self.playground_url)
+    server_match = re.match( r"^(http.+)\/interview\?i=docassemble\.playground(\d+).*$", self.playground_url )
     if server_match is None:
       self.server_url = None
       self.playground_id = None
-      error = ErrorLikeObject()
-      error.message = 'Invalid interview url. If you are sure you have the whole url of a running interview, please report a bug and include your interview URL in the report.'
+      error = ErrorLikeObject( 'Cannot validate the interview URL "' + self.playground_url + '". If you are sure you have the whole URL of a running interview, please report a bug and include your interview URL in the report.' )
       self.errors.append( error )
-      log( error.message, 'console' )
+      log( error.data[ 'message' ], 'console' )
     else:
+      # TODO: More fine-grained validation of this information
       self.server_url = server_match.group(1)[1]
       self.playground_id = server_match.group(1)[2]
+    
+    # TODO: Is it possible to try to log into their server to
+    # make sure they've given the correct information?
     
     return self
   
@@ -144,6 +156,7 @@ class TestInstaller(DAObject):
     default_branch_name = repo.default_branch
     default_branch = repo.get_branch( default_branch_name )
     
+    # Loop through branch names until one is available
     branch_name_base = "automated_testing"
     branch_name = branch_name_base
     ref_path = "refs/heads/" + branch_name  # path of new branch
@@ -201,7 +214,11 @@ Updates:
     
     return self
 
+          
+#def get_error_like( message ):
+#  return { 'status': 0, 'data': { 'message': message }}
+          
 class ErrorLikeObject():
-  def __init__( self ):
+  def __init__( self, message='' ):
     self.status = 0
-    self.data = { 'message': '' }
+    self.data = { 'message': message }

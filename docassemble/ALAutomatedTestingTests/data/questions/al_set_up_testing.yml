@@ -13,23 +13,27 @@ objects:
 mandatory: True
 code: |
   # - [x] process files
-  # - [ ] make_pull_request()
-  # - [ ] Ask about commit message and related issue #?
+  # - [x] make_pull_request()
+  # - [ ] Custom related issue # and commit message?
   # - [ ] Ask if they want to just push to default branch?
   
   # For development
-  installer.repo_url = 'https://github.com/plocket/install'
+  #installer.repo_url = 'https://github.com/plocket/install'
   #installer.playground_url = 'https://apps-dev.suffolklitlab.org/interview?i=docassemble.playground12ALTestingGitHubAPI%3Aal_set_up_testing.yml#page1'
   
-  installer.token  # github authorization
-  installer.password  # da authorization
+  if len( installer.errors ) > 0:
+    show_errors
   
+  installer.token  # github authorization
   authorize_for_github
+  
+  installer.password  # da authorization
   set_da_server_info
+  
   set_file_contents
   update_github
   
-  check_stuff
+  next_steps
 ---
 code: |
   # TODO: This will overwrite file in existing branch if page is refreshed instead of a new branch being created. Is that what we want?
@@ -55,6 +59,16 @@ code: |
   installer.make_pull_request()
   update_github = True
 ---
+id: errors
+event: show_errors
+question: |
+  Sorry, something went wrong
+subquestion: |
+  % for error in installer.errors:
+  Error: ${ error.data[ 'message' ] }
+  
+  % endfor
+---
 # TODO: Add link to docs where we explain how the library makes a project, etc.
 # TODO: Add links to the actual github repo and files and folders
 # TODO: only show 'other than you' if the person is logged in
@@ -68,7 +82,7 @@ subquestion: |
   
   We will need you to give us:
   
-  1. A [GitHub personal token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) with 'repo' level permissions.
+  1. A [GitHub personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) with 'repo' level permissions.
   1. Your docassemble testing account's sign in information. That can be your account if you want it to be.
 
   This tool will add some files to different folders in your interview's GitHub repository:
@@ -86,9 +100,9 @@ id: github auth
 question: |
   GitHub authorization
 subquestion: |
-  In order to change files in your GitHub repository, we need your permission.
+  In order to change files in your GitHub repository, we need your permission. Please create a [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) for this purpose. You can delete the token any time after completing the setup.
 fields:
-  - URL of the interview's GitHub repository: installer.repo_url
+  - Interview repository URL: installer.repo_url
   - Personal access token: installer.token
     datatype: password
 ---
@@ -107,7 +121,8 @@ fields:
 # TODO: Add link to PR if it was made
 # TODO: Add link to actions page if it was merged with default
 # TODO: Add link to documentation (maybe put instructions for failing runs in there)
-event: check_stuff
+# TODO: Use the github feedback functionality AL provides
+event: next_steps
 question: |
   Check the result
 subquestion: |
@@ -123,7 +138,9 @@ subquestion: |
       1. If tests still fail, [make an issue in our testing package's repository](https://github.com/plocket/docassemble-cucumber/issues).
   1. When that test run is over, see if you can [run the workflow manually from the actions menu](https://docs.github.com/en/actions/managing-workflow-runs/manually-running-a-workflow#running-a-workflow-on-github).
 
-  If everything passes, all should be well and you should be ready to write your first tests. If you're still having trouble or have some feedback, [we would love you to make an issue in our testing package's repository](https://github.com/plocket/docassemble-cucumber/issues).
+  If everything passes, all should be well and you should be ready to write your first tests. [Delete the personal access token you created](https://github.com/settings/tokens).
+  
+  If you are still having trouble or have some feedback, [we would love you to make an issue in our testing package's repository](https://github.com/plocket/docassemble-cucumber/issues).
 ---
 # TODO: Make an interview that will generate a .env for people to download or maybe just copy/paste as it's a hidden file
 template: env_example
