@@ -105,8 +105,8 @@ fields:
   - Testing account's email: installer.email
   - Testing account's password: installer.password
     datatype: password
-  - note: "From inside the testing account, hit 'Save and Run' in the YAML file you want to test. What is the url in the address bar?"
-  - no label: installer.playground_url
+  - note: "From inside the testing account, hit 'Save and Run' in the YAML file you want to test. What is the URL in the address bar?"
+  - Interview URL: installer.playground_url
 ---
 # TODO: Add link to PR
 event: check_stuff
