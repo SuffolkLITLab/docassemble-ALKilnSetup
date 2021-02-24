@@ -80,6 +80,7 @@ class TestInstaller(DAObject):
     # May not need user name with this library
     self.github = Github(self.token)
     self.user_name = self.github.get_user().name
+    self.repo = self.github.get_user().get_repo( self.repo_name )
     
     # The value for the GitHub 'Authorization' key
     auth_bytes = codecs.encode(bytes( self.user_name + ':' + self.token, 'utf8'), 'base64')
@@ -99,8 +100,6 @@ class TestInstaller(DAObject):
       self.repo_name = matches.groups(1)[1]
     else:
       self.repo_name = None
-    #log( 'self.repo_name', 'console' )
-    #log( self.repo_name, 'console' )
     return self
   
   def set_key_values( self ):
@@ -137,13 +136,8 @@ class TestInstaller(DAObject):
     
     return self
   
-  def set_repo( self ):
-    self.repo = self.github.get_user().get_repo( self.repo_name )
-  
   def create_branch( self ):
     # Get default branch
-    if not defined( 'installer.repo' ):
-      self.set_repo()
     repo = self.repo
     default_branch_name = repo.default_branch
     default_branch = repo.get_branch( default_branch_name )
@@ -155,11 +149,10 @@ class TestInstaller(DAObject):
     count = 1
     max_count = 20
     while ( count < max_count ):
-      # except github.GithubException.GithubException as error:
       try:
         response = repo.create_git_ref( ref_path, default_branch.commit.sha )
         break
-      except Exception as error:
+      except Exception as error:  # github.GithubException.GithubException
         count += 1
         branch_name = branch_name_base + '_' + str( count )
         ref_path = "refs/heads/" + branch_name
@@ -173,49 +166,37 @@ class TestInstaller(DAObject):
       log( 'non-422 error', 'console' )
       log( self.errors, 'console' )
     
-    #self.ref_path = ref_path
     self.branch_name = branch_name
     return self
   
   def commit_files( self ):
     # https://pygithub.readthedocs.io/en/latest/github_objects/Repository.html#github.Repository.Repository.create_file
     # https://pygithub.readthedocs.io/en/latest/github_objects/Repository.html#github.Repository.Repository.create_git_commit
-    # https://docs.github.com/en/rest/reference/repos#create-or-update-file-contents
-    # https://docs.github.com/en/rest/reference/repos#contents
-    # https://stackoverflow.com/questions/20045572/create-folder-using-github-api
-    # https://stackoverflow.com/questions/22312545/github-api-to-create-a-file
     
-    # Create a commit?
-    # https://docs.github.com/en/rest/reference/git#list-matching-references
-    
-    # Check mergability of a PR
+    # TODO: Check mergability of a PR
     # https://docs.github.com/en/rest/guides/getting-started-with-the-git-database-api#checking-mergeability-of-pull-requests
     
-    # 1
-    self.repo.create_file('.env_example', 'Add .env_example', self.env_example_str, branch=self.branch_name)
-    # 2
-    self.repo.create_file('tests/features/example_test.feature', 'Add tests/features/example_test.feature', self.example_test_str, branch=self.branch_name)
-    # 3
-    self.repo.create_file('.gitignore', 'Add .gitignore', self.gitignore_str, branch=self.branch_name)
-    # 4
-    self.repo.create_file('package.json', 'Add package.json', self.package_json_str, branch=self.branch_name)
-    # 5
-    self.repo.create_file('.github/workflow/run_form_tests.yml', 'Add r.github/workflow/run_form_tests.yml', self.run_interview_tests_str, branch=self.branch_name)
+    self.repo.create_file('.env_example', 'Add .env_example', self.env_example_str, branch=self.branch_name)  # 1
+    self.repo.create_file('tests/features/example_test.feature', 'Add tests/features/example_test.feature', self.example_test_str, branch=self.branch_name)  # 2
+    self.repo.create_file('.gitignore', 'Add .gitignore', self.gitignore_str, branch=self.branch_name)  # 3
+    self.repo.create_file('package.json', 'Add package.json', self.package_json_str, branch=self.branch_name)  # 4
+    self.repo.create_file('.github/workflow/run_form_tests.yml', 'Add r.github/workflow/run_form_tests.yml', self.run_interview_tests_str, branch=self.branch_name)  # 5
     
     return self
-#
-#  def get_files( self ):
-#    # We have the files in the templates folder
-#    # though the hidden files are... invisible...
-#    # and the .feature file is uneditable...
-#    pass
-#
-#  def transform_files( self ):
-#    # Don't need this as Mako does the job
-#    pass
-#
-#  def push_to_new_branch( self ):
-#    pass
-#
-#  def make_pull_request( self ):
-#    pass
+
+  def make_pull_request( self ):
+    base_name = self.repo.default_branch
+    head_name = self.branch_name
+    title = 'Update to automated tests'  # TODO: Add issue # if desired
+    description = '''
+Updates:
+- [x] .env_example
+- [x] tests/features/example_test.feature
+- [x] .gitignore
+- [x] package.json
+- [x] .github/workflow/run_form_tests.yml
+'''  # TODO: Add issue # if desired
+    response = self.repo.create_pull(base=base_name, head=head_name, title=title, body=description)
+    log( response, 'console' )
+    
+    return self

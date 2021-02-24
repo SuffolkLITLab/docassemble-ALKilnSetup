@@ -9,11 +9,6 @@ modules:
 ---
 objects:
   - installer: TestInstaller
-  #- installer.run_interview_tests: DAFile
-  #- installer.package_json: DAFile
-  #- installer.example_test: DAFile
-  #- installer.gitignore: DAFile
-  #- installer.env_example: DAFile
 ---
 mandatory: True
 code: |
@@ -23,27 +18,24 @@ code: |
   # - [ ] Ask if they want to just push to default branch?
   
   # For development
-  installer.repo_url = 'https://github.com/plocket/docassemble-ALAutomatedTestingTests'
+  installer.repo_url = 'https://github.com/plocket/install'
   installer.playground_url = 'https://apps-dev.suffolklitlab.org/interview?i=docassemble.playground12ALTestingGitHubAPI%3Aal_set_up_testing.yml#page1'
   
   installer.token  # github authorization
   installer.playground_url  # workflow and .env
   installer.email  # da authorization
   
-  create_branch
+  authorize_for_github
   set_da_server_info
   set_file_contents
-  
-  #installer.send_da_auth_secrets()
-  installer.commit_files()
+  update_github
   
   check_stuff
 ---
 code: |
   # TODO: This will overwrite file in existing branch if page is refreshed instead of a new branch being created. Is that what we want?
   installer.set_github_auth()
-  installer.create_branch()
-  create_branch = True
+  authorize_for_github = True
 ---
 code: |
   installer.set_da_server_info()
@@ -58,6 +50,13 @@ code: |
 
   set_file_contents = True
 ---
+code: |
+  #installer.send_da_auth_secrets()
+  installer.create_branch()
+  installer.commit_files()
+  installer.make_pull_request()
+  update_github = True
+---
 # TODO: Add link to docs where we explain how the library makes a project, etc.
 # TODO: Add links to the actual github repo and files and folders
 # TODO: only show 'other than you' if the person is logged in
@@ -67,7 +66,7 @@ question: |
 subquestion: |
   This interview will help you set up automated integrated GitHub testing for your docassemble project. Your answers will be encrypted end-to-end and on the server. No one other than you will have access to it.
 
-  :clock: This could take about 30 minutes
+  :clock: This could take about 15 minutes
   
   We will need you to give us:
   
