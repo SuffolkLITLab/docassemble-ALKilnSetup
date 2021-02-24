@@ -27,6 +27,7 @@ from docassemble.base.util import DAFile, DAFileCollection
 
 class TestInstaller(DAObject):
   def init( self, *pargs, **kwargs ):
+    self.errors = []
     super().init(*pargs, **kwargs)
   
   def send_da_auth_secrets( self ):
@@ -74,8 +75,8 @@ class TestInstaller(DAObject):
 
   def set_github_auth( self ):
     """Set values needed for GitHub authorization.
-    Needs self.user_name, self.repo_name, and self.token."""
-    self.get_github_info_from_repo_url() # gets self.user_name, self.repo_name
+    Needs self.repo_name and self.token."""
+    self.get_github_info_from_repo_url() # Gets self.repo_name
     
     # May not need user name with this library
     self.github = Github(self.token)
@@ -95,7 +96,8 @@ class TestInstaller(DAObject):
   
   def get_github_info_from_repo_url( self ):
     """Use repo address to parse out user name and repo name. Needs self.repo_url"""
-    matches = re.match(r"https:\/\/github.com\/([^\/]*)\/([^\/]*)", self.repo_url)
+    # Match either the actual URL or the clone HTTP or SSH URL
+    matches = re.match(r"^.+github.com(?:\/|:)([^\/]*)\/([^\/.]*)(?:\..{3})?", self.repo_url)
     if matches:
       self.repo_name = matches.groups(1)[1]
     else:
@@ -122,17 +124,17 @@ class TestInstaller(DAObject):
     """Use the interview url to get the user's Playground id."""
     # Can probably do both in one match, but maybe we want to get granular with
     # our error messages...?
-    server_match = re.match( r"^(.+)\/interview\?i=docassemble\.playground", self.playground_url)
+    server_match = re.match( r"^(.+)\/interview\?i=docassemble\.playground(\d+).*$", self.playground_url)
     if server_match is None:
       self.server_url = None
-    else:
-      self.server_url = server_match.group(1)
-      
-    id_match = re.match( r"^.+(?:interview\?i=docassemble\.playground)(\d+)(?:.*)$", self.playground_url )
-    if id_match is None:
       self.playground_id = None
+      error = ErrorLikeObject()
+      error.message = 'Invalid interview url. If you are sure you have the whole url of a running interview, please report a bug and include your interview URL in the report.'
+      self.errors.append( error )
+      log( error.message, 'console' )
     else:
-      self.playground_id = id_match.group(1)
+      self.server_url = server_match.group(1)[1]
+      self.playground_id = server_match.group(1)[2]
     
     return self
   
@@ -142,7 +144,6 @@ class TestInstaller(DAObject):
     default_branch_name = repo.default_branch
     default_branch = repo.get_branch( default_branch_name )
     
-    self.errors = []
     branch_name_base = "automated_testing"
     branch_name = branch_name_base
     ref_path = "refs/heads/" + branch_name  # path of new branch
@@ -162,20 +163,17 @@ class TestInstaller(DAObject):
           # TODO: Tell the user to delete old branches
           self.errors.append( error )
           
-    if len(self.errors) > 0 and not self.errors[0].status == 422:
-      log( 'non-422 error', 'console' )
+    # Check if the last error was 'branch already exists' error
+    if len(self.errors) > 0 and not self.errors[ len(self.errors) - 1 ].status == 422:
+      log( 'non-422 error:', 'console' )
       log( self.errors, 'console' )
     
     self.branch_name = branch_name
     return self
   
-  def commit_files( self ):
+  def push_files( self ):
+    ''' Commits and pushes all the needed files.'''
     # https://pygithub.readthedocs.io/en/latest/github_objects/Repository.html#github.Repository.Repository.create_file
-    # https://pygithub.readthedocs.io/en/latest/github_objects/Repository.html#github.Repository.Repository.create_git_commit
-    
-    # TODO: Check mergability of a PR
-    # https://docs.github.com/en/rest/guides/getting-started-with-the-git-database-api#checking-mergeability-of-pull-requests
-    
     self.repo.create_file('.env_example', 'Add .env_example', self.env_example_str, branch=self.branch_name)  # 1
     self.repo.create_file('tests/features/example_test.feature', 'Add tests/features/example_test.feature', self.example_test_str, branch=self.branch_name)  # 2
     self.repo.create_file('.gitignore', 'Add .gitignore', self.gitignore_str, branch=self.branch_name)  # 3
@@ -185,6 +183,8 @@ class TestInstaller(DAObject):
     return self
 
   def make_pull_request( self ):
+    # https://pygithub.readthedocs.io/en/latest/examples/PullRequest.html
+    # TODO: Check mergability of a PR
     base_name = self.repo.default_branch
     head_name = self.branch_name
     title = 'Update to automated tests'  # TODO: Add issue # if desired
@@ -197,6 +197,11 @@ Updates:
 - [x] .github/workflow/run_form_tests.yml
 '''  # TODO: Add issue # if desired
     response = self.repo.create_pull(base=base_name, head=head_name, title=title, body=description)
-    log( response, 'console' )
+    self.pull_url = response.url
     
     return self
+
+class ErrorLikeObject():
+  def __init__( self ):
+    self.status = 0
+    self.data = { 'message': '' }

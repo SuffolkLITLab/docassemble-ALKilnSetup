@@ -19,11 +19,10 @@ code: |
   
   # For development
   installer.repo_url = 'https://github.com/plocket/install'
-  installer.playground_url = 'https://apps-dev.suffolklitlab.org/interview?i=docassemble.playground12ALTestingGitHubAPI%3Aal_set_up_testing.yml#page1'
+  #installer.playground_url = 'https://apps-dev.suffolklitlab.org/interview?i=docassemble.playground12ALTestingGitHubAPI%3Aal_set_up_testing.yml#page1'
   
   installer.token  # github authorization
-  installer.playground_url  # workflow and .env
-  installer.email  # da authorization
+  installer.password  # da authorization
   
   authorize_for_github
   set_da_server_info
@@ -47,13 +46,12 @@ code: |
   installer.example_test_str = example_test.content
   installer.gitignore_str = gitignore.content
   installer.env_example_str = env_example.content
-
   set_file_contents = True
 ---
 code: |
   #installer.send_da_auth_secrets()
   installer.create_branch()
-  installer.commit_files()
+  installer.push_files()
   installer.make_pull_request()
   update_github = True
 ---
@@ -75,15 +73,15 @@ subquestion: |
 
   This tool will add some files to different folders in your interview's GitHub repository:
 
+  1. `tests/features/example_test.feature` is a very simple example of a test.
   1. `.github/workflows/run_interview_tests.yml` tells GitHub when and how to run the tests.
   1. `package.json` tells GitHub what packages the tests need.
-  1. `tests/features/example_test.feature` is a very simple example of a test.
   1. `.gitignore` is for developers who want to work in their local environment.
   1. `.env-example` can help guide developers who want to work in their local environment.
 
 continue button field: intro
 ---
-# TODO: Add instructions on how to find the GitHub repo url on Packages page
+# TODO: Add instructions on how to find the GitHub repo url on Packages page (maybe point to docs)
 id: github auth
 question: |
   GitHub authorization
@@ -94,7 +92,6 @@ fields:
   - Personal access token: installer.token
     datatype: password
 ---
-# TODO: Use url to parse out id
 id: server info
 question: |
   Docassemble
@@ -107,20 +104,26 @@ fields:
   - note: "From inside the testing account, hit 'Save and Run' in the YAML file you want to test. What is the URL in the address bar?"
   - Interview URL: installer.playground_url
 ---
-# TODO: Add link to PR
+# TODO: Add link to PR if it was made
+# TODO: Add link to actions page if it was merged with default
+# TODO: Add link to documentation (maybe put instructions for failing runs in there)
 event: check_stuff
 question: |
   Check the result
 subquestion: |
-  1. If you made a PR, see the PR that was made and merge it in.
-  1. Go to (link to repo's actions page) and see the example test being run.
+  % if defined( 'installer.pull_url' ):
+  1. Check [the pull request](${ installer.pull_url }) and merge it in if it looks good.
+  1. Once you've merged your pull request into your default branch (usually 'main') [go to your actions page](https://github.com/${ installer.user_name }/${ installer.repo_name }/actions) to see the first practice test run.
+  % elif defined( 'installer.user_name' ):
+  1. [Go to your actions page](https://github.com/${ installer.user_name }/${ installer.repo_name }/actions) to see the example test being run.
+  % endif
   1. If it fails the firs time, [rerun the test (job)](https://docs.github.com/en/actions/managing-workflow-runs/re-running-a-workflow). If it fails again:
-      1. Check the `.github/workflows/run_interview_tests.yml` to make sure your docassemble server name is in there correctly.
-      1. Edit the values of [the repository secrets](https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-a-repository) manually, making sure that they are for the correct account on the correct server.
+      1. Check the .github/workflows/run_interview_tests.yml `env:` section to make sure your docassemble server name is right.
+      1. Edit the values of [the repository secrets](https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-a-repository) manually, to make sure that the email address, password, and id are for the correct account on the correct server.
       1. If tests still fail, [make an issue in our testing package's repository](https://github.com/plocket/docassemble-cucumber/issues).
-  1. When that test run is over, try [running the workflow manually from the actions menu](https://docs.github.com/en/actions/managing-workflow-runs/manually-running-a-workflow#running-a-workflow-on-github)
+  1. When that test run is over, see if you can [run the workflow manually from the actions menu](https://docs.github.com/en/actions/managing-workflow-runs/manually-running-a-workflow#running-a-workflow-on-github).
 
-  If everything passes, all should be well and you should be ready to write your first tests. If you're still having trouble, [make an issue in our testing package's repository](https://github.com/plocket/docassemble-cucumber/issues).
+  If everything passes, all should be well and you should be ready to write your first tests. If you're still having trouble or have some feedback, [we would love you to make an issue in our testing package's repository](https://github.com/plocket/docassemble-cucumber/issues).
 ---
 # TODO: Make an interview that will generate a .env for people to download or maybe just copy/paste as it's a hidden file
 template: env_example
@@ -246,10 +249,10 @@ content: |
           node-version: [12.x]
 
       env:
+        BASE_URL: ${ installer.server_url }
         PLAYGROUND_EMAIL: ${ '${{' } secrets.PLAYGROUND_EMAIL ${ '}}' }
         PLAYGROUND_PASSWORD: ${ '${{' } secrets.PLAYGROUND_PASSWORD ${ '}}' }
         PLAYGROUND_ID: ${ '${{' } secrets.PLAYGROUND_ID ${ '}}' }
-        BASE_URL: ${ installer.server_url }
         BRANCH_PATH: ${ '${{' } github.ref ${ '}}' }
         EXTRA_LANGUAGES: ${ '${{' } secrets.EXTRA_LANGUAGES ${ '}}' }
 
