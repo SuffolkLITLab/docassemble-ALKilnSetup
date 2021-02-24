@@ -4,6 +4,9 @@ metadata:
   description: Set up AssemblyLine automated testing for your docassemble package
   comment: Test the automated integrated testing library for AssemblyLine
 ---
+features:
+  question back button: True
+---
 modules:
   - .al_set_up_testing
 ---
@@ -24,13 +27,15 @@ code: |
   if len( installer.errors ) > 0:
     show_errors
   
-  installer.token  # github authorization
-  authorize_for_github
-  
   installer.password  # da authorization
-  set_da_server_info
+  set_da_server_info  # server vars
+  
+  installer.token  # github authorization
+  authorize_for_github  # github vars
   
   set_file_contents
+  
+  is_ready
   update_github
   
   next_steps
@@ -53,10 +58,10 @@ code: |
   set_file_contents = True
 ---
 code: |
-  #installer.send_da_auth_secrets()
   installer.create_branch()
   installer.push_files()
   installer.make_pull_request()
+  installer.send_da_auth_secrets()
   update_github = True
 ---
 id: errors
@@ -65,7 +70,7 @@ question: |
   Sorry, something went wrong
 subquestion: |
   % for error in installer.errors:
-  Error: ${ error.data[ 'message' ] }
+  **Error:** ${ error.data[ 'message' ] }
   
   % endfor
 ---
@@ -76,14 +81,16 @@ id: intro
 question: |
   Set up AL automated integrated testing
 subquestion: |
-  This interview will help you set up automated integrated GitHub testing for your docassemble project. Your answers will be encrypted end-to-end and on the server. No one other than you will have access to it.
+  This interview will help you set up automated integrated GitHub testing for your docassemble project.
+  
+  Your answers will be encrypted end-to-end and on the server. No one other than you will have access to it. You **must** make sure your GitHub account has permission to change files in the correct repository.
 
   :clock: This could take about 15 minutes
   
   We will need you to give us:
   
   1. A [GitHub personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) with 'repo' level permissions.
-  1. Your docassemble testing account's sign in information. That can be your account if you want it to be.
+  1. Your docassemble testing account's sign-in information. That can be your account if you want it to be.
 
   This tool will add some files to different folders in your interview's GitHub repository:
 
@@ -92,6 +99,8 @@ subquestion: |
   1. `package.json` tells GitHub what packages the tests need.
   1. `.gitignore` is for developers who want to work in their local environment.
   1. `.env-example` can help guide developers who want to work in their local environment.
+  
+  It will also add 3 [secrets](https://docs.github.com/en/actions/reference/encrypted-secrets): PLAYGROUND_EMAIL, PLAYGROUND_PASSWORD, and PLAYGROUND_ID
 
 continue button field: intro
 ---
@@ -100,11 +109,18 @@ id: github auth
 question: |
   GitHub authorization
 subquestion: |
-  In order to change files in your GitHub repository, we need your permission. Please create a [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) for this purpose. You can delete the token any time after completing the setup.
+  In order to change files in your GitHub repository, we need permission. If you have permission to change the files of the repository, you can give us permission too.
+  
+  Please create a [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) for this purpose. You can delete the token any time after completing the setup.
 fields:
   - Interview repository URL: installer.repo_url
   - Personal access token: installer.token
     datatype: password
+terms:
+  Interview repository URL: |
+    The repository's URL will give us the name of the repo and its owner.
+  Personal access token: |
+    As long as you have permission to change the repository's files, your personal access token will give us permission to change them too.
 ---
 id: server info
 question: |
@@ -113,10 +129,36 @@ subquestion: |
   Use the information for the account that should run the tests to answer the questions below. You can use your own account as the testing account.
 fields:
   - Testing account's email: installer.email
+    datatype: email
   - Testing account's password: installer.password
     datatype: password
   - note: "From inside the testing account, hit 'Save and Run' in the YAML file you want to test. What is the URL in the address bar?"
   - Interview URL: installer.playground_url
+terms:
+  Interview URL: |
+    The interview URL will give us the account's Playground ID and the address of the server that the account is on.
+---
+id: confirm info
+question: |
+  Are you ready?
+review:
+  - Edit: installer.email
+    button: |
+      ####Docassemble info
+      **Email of testing account**:[BR]
+      ${ installer.email }[BR]
+      **Playground ID**:[BR]
+      ${ installer.playground_id }[BR]
+      **URL of running testable interview**:[BR]
+      [${ installer.playground_url }](${ installer.playground_url })
+  - Edit: installer.repo_url
+    button: |
+      ####GitHub info
+      **GitHub repo owner**:[BR]
+      ${ installer.owner_name }[BR]
+      **Repository url**:[BR]
+      [https://github.com/${ installer.owner_name }/${ installer.repo_name }](https://github.com/${ installer.owner_name }/${ installer.repo_name })
+continue button field: is_ready
 ---
 # TODO: Add link to PR if it was made
 # TODO: Add link to actions page if it was merged with default
@@ -128,19 +170,22 @@ question: |
 subquestion: |
   % if defined( 'installer.pull_url' ):
   1. Check [the pull request](${ installer.pull_url }) and merge it in if it looks good.
-  1. Once you've merged your pull request into your default branch (usually 'main') [go to your actions page](https://github.com/${ installer.user_name }/${ installer.repo_name }/actions) to see the first practice test run.
-  % elif defined( 'installer.user_name' ):
-  1. [Go to your actions page](https://github.com/${ installer.user_name }/${ installer.repo_name }/actions) to see the example test being run.
+  1. Once you've merged your pull request into your default branch (usually 'main') [go to your actions page](https://github.com/${ installer.owner_name }/${ installer.repo_name }/actions) to see the first practice test run.
+  % elif defined( 'installer.owner_name' ):
+  1. [Go to your actions page](https://github.com/${ installer.owner_name }/${ installer.repo_name }/actions) to see the example test being run.
   % endif
-  1. If it fails the firs time, [rerun the test (job)](https://docs.github.com/en/actions/managing-workflow-runs/re-running-a-workflow). If it fails again:
+  1. If it fails the firs time, [rerun the test (job)](https://docs.github.com/en/actions/managing-workflow-runs/re-running-a-workflow).
+  1. If it fails again:
       1. Check the .github/workflows/run_interview_tests.yml `env:` section to make sure your docassemble server name is right.
-      1. Edit the values of [the repository secrets](https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-a-repository) manually, to make sure that the email address, password, and id are for the correct account on the correct server.
+      1. If it is wrong, you can [edit the file in GitHub](https://docs.github.com/en/github/managing-files-in-a-repository/editing-files-in-your-repository).
+      1. Edit the values of [the repository secrets](https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-a-repository) manually to make sure that the email address, password, and id are for the correct account on the correct server. GitHub will not let you see the old values as that would be a breach of security.
+      1. [Run the test manually](https://docs.github.com/en/actions/managing-workflow-runs/manually-running-a-workflow#running-a-workflow-on-github).
       1. If tests still fail, [make an issue in our testing package's repository](https://github.com/plocket/docassemble-cucumber/issues).
   1. When that test run is over, see if you can [run the workflow manually from the actions menu](https://docs.github.com/en/actions/managing-workflow-runs/manually-running-a-workflow#running-a-workflow-on-github).
 
-  If everything passes, all should be well and you should be ready to write your first tests. [Delete the personal access token you created](https://github.com/settings/tokens).
+  If everything passes, all should be well and you should be ready to write your first tests. Delete the [personal access token](https://github.com/settings/tokens) you created.
   
-  If you are still having trouble or have some feedback, [we would love you to make an issue in our testing package's repository](https://github.com/plocket/docassemble-cucumber/issues).
+  If you are still having trouble or have some feedback, we would love you to [make an issue in our testing package's repository](https://github.com/plocket/docassemble-cucumber/issues).
 ---
 # TODO: Make an interview that will generate a .env for people to download or maybe just copy/paste as it's a hidden file
 template: env_example
@@ -156,7 +201,7 @@ content: |
   PLAYGROUND_ID=11111
 
   BASE_URL=https://www.docassemble-server-url.com
-  REPO_URL=https://github.com/user_name/repo_name
+  REPO_URL=https://github.com/owner_name/repo_name
 
   # Name of the branch on the Github repo to be tested.
   BRANCH_PATH=main
@@ -219,14 +264,14 @@ content: |
     },
     "repository": {
       "type": "git",
-      "url": "git+https://github.com/${ installer.user_name }/${ installer.repo_name }.git"
+      "url": "git+https://github.com/${ installer.owner_name }/${ installer.repo_name }.git"
     },
     "author": "",
     "license": "ISC",
     "bugs": {
-      "url": "https://github.com/${ installer.user_name }/${ installer.repo_name }/issues"
+      "url": "https://github.com/${ installer.owner_name }/${ installer.repo_name }/issues"
     },
-    "homepage": "https://github.com/${ installer.user_name }/${ installer.repo_name }#readme",
+    "homepage": "https://github.com/${ installer.owner_name }/${ installer.repo_name }#readme",
     "dependencies": {
       "bufferutil": "^4.0.1",
       "chai": "^4.2.0",

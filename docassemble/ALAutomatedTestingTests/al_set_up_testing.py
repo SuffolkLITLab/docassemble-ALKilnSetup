@@ -6,9 +6,8 @@ import codecs
 from base64 import b64encode
 import re
 import json
-from docassemble.base.util import log, zip_file, defined
+from docassemble.base.util import log
 from docassemble.base.core import DAObject
-from docassemble.base.util import DAFile, DAFileCollection
 
 # reference:
 # Mostly: https://pygithub.readthedocs.io/en/latest/introduction.html
@@ -17,14 +16,6 @@ from docassemble.base.util import DAFile, DAFileCollection
 # pull: https://pygithub.readthedocs.io/en/latest/github_objects/Repository.html#github.Repository.Repository.create_pull
 # repo key: https://pygithub.readthedocs.io/en/latest/github_objects/Repository.html#github.Repository.Repository.get_keys
 
-# https://gist.github.com/JeffPaine/3145490
-# https://docs.github.com/en/free-pro-team@latest/rest/reference/issues#create-an-issue
-# https://github.com/SuffolkLITLab/docassemble-GithubFeedbackForm
-# https://vaibhavsagar.com/blog/2020/05/04/github-secrets-api/
-# https://github.com/berit/docassemble-initializecucumber/blob/main/docassemble/initializecucumber/test.py
-# Create org secret: https://docs.github.com/en/rest/reference/actions#create-or-update-an-organization-secret
-# Create repo secret: https://docs.github.com/en/rest/reference/actions#create-or-update-a-repository-secret
-
 
 class TestInstaller(DAObject):
   def init( self, *pargs, **kwargs ):
@@ -32,9 +23,10 @@ class TestInstaller(DAObject):
     super().init(*pargs, **kwargs)
   
   def send_da_auth_secrets( self ):
-    """Set GitHub repo secrets the tests need to log into the da server and
-    create projects to run interviews to test."""
-    # PyGithub cannot currently handle secrets
+    """Set the GitHub repo secrets the tests need to log into the da server and
+    create projects to contain the interviews being tested. PyGithub does not yet handle secrets. See issue: https://github.com/PyGithub/PyGithub/issues/1373."""
+    # Create org secret: https://docs.github.com/en/rest/reference/actions#create-or-update-an-organization-secret
+    # Create repo secret: https://docs.github.com/en/rest/reference/actions#create-or-update-a-repository-secret
     self.set_github_auth()
     self.put_secret( secret_name='PLAYGROUND_EMAIL', secret_value=self.email )
     self.put_secret( secret_name='PLAYGROUND_PASSWORD', secret_value=self.password )
@@ -44,13 +36,12 @@ class TestInstaller(DAObject):
   
   def put_secret( self, secret_name='', secret_value='' ):
     """Add one secret to the GitHub repo."""
+    # Everything should be authenticated by now.
     # Convert the message and key to Uint8Array's (Buffer implements that interface)
     encrypted_key = public.PublicKey( self.public_key.encode("utf-8"), encoding.Base64Encoder() )
     sealed_box = public.SealedBox( encrypted_key )
-    # Encrypt using LibSodium.
-    encrypted = sealed_box.encrypt( secret_value.encode( "utf-8" ))
-    # Base64 the encrypted secret
-    base64_encrypted = b64encode( encrypted ).decode( "utf-8" )
+    encrypted = sealed_box.encrypt( secret_value.encode( "utf-8" ))  # Encrypt using LibSodium.
+    base64_encrypted = b64encode( encrypted ).decode( "utf-8" )  # Base64 the encrypted secret
     #log( 'base64_encrypted', 'console' )
     #log( base64_encrypted, 'console' )
     
@@ -65,7 +56,7 @@ class TestInstaller(DAObject):
     #log( 'secret_response.text', 'console' )
     #log( secret_response.text, 'console' )
     
-    # TODO: Check there was no error
+    # TODO: Check there was no error? Everything should be authorized by now.
     
     # Cannot get the value of the secret to see if we're setting it correctly
     # Can at least check that the secret exists
@@ -75,33 +66,47 @@ class TestInstaller(DAObject):
     return self
 
   def set_github_auth( self ):
-    """Set values needed for GitHub authorization.
-    Needs self.repo_name and self.token."""
+    """Set values needed for GitHub authorization."""
     self.get_github_info_from_repo_url() # Gets self.repo_name
     
-    # May not need user name with this library
+    # TODO:
+    # Token doesn't work: github.GithubException.BadCredentialsException (401, 403)
+    # Repo doesn't exist: github.GithubException.UnknownObjectException (404)
+    
+    # May not need owner name with this library
     try:
       self.github = Github( self.token )
-      self.user_name = self.github.get_user().name
       self.repo = self.github.get_user().get_repo( self.repo_name )
+      self.owner_name = self.repo.owner.login
     except Exception as error:
-      error.data[ 'message' ] += '. You may have copied your access token incorrectly or you may have deleted that access token.'
+      # TODO: Could this also mean the user is not a collaborator on the repo?
+      # Try against https://github.com/google/model_search
+      # TODO: Allow non-collaborator to make a fork and a pull request.
+      if ( error.status == 401 ):
+        error.data[ 'message' ] += '. It looks like we cannot find that personal access token. Try copying and pasting it again.'
       self.errors.append( error )
-      log( error.data[ 'message' ], 'console' )
+      log( error, 'console' )
       return self
+    
+    # TODO: Check user permissions: https://pygithub.readthedocs.io/en/latest/github_objects/Repository.html#github.Repository.Repository.get_collaborator_permission
+    self.user_name = self.github.get_user().login
+    #self.repo.get_collaborator_permission( self.user_name )
+    #if something:
+    #  error.data[ 'message' ] += '. It looks like the ' + self.user_name + ' account does not have permission to edit this repository. Try to see if you can edit the code manually when signed in with that account. If that does not work, talk with your administrator. If that does work, file an issue with us.'
+    #  return self
     
     # The below is only needed because PyGithub does not handle secrets
     # The value for the GitHub 'Authorization' key
-    auth_bytes = codecs.encode(bytes( self.user_name + ':' + self.token, 'utf8'), 'base64')
+    auth_bytes = codecs.encode(bytes( self.owner_name + ':' + self.token, 'utf8'), 'base64')
     self.basic_auth = 'Basic ' + auth_bytes.decode().strip()
     # The base url string needed for making requests to the repo.
-    self.github_repo_base = "https://api.github.com/repos/" + self.user_name + "/" + self.repo_name
+    self.github_repo_base = "https://api.github.com/repos/" + self.owner_name + "/" + self.repo_name
     self.set_key_values()
     
     return self
   
   def get_github_info_from_repo_url( self ):
-    """Use repo address to parse out user name and repo name. Needs self.repo_url"""
+    """Use repo address to parse out owner name and repo name. Needs self.repo_url"""
     # Match either the actual URL or the clone HTTP or SSH URL
     matches = re.match(r"^.+github.com(?:\/|:)([^\/]*)\/([^\/.]*)(?:\..{3})?", self.repo_url)
     if matches:
@@ -110,7 +115,7 @@ class TestInstaller(DAObject):
       self.repo_name = None
       error = ErrorLikeObject( 'Cannot validate the GitHub URL "' + self.repo_url + '". If you are sure you have the whole correct URL the repository, please report a bug and include your interview URL in the report.' )
       self.errors.append( error )
-      log( error.data[ 'message' ], 'console' )
+      log( error, 'console' )
     return self
   
   def set_key_values( self ):
@@ -139,11 +144,11 @@ class TestInstaller(DAObject):
       self.playground_id = None
       error = ErrorLikeObject( 'Cannot validate the interview URL "' + self.playground_url + '". If you are sure you have the whole URL of a running interview, please report a bug and include your interview URL in the report.' )
       self.errors.append( error )
-      log( error.data[ 'message' ], 'console' )
+      log( error, 'console' )
     else:
       # TODO: More fine-grained validation of this information
-      self.server_url = server_match.group(1)[1]
-      self.playground_id = server_match.group(1)[2]
+      self.server_url = server_match.group(1)
+      self.playground_id = server_match.group(2)
     
     # TODO: Is it possible to try to log into their server to
     # make sure they've given the correct information?
@@ -151,12 +156,14 @@ class TestInstaller(DAObject):
     return self
   
   def create_branch( self ):
+    """Create a new branch on the given repository. Make sure branch doesn't already exist."""
     # Get default branch
     repo = self.repo
     default_branch_name = repo.default_branch
     default_branch = repo.get_branch( default_branch_name )
     
     # Loop through branch names until one is available
+    final_error = ErrorLikeObject( '' )
     branch_name_base = "automated_testing"
     branch_name = branch_name_base
     ref_path = "refs/heads/" + branch_name  # path of new branch
@@ -174,12 +181,15 @@ class TestInstaller(DAObject):
         # Some kind of exception in here? Lets hope it doesn't occur at all.
         if count == max_count:
           # TODO: Tell the user to delete old branches
+          final_error = error
           self.errors.append( error )
           
     # Check if the last error was 'branch already exists' error
     if len(self.errors) > 0 and not self.errors[ len(self.errors) - 1 ].status == 422:
-      log( 'non-422 error:', 'console' )
       log( self.errors, 'console' )
+    elif ( final_error.status == 422 ):
+      final_error.data[ 'message' ] += '. It looks like all the possible branch names are taken. Please delete some of the branches that start with ' + branch_name_base + '.'
+      log( final_error, 'console' )
     
     self.branch_name = branch_name
     return self
@@ -214,10 +224,7 @@ Updates:
     
     return self
 
-          
-#def get_error_like( message ):
-#  return { 'status': 0, 'data': { 'message': message }}
-          
+
 class ErrorLikeObject():
   def __init__( self, message='' ):
     self.status = 0
