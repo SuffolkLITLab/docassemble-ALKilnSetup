@@ -26,6 +26,8 @@ code: |
   set_da_info
   
   # github stuff
+  installer.repo_url
+  set_github_auth
   
   # confirm
   is_ready
@@ -34,6 +36,10 @@ code: |
   
   #instructions
   next_steps
+---
+code: |
+  installer.set_github_auth()
+  set_github_auth = True
 ---
 # TODO: Add link to docs where we explain how the library makes a project, etc.
 # TODO: Add links to the actual github repo and files and folders
@@ -86,7 +92,20 @@ code: |
   installer.set_da_info()
   set_da_info = True
 ---
-# github info
+# TODO: Add instructions on how to find the GitHub repo url on Packages page (maybe point to docs)
+id: github auth
+question: |
+  GitHub authorization
+subquestion: |
+  In order to change files in your GitHub repository, we need permission. If you have permission to change the files of the repository, you can give us permission too.
+  
+  To do that, create a [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token). You can delete the token any time after confirming the setup has worked. You can also use a new one anytime.
+fields:
+  - GitHub repository URL: installer.repo_url
+    help: "The repository's URL will give us the name of the repo and its owner."
+  - Personal access token: installer.token
+    datatype: password
+    help: "As long as you have permission to change the repository's files, your personal access token will give us permission to change them too."
 ---
 id: confirm info
 question: |
@@ -103,9 +122,14 @@ review:
       
       **URL of running testable interview**:[BR]
       [${ installer.playground_url }](${ installer.playground_url })
-  - Edit: intro
+  - Edit: installer.repo_url
     button: |
-      ####GitHub info
+      #####GitHub info
+      **Your username**:[BR]
+      ${ installer.user_name }
+      
+      **Repository URL**:[BR]
+      [https://github.com/${ installer.owner_name }/${ installer.repo_name }](https://github.com/${ installer.owner_name }/${ installer.repo_name })
 continue button field: is_ready
 ---
 # TODO: Add link to PR if it was made

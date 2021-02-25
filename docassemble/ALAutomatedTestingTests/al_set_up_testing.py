@@ -38,8 +38,40 @@ class TestInstaller(DAObject):
     return self
   
   # da auth and pushing
-  def set_github_info( self ):
+  def set_github_auth( self ):
+    """Get and set all the information needed to authorize to GitHub"""
     self.get_github_info_from_repo_url()
+    
+    # TODO: detect types of errors
+    # Token doesn't work: github.GithubException.BadCredentialsException (401, 403)
+    # Repo doesn't exist: github.GithubException.UnknownObjectException (404)
+    
+    self.github = Github( self.token )
+    # self.github.enable_console_debug_logging()
+    log( 1, 'console' )
+    log( self.github.FIX_REPO_GET_GIT_REF, 'console' )  # True
+    log( 2, 'console' )
+    #log( self.github.per_page, 'console' )
+    #log( 3, 'console' )
+    #log( self.github.rate_limiting, 'console' )
+    log( 4, 'console' )
+    log( self.github.oauth_scopes, 'console' )  # None
+    log(5, 'console' )
+    user = self.github.get_user()
+    log(6, 'console' )
+    self.repo = user.get_repo( self.repo_name )
+    log( 'a', 'console' )
+    self.owner_name = self.repo.owner.login
+    log( 'b', 'console' )
+    self.user_name = self.github.get_user().login  # feedback for the user
+    log( 'c', 'console' )
+    # TODO: Check user permissions: https://pygithub.readthedocs.io/en/latest/github_objects/Repository.html#github.Repository.Repository.get_collaborator_permission
+    #self.repo.get_collaborator_permission( self.user_name )
+    
+    return self
+  
+  def set_auth_for_secrets( self ):
+    """Separated to allow easier removal when library finally supports secrets"""
     
     return self
   
@@ -48,7 +80,7 @@ class TestInstaller(DAObject):
     # Match either the actual URL or the clone HTTP or SSH URL
     matches = re.match(r"^.+github.com(?:\/|:)([^\/]*)\/([^\/.]*)(?:\..{3})?", self.repo_url)
     if matches:
-      self.repo_name = matches.groups(1)[1]
+      self.repo_name = matches.group(2)
     else:
       self.repo_name = None
       
