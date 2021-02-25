@@ -25,6 +25,7 @@ code: |
   # github stuff
   
   # confirm
+  is_ready
   
   # update github
   
@@ -65,7 +66,17 @@ continue button field: intro
 ---
 # github info
 ---
-# review and confirm
+id: confirm info
+question: |
+  Are you ready?
+review:
+  - Edit: intro
+    button: |
+      ####Docassemble info
+  - Edit: intro
+    button: |
+      ####GitHub info
+continue button field: is_ready
 ---
 # TODO: Add link to PR if it was made
 # TODO: Add link to actions page if it was merged with default
