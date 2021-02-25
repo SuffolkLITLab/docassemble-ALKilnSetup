@@ -39,6 +39,19 @@ class TestInstaller(DAObject):
   
   # da auth and pushing
   def set_github_info( self ):
+    self.get_github_info_from_repo_url()
+    
+    return self
+  
+  def get_github_info_from_repo_url( self ):
+    """Use repo address to parse out owner name and repo name. Needs self.repo_url"""
+    # Match either the actual URL or the clone HTTP or SSH URL
+    matches = re.match(r"^.+github.com(?:\/|:)([^\/]*)\/([^\/.]*)(?:\..{3})?", self.repo_url)
+    if matches:
+      self.repo_name = matches.groups(1)[1]
+    else:
+      self.repo_name = None
+      
     return self
   
   def update_github( self ):
