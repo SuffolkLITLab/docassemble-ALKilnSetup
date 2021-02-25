@@ -13,6 +13,9 @@ modules:
 objects:
   - installer: TestInstaller
 ---
+include:
+  - al_testing_files_to_push.yml
+---
 # I've done this once before. Trust me...
 mandatory: True
 code: |
