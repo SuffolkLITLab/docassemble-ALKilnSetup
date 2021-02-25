@@ -20,7 +20,10 @@ code: |
   # handle errors
   
   intro
+  
   # da stuff
+  installer.playground_url
+  set_da_info
   
   # github stuff
   
@@ -62,7 +65,26 @@ subquestion: |
 
 continue button field: intro
 ---
-# docassemble info
+id: server info
+question: |
+  Docassemble
+subquestion: |
+  Use the information for the account that should run the tests to answer the questions below. You can use your own account as the testing account.
+fields:
+  - Testing account's email: installer.email
+    datatype: email
+  - Testing account's password: installer.password
+    datatype: password
+  - note: "From inside the testing account, hit 'Save and Run' in the YAML file you want to test. What is the URL in the address bar?"
+  - Interview URL: installer.playground_url
+terms:
+  Interview URL: |
+    The interview URL will give us the account's Playground ID and the address of the server that the account is on.
+---
+# da info
+code: |
+  installer.set_da_info()
+  set_da_info = True
 ---
 # github info
 ---
@@ -70,9 +92,17 @@ id: confirm info
 question: |
   Are you ready?
 review:
-  - Edit: intro
+  - Edit: installer.playground_url
     button: |
-      ####Docassemble info
+      #####Docassemble info
+      
+      **Email of testing account**:[BR]
+      ${ installer.email }
+      
+      **Playground ID**: ${ installer.playground_id }
+      
+      **URL of running testable interview**:[BR]
+      [${ installer.playground_url }](${ installer.playground_url })
   - Edit: intro
     button: |
       ####GitHub info
