@@ -49,9 +49,10 @@ code: |
   set_github_auth = True
 ---
 code: |
-  # if vals are made in module using `.content`, they trigger
-  # the YAML logic block repeatedly, causing multiple
-  # new branches
+  # These vars need to be defined before creating a branch.
+  # Otherwise, because of da execution behavior, they cause
+  # loops that end up creating 5 branches. It seemed to make
+  # sense to put them in here.
   installer.env_example_str = installer.env_example.content
   installer.example_test_str = installer.example_test.content
   installer.gitignore_str = installer.gitignore.content
