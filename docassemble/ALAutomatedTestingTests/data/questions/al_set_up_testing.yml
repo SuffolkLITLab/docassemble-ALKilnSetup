@@ -13,12 +13,15 @@ modules:
 objects:
   - installer: TestInstaller
 ---
+include:
+  - al_testing_files_to_push.yml
+---
 # I've done this once before. Trust me...
 mandatory: True
 code: |
-  # For development
-  installer.repo_url = 'https://github.com/plocket/install'
-  #installer.playground_url = 'https://apps-dev.suffolklitlab.org/interview?i=docassemble.playground12ALTestingGitHubAPI%3Aal_set_up_testing.yml#page1'
+  ## for dev
+  #installer.repo_url = 'https://github.com/plocket/install'
+  #installer.playground_url = 'https://apps-dev.suffolklitlab.org/interview?i=docassemble.playground12ALTestingGHSendFiles%3Aal_set_up_testing.yml#page4'
   
   # handle errors
   if len( installer.errors ) > 0:
@@ -38,6 +41,7 @@ code: |
   is_ready
   
   # update github
+  update_github
   
   #instructions
   next_steps
@@ -45,6 +49,19 @@ code: |
 code: |
   installer.set_github_auth()
   set_github_auth = True
+---
+code: |
+  # These vars need to be defined before creating a branch.
+  # Otherwise, because of da execution behavior, they cause
+  # loops that end up creating 5 branches. It seemed to make
+  # sense to put them in here.
+  installer.env_example_str = installer.env_example.content
+  installer.example_test_str = installer.example_test.content
+  installer.gitignore_str = installer.gitignore.content
+  installer.package_json_str = installer.package_json.content
+  installer.run_form_tests_str = installer.run_form_tests.content
+  installer.update_github()
+  update_github = True
 ---
 # TODO: Add link to docs where we explain how the library makes a project, etc.
 # TODO: Add links to the actual github repo and files and folders
