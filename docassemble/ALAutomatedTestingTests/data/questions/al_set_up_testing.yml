@@ -19,9 +19,9 @@ include:
 # I've done this once before. Trust me...
 mandatory: True
 code: |
-  # for dev
-  installer.repo_url = 'https://github.com/plocket/install'
-  installer.playground_url = 'https://apps-dev.suffolklitlab.org/interview?i=docassemble.playground12ALTestingGHSendFiles%3Aal_set_up_testing.yml#page4'
+  ## for dev
+  #installer.repo_url = 'https://github.com/plocket/install'
+  #installer.playground_url = 'https://apps-dev.suffolklitlab.org/interview?i=docassemble.playground12ALTestingGHSendFiles%3Aal_set_up_testing.yml#page4'
   
   # handle errors
   
