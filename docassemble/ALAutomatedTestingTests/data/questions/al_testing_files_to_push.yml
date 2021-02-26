@@ -1,6 +1,10 @@
 ---
+comment: |
+  Templates use Mako to fill in the needed custom details.
+  Templates are used as strings with PyGithub.
+---
 # TODO: Make an interview that will generate a .env for people to download or maybe just copy/paste as it's a hidden file
-template: env_example
+template: installer.env_example
 content: |
   # Username and password to log in to a docassemble playground to run tests
   PLAYGROUND_EMAIL=example@example.com
@@ -26,7 +30,7 @@ content: |
   # Change this to DEBUG=1 to run tests in a visible browser
   DEBUG=
 ---
-template: example_test
+template: installer.example_test
 content: |
   @example_feature_tag
   Feature: An example test
@@ -40,7 +44,7 @@ content: |
   Scenario: Server finishes reloading
     Given I start the interview at "test"
 ---
-template: gitignore
+template: installer.gitignore
 content: |
   tests/chromedriver
   *DS_Store*
@@ -53,7 +57,7 @@ content: |
   *_lang_*.feature
   *_report_*
 ---
-template: package_json
+template: installer.package_json
 content: |
   {
     "name": "${ installer.repo_name }",
@@ -98,7 +102,7 @@ content: |
 ---
 # The closing '}}' doesn't really need to be contained.
 # It just seemed more consistent
-template: run_interview_tests
+template: installer.run_interview_tests
 content: |
   name: Test the interview
 

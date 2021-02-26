@@ -19,23 +19,27 @@ include:
 # I've done this once before. Trust me...
 mandatory: True
 code: |
+  # for dev
+  installer.repo_url = 'https://github.com/plocket/install'
+  installer.playground_url = 'https://apps-dev.suffolklitlab.org/interview?i=docassemble.playground12ALTestingGHSendFiles%3Aal_set_up_testing.yml#page4'
   
   # handle errors
   
   intro
   
   # da stuff
-  installer.playground_url
+  installer.password
   set_da_info
   
   # github stuff
-  installer.repo_url
+  installer.token
   set_github_auth
   
   # confirm
   is_ready
   
   # update github
+  update_github
   
   #instructions
   next_steps
@@ -43,6 +47,19 @@ code: |
 code: |
   installer.set_github_auth()
   set_github_auth = True
+---
+code: |
+  ## if vals are made in module using `.content`, they trigger
+  ## the YAML logic block repeatedly, causing multiple
+  ## new branches
+  #env_example = self.env_example.content
+  #example_test = self.example_test.content
+  #gitignore = self.gitignore.content
+  #package_json = self.package_json.content
+  #run_interview_tests = self.run_interview_tests.content
+  installer.update_github()
+  log( 'update yml', 'console' )
+  update_github = True
 ---
 # TODO: Add link to docs where we explain how the library makes a project, etc.
 # TODO: Add links to the actual github repo and files and folders
