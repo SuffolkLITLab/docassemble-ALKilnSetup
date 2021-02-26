@@ -38,7 +38,38 @@ class TestInstaller(DAObject):
     return self
   
   # da auth and pushing
-  def set_github_info( self ):
+  def set_github_auth( self ):
+    """Get and set all the information needed to authorize to GitHub"""
+    self.get_github_info_from_repo_url()
+    
+    # TODO: detect types of errors
+    
+    self.github = Github( self.token )
+    # Token doesn't auth: github.GithubException.BadCredentialsException (401, 403)
+    user = self.github.get_user()
+    # Repo doesn't exist: github.GithubException.UnknownObjectException (404)
+    self.repo = user.get_repo( self.repo_name )
+    self.owner_name = self.repo.owner.login
+    self.user_name = self.github.get_user().login  # feedback for the user
+    # TODO: Check user permissions: https://pygithub.readthedocs.io/en/latest/github_objects/Repository.html#github.Repository.Repository.get_collaborator_permission
+    #self.repo.get_collaborator_permission( self.user_name )
+    
+    return self
+  
+  def set_auth_for_secrets( self ):
+    """Separated to allow easier removal when library finally supports secrets"""
+    
+    return self
+  
+  def get_github_info_from_repo_url( self ):
+    """Use repo address to parse out owner name and repo name. Needs self.repo_url"""
+    # Match either the actual URL or the clone HTTP or SSH URL
+    matches = re.match(r"^.+github.com(?:\/|:)([^\/]*)\/([^\/.]*)(?:\..{3})?", self.repo_url)
+    if matches:
+      self.repo_name = matches.group(2)
+    else:
+      self.repo_name = None
+      
     return self
   
   def update_github( self ):
