@@ -14,6 +14,7 @@ from docassemble.base.core import DAObject
 
 class TestInstaller(DAObject):
   def init( self, *pargs, **kwargs ):
+    self.errors = []
     super().init(*pargs, **kwargs)
   
   def set_da_info( self ):
@@ -21,16 +22,19 @@ class TestInstaller(DAObject):
     # Can we get granular with error messages?
     log( 1, 'console' )
     server_match = re.match( r"^(http.+)\/interview\?i=docassemble\.playground(\d+).*$", self.playground_url )
-    if server_match is None:
-      log( 2, 'console' )
-      self.server_url = None
-      self.playground_id = None
-      # TODO: Show error
-    else:
-      log( 3, 'console' )
+    if server_match:
       # TODO: More fine-grained validation of this information
       self.server_url = server_match.group(1)
       self.playground_id = server_match.group(2)
+      log( 2, 'console' )
+    else:
+      log( 3, 'console' )
+      self.server_url = None
+      self.playground_id = None
+      # Show error
+      error = ErrorLikeObject( self.da_url_error )
+      self.errors.append( error )
+      log( error, 'console' )
     
     # TODO: Is it possible to try to log into their server to
     # make sure they've given the correct information?
@@ -75,5 +79,8 @@ class TestInstaller(DAObject):
   def update_github( self ):
     return self
   
-  # handle errors
-    
+# handle errors
+class ErrorLikeObject():
+  def __init__( self, message='' ):
+    self.status = 0
+    self.data = { 'message': message }
