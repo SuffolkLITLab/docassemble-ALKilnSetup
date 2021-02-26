@@ -24,6 +24,8 @@ code: |
   #installer.playground_url = 'https://apps-dev.suffolklitlab.org/interview?i=docassemble.playground12ALTestingGHSendFiles%3Aal_set_up_testing.yml#page4'
   
   # handle errors
+  if len( installer.errors ) > 0:
+    show_errors
   
   intro
   
@@ -101,7 +103,9 @@ fields:
     datatype: email
   - Testing account's password: installer.password
     datatype: password
-  - note: "From inside the testing account, hit 'Save and Run' in the YAML file you want to test. What is the URL in the address bar?"
+  - note: |
+      From inside the testing account, hit 'Save and Run' in the YAML file you want to test. What is the URL in the address bar? Example of a valid URL:[BR]
+      `https://dev.court-wizards.org/interview?i=docassemble.playground222ProjectName%3Asome_file.yml#page2`"
   - Interview URL: installer.playground_url
 terms:
   Interview URL: |
@@ -180,4 +184,24 @@ comment: |
   If everything passes, all should be well and you should be ready to write your first tests. Delete the [personal access token](https://github.com/settings/tokens) you created.
   
   If you are still having trouble or have some feedback, we would love you to [make an issue in our testing package's repository](https://github.com/plocket/docassemble-cucumber/issues).
+---
+id: show_errors
+event: show_errors
+question: |
+  Sorry, something went wrong
+subquestion: |
+  % for error in installer.errors:
+  **Error:** ${ error.data[ 'message' ] }
+  
+  % endfor
+---
+code: |
+  installer.da_url_error = da_url_error.content
+---
+template: da_url_error
+content: |
+  Cannot validate the interview URL **"${ installer.playground_url }"**. Example of a valid URL:[BR]
+  `https://dev.court-wizards.org/interview?i=docassemble.playground222ProjectName%3Asome_file.yml#page2` [BR]
+  If you are sure you have the whole URL of a running interview, please report a bug and include your interview URL in the report.
+---
 ---
