@@ -55,6 +55,7 @@ code: |
   page_1
   page_2
   page_3
+  page_4
   end
 ---
 # Person 1
@@ -80,6 +81,29 @@ question: |
   Some fields
 fields:
   - something else we will understand: good_var_name
+---
+objects:
+  protagonist: Individual
+  antagonist: Individual
+---
+code: |
+  protagonist.name.first = "Harry"
+  protagonist.name.last = "Potter"
+  antagonist.name.first = "Tom"
+  antagonist.name.last = "Riddle"
+---
+mandatory: True
+# Person 4
+continue button field: page_4
+id: page 4
+question: |
+  Example: object_checkboxes
+fields:
+  no label: selected_object_checkbox
+  datatype: object_checkboxes
+  choices:
+    - protagonist
+    - antagonist
 ---
 id: the end
 event: end
