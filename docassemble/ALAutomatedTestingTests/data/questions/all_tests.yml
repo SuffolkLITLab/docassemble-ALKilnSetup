@@ -8,18 +8,18 @@ comment: |
   # Fields to include
   
   ## Regular:
-  - [ ] Radio (yes/no)
-  - [ ] Radio (other)
-  - [ ] Checkbox (none of)
-  - [ ] Checkbox (yes/no)
-  - [ ] Checkbox (other)
-  - [ ] Buttons (yes/no)
-  - [ ] Buttons (other)
-  - [ ] Buttons (continue)
-  - [ ] Dropdown
-  - [ ] Text area
+  - [x] Radio (yes/no)
+  - [x] Radio (other)
+  - [x] Checkbox (none of)
+  - [x] Checkbox (yes/no)
+  - [x] Checkbox (other)
+  - [x] Buttons (yes/no)
+  - [x] Buttons (other)
+  - [x] Buttons (continue)
+  - [x] Dropdown
+  - [x] Text area
   - [x] Text input (type text)
-  - [ ] Text input (type date)
+  - [x] Text input (type date)
   
   ## Showif:
   - [x] Radio (yes/no)
@@ -32,11 +32,10 @@ comment: |
   - [x] Text input (type text)
   
   # Other things to include:
-  - [ ] Terms
-  - [ ] Button that's a link
-  - [ ] A link
-  - [ ] A phrase
-  - [ ] Button that's not a continue button
+  - [x] Terms
+  - [x] Button that's a link
+  - [x] A link
+  - [x] Button that's not a continue button
 
   # Situations to test:
   - [ ] Continue button field is listed in the table before other unrequired fields on the page (for the story table)
@@ -48,46 +47,79 @@ comment: |
 mandatory: True
 id: interview order
 code: |
-  page_1
+  direct_standard_fields
   direct_showifs
-  page_3
-  page_4
+  object_checkboxes_test
+  buttons_yesnomaybe
+  buttons_other
+  button_continue
+  screen_features
   
+  button_event_action
   end
 ---
-# Person 1
-continue button field: page_1
-id: page 1
+id: direct standard fields
+continue button field: direct_standard_fields
 question: |
-  Some fields
+  Direct standard fields
+subquestion: |
+  Excludes proxy vars (x, i, j, etc.) or choices created with objects.
 fields:
-  - Test regular text field: regular_text_field
+  - checkboxes (yesno): checkboxes_yesno
+    datatype: yesno
+  - checkboxes (other): checkboxes_other
+    datatype: checkboxes
+    choices: 
+       - checkboxes opt 1: checkbox_other_opt_1
+       - checkboxes opt 2: checkbox_other_opt_2
+       - checkboxes opt 3: checkbox_other_opt_3
+  - radio (yesno): radio_yesno
+    datatype: yesnoradio
+  - radio (other): radio_other
+    datatype: radio
+    choices: 
+      - radio opt 1: radio_other_opt_1
+      - radio opt 2: radio_other_opt_2
+      - radio opt 3: radio_other_opt_3
+  # Same DOM as `datatype: area`
+  - text input: text_input
+  - textarea: textarea
+    input type: area
+  - dropdown: dropdown_test
+    datatype: dropdown
+    choices:
+      - dropdown opt 1: dropdown_opt_1
+      - dropdown opt 2: dropdown_opt_2
+      - dropdown opt 3: dropdown_opt_3
 ---
-continue button field: direct_showifs
 id: showifs
+continue button field: direct_showifs
 question: |
   Reveal showifs
 subquestion: |
   We start only seeing layer 1, the first question. All other layers are hidden to test finding various hidden fields in the DOM.
-  
+
   TODO:
-  
+
   - object
   - object_checkbox
-  
+
   No showifs: yesnomaybe: (buttons), buttons: (other), continue button field:
 fields:
   - Show layer 2: show_2
     datatype: yesno
-  - Show layer 3 (showif checkbox yesno): show_3
+  - Show layer 3: show_3
     datatype: yesno
     show if: show_2
+  - showif checkbox yesno: showif_checkbox_yesno
+    datatype: yesno
+    show if: show_3
   # A checkbox's none of the above `for` value is unique
   - showif checkboxes (multiple): showif_checkboxes_other
     datatype: checkboxes
     choices:
-      - showif checkbox other 1: showif_checkboxes_other_1
-      - showif checkbox other 2: showif_checkboxes_other_2
+      - showif checkbox nota 1: showif_checkboxes_nota_1
+      - showif checkbox nota 2: showif_checkboxes_nota_2
     show if: show_3
   - showif yesnoradio: showif_yesnoradio 
     datatype: yesnoradio
@@ -97,6 +129,7 @@ fields:
     choices:
       - showif radio multi 1: showif_radio_multi_1
       - showif radio multi 2: showif_radio_multi_2
+      - showif radio multi 3: showif_radio_multi_3
     show if: show_3
   - showif text input: showif_text_input
     show if: show_3
@@ -109,40 +142,70 @@ fields:
     - showif dropdown opt 1: showif_dropdown_1
     - showif dropdown opt 2: showif_dropdown_4
 ---
-# Person 3
-continue button field: page_3
-id: page 3
-question: |
-  Some fields
-fields:
-  - something else we will understand: good_var_name
----
 objects:
-  protagonist: Individual
-  antagonist: Individual
+  - obj_chkbx_opt_1: DAObject
+  - obj_chkbx_opt_2: DAObject
+  - obj_chkbx_opt_3: DAObject
 ---
 code: |
-  protagonist.name.first = "Harry"
-  protagonist.name.last = "Potter"
-  antagonist.name.first = "Tom"
-  antagonist.name.last = "Riddle"
+  obj_chkbx_opt_1.name = 'obj_chkbx_opt_1'
+  obj_chkbx_opt_2.name = 'obj_chkbx_opt_2'
+  obj_chkbx_opt_3.name = 'obj_chkbx_opt_3'
 ---
-mandatory: True
-# Person 4
-continue button field: page_4
-id: page 4
+id: object checkboxes
 question: |
-  Example: object_checkboxes
+  Object checkboxes
+subquestion: |
+  Made of list of objects. TODO: Add `object` choices dropdown.
 fields:
-  no label: selected_object_checkbox
-  datatype: object_checkboxes
-  choices:
-    - protagonist
-    - antagonist
+  - no label: object_checkboxes_test
+    datatype: object_checkboxes
+    choices:
+      - obj_chkbx_opt_1
+      - obj_chkbx_opt_2
+      - obj_chkbx_opt_3
+---
+id: buttons yesnomaybe
+question: |
+  Button (yes/no/maybe)
+yesnomaybe: buttons_yesnomaybe
+---
+id: buttons other
+question: |
+  Button (other)
+field: buttons_other
+buttons:
+  - button 1: button_1
+  - button 2: button_2
+  - button 3: button_3
+---
+id: button continue
+continue button field: button_continue
+question: |
+  Button (continue)
+---
+id: screen features
+continue button field: screen_features
+question: |
+  Other screen features
+subquestion: | 
+  * [Link: reload the page](${ interview_url() }).
+  * {Term} (working).
+  * {Broken term}.
+terms: 
+  term: |
+    A term is a word that you click on if you don't know what the definition is.
+---
+id: button event action
+question: |
+  Button (event action)
+field: button_event_action
+action buttons: 
+  - label: Do not pass go
+    action: end
+    icon: laugh-wink
 ---
 id: the end
 event: end
 question: |
-  Congradulations! Tests have passed!
-  
- 
+  Congratulations! Tests have passed!
