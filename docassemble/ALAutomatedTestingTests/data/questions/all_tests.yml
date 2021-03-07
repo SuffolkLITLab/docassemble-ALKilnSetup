@@ -85,7 +85,7 @@ fields:
   - text input: text_input
   - textarea: textarea
     input type: area
-  - dropdown: dropdown
+  - dropdown: dropdown_test
     datatype: dropdown
     choices:
       - dropdown opt 1: dropdown_opt_1
