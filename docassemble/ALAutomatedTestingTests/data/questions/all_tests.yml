@@ -118,8 +118,8 @@ fields:
   - showif checkboxes (multiple): showif_checkboxes_other
     datatype: checkboxes
     choices:
-      - showif checkbox none 1: showif_checkboxes_none_1
-      - showif checkbox none 2: showif_checkboxes_none_2
+      - showif checkbox nota 1: showif_checkboxes_nota_1
+      - showif checkbox nota 2: showif_checkboxes_nota_2
     show if: show_3
   - showif yesnoradio: showif_yesnoradio 
     datatype: yesnoradio
