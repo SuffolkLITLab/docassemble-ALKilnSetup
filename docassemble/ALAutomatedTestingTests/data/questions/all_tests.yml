@@ -8,18 +8,18 @@ comment: |
   # Fields to include
   
   ## Regular:
-  - [ ] Radio (yes/no)
-  - [ ] Radio (other)
-  - [ ] Checkbox (none of)
-  - [ ] Checkbox (yes/no)
-  - [ ] Checkbox (other)
-  - [ ] Buttons (yes/no)
-  - [ ] Buttons (other)
-  - [ ] Buttons (continue)
-  - [ ] Dropdown
-  - [ ] Text area
+  - [x] Radio (yes/no)
+  - [x] Radio (other)
+  - [x] Checkbox (none of)
+  - [x] Checkbox (yes/no)
+  - [x] Checkbox (other)
+  - [x] Buttons (yes/no)
+  - [x] Buttons (other)
+  - [x] Buttons (continue)
+  - [x] Dropdown
+  - [x] Text area
   - [x] Text input (type text)
-  - [ ] Text input (type date)
+  - [x] Text input (type date)
   
   ## Showif:
   - [x] Radio (yes/no)
@@ -32,11 +32,10 @@ comment: |
   - [x] Text input (type text)
   
   # Other things to include:
-  - [ ] Terms
-  - [ ] Button that's a link
-  - [ ] A link
-  - [ ] A phrase
-  - [ ] Button that's not a continue button
+  - [x] Terms
+  - [x] Button that's a link
+  - [x] A link
+  - [x] Button that's not a continue button
 
   # Situations to test:
   - [ ] Continue button field is listed in the table before other unrequired fields on the page (for the story table)
@@ -48,8 +47,14 @@ comment: |
 mandatory: True
 id: interview order
 code: |
+  term_continue_button
   page_1
+  link_button
+  regular_yes_no_button_cont
+  regular_button_other_cont
+  regular_continue_button
   direct_showifs
+  page_2
   page_3
   page_4
   
@@ -60,8 +65,107 @@ continue button field: page_1
 id: page 1
 question: |
   Some fields
+subquestion: |
+  Testing out normal links: 
+  [Reload the page](${ interview_url() })
 fields:
+  # Regular radio buttons
+  - Test regular yes/no radio button: regular_radio_yes_no
+    datatype: yesnoradio
+  - Test regular radio button (other): regular_radio_other
+    datatype: radio
+    choices: 
+      - Regular radio button option 1
+      - Regular radio button option 2
+      - Regular radio button option 3
+  # Regular checkboxes
+  - note: Check the regular yes/no checkbox options. 
+  - Regular yes/no checkbox option 1: regular_yes_no_checkbox_1
+    datatype: yesno
+  - Regular yes/no checkbox option 2: regular_yes_no_checkbox_2
+    datatype: yesno
+  - Test regular checkboxes (other): regular_checkboxes_other
+    datatype: checkboxes
+    choices: 
+       - regular checkbox (other) option 1
+       - regular checkbox (other) option 2 
+  - Example checkbox: regular_checkbox_ex
+    datatype: checkboxes
+    choices:
+       - Cake
+       - Pie
+   # What's a regular none of checkbox?
+  # Regular text fields 
+  - Test regular text field (date): regular_text_field_date
+    datatype: date 
   - Test regular text field: regular_text_field
+  - Test regular textbox/area: regular_text_area
+    input type: area
+  # Regular dropdown
+  - Test regular dropdown: regular_dropdown
+    datatype: dropdown
+    choices:
+      - regular dropdown option 1
+      - regular dropdown option 2
+  # Showif radio buttons
+  - Test showif radio button (yes/no) [select "YES" to trigger showif]: showif_radio_yes_no
+    datatype: yesnoradio
+  - Showif radio button (yes/no) yes selection test (just write something random here; if you triggered this field it means that the showif yes/no radio button worked): showif_radio_yes_no_affirmative
+    show if: showif_radio_yes_no 
+  - Test showif radio button (other) [choose option 1 to trigger showif]: showif_radio_other
+    datatype: radio
+    choices:
+      - showif radio button (other) option 1: op1
+      - showif radio button (other) option 2: op2
+      - showif radio button (other) option 3: op3
+  - Test showif radio button (other): showif_radio_other_option_1_worked
+    show if:
+       variable: showif_radio_other
+       is: op1
+---
+# Person 1
+# Button that's a link
+continue_button_field: link_button_cont
+question: |
+  Test out the "docassemble.org" button (hitting back once you've successfully loaded docassemble.org should bring you back to this interview). This is for testing out a button that's a link/a button that's not a continue button. 
+field: link_button
+action buttons: 
+  - label: Go to docassemble.org
+    action: https://docassemble.org
+    color: warning
+    icon: sign-out-alt
+---
+# Person 1
+# Regular yes-no buttons
+continue button field: regular_yes_no_button_cont
+question: |
+  Test regular button (yes/no)
+yesno: regular_yes_no_button
+---
+# Person 1
+# Regular button (other)
+continue button field: regular_button_other_cont
+question: |
+  Test regular button (other)
+field: regular_button_other
+buttons:
+  - regular button option 1
+  - regular button option 2 
+---
+# Person 1
+# Regular button (continue)
+continue button field: regular_continue_button
+question: |
+  Test regular button (continue)
+---
+# Person 1 
+# Terms
+continue button field: term_continue_button
+question: |
+  Term test! Click on the word {term} to test if it's working as intended. 
+terms: 
+  term: |
+    A term is a word that you click on if you don't know what the definition is. 
 ---
 continue button field: direct_showifs
 id: showifs
@@ -143,6 +247,4 @@ fields:
 id: the end
 event: end
 question: |
-  Congradulations! Tests have passed!
-  
- 
+  Congratulations! Tests have passed!
