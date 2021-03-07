@@ -47,151 +47,79 @@ comment: |
 mandatory: True
 id: interview order
 code: |
-  term_continue_button
-  page_1
-  link_button
-  regular_yes_no_button_cont
-  regular_button_other_cont
-  regular_continue_button
+  direct_standard_fields
   direct_showifs
-  page_2
-  page_3
-  page_4
+  object_checkboxes_test
+  buttons_yesnomaybe
+  buttons_other
+  button_continue
+  screen_features
   
+  button_event_action
   end
 ---
-# Person 1
-continue button field: page_1
-id: page 1
+id: direct standard fields
+continue button field: direct_standard_fields
 question: |
-  Some fields
+  Direct standard fields
 subquestion: |
-  Testing out normal links: 
-  [Reload the page](${ interview_url() })
+  Excludes proxy vars (x, i, j, etc.) or choices created with objects.
 fields:
-  # Regular radio buttons
-  - Test regular yes/no radio button: regular_radio_yes_no
+  - checkboxes (yesno): checkboxes_yesno
+    datatype: yesno
+  - checkboxes (other): checkboxes_other
+    datatype: checkboxes
+    choices: 
+       - checkboxes opt 1: checkbox_other_opt_1
+       - checkboxes opt 2: checkbox_other_opt_2
+       - checkboxes opt 3: checkbox_other_opt_3
+  - radio (yesno): radio_yesno
     datatype: yesnoradio
-  - Test regular radio button (other): regular_radio_other
+  - radio (other): radio_other
     datatype: radio
     choices: 
-      - Regular radio button option 1
-      - Regular radio button option 2
-      - Regular radio button option 3
-  # Regular checkboxes
-  - note: Check the regular yes/no checkbox options. 
-  - Regular yes/no checkbox option 1: regular_yes_no_checkbox_1
-    datatype: yesno
-  - Regular yes/no checkbox option 2: regular_yes_no_checkbox_2
-    datatype: yesno
-  - Test regular checkboxes (other): regular_checkboxes_other
-    datatype: checkboxes
-    choices: 
-       - regular checkbox (other) option 1
-       - regular checkbox (other) option 2 
-  - Example checkbox: regular_checkbox_ex
-    datatype: checkboxes
-    choices:
-       - Cake
-       - Pie
-   # What's a regular none of checkbox?
-  # Regular text fields 
-  - Test regular text field (date): regular_text_field_date
-    datatype: date 
-  - Test regular text field: regular_text_field
-  - Test regular textbox/area: regular_text_area
+      - radio opt 1: radio_other_opt_1
+      - radio opt 2: radio_other_opt_2
+      - radio opt 3: radio_other_opt_3
+  # Same DOM as `datatype: area`
+  - text input: text_input
+  - textarea: textarea
     input type: area
-  # Regular dropdown
-  - Test regular dropdown: regular_dropdown
+  - dropdown: dropdown
     datatype: dropdown
     choices:
-      - regular dropdown option 1
-      - regular dropdown option 2
-  # Showif radio buttons
-  - Test showif radio button (yes/no) [select "YES" to trigger showif]: showif_radio_yes_no
-    datatype: yesnoradio
-  - Showif radio button (yes/no) yes selection test (just write something random here; if you triggered this field it means that the showif yes/no radio button worked): showif_radio_yes_no_affirmative
-    show if: showif_radio_yes_no 
-  - Test showif radio button (other) [choose option 1 to trigger showif]: showif_radio_other
-    datatype: radio
-    choices:
-      - showif radio button (other) option 1: op1
-      - showif radio button (other) option 2: op2
-      - showif radio button (other) option 3: op3
-  - Test showif radio button (other): showif_radio_other_option_1_worked
-    show if:
-       variable: showif_radio_other
-       is: op1
+      - dropdown opt 1: dropdown_opt_1
+      - dropdown opt 2: dropdown_opt_2
+      - dropdown opt 3: dropdown_opt_3
 ---
-# Person 1
-# Button that's a link
-continue_button_field: link_button_cont
-question: |
-  Test out the "docassemble.org" button (hitting back once you've successfully loaded docassemble.org should bring you back to this interview). This is for testing out a button that's a link/a button that's not a continue button. 
-field: link_button
-action buttons: 
-  - label: Go to docassemble.org
-    action: https://docassemble.org
-    color: warning
-    icon: sign-out-alt
----
-# Person 1
-# Regular yes-no buttons
-continue button field: regular_yes_no_button_cont
-question: |
-  Test regular button (yes/no)
-yesno: regular_yes_no_button
----
-# Person 1
-# Regular button (other)
-continue button field: regular_button_other_cont
-question: |
-  Test regular button (other)
-field: regular_button_other
-buttons:
-  - regular button option 1
-  - regular button option 2 
----
-# Person 1
-# Regular button (continue)
-continue button field: regular_continue_button
-question: |
-  Test regular button (continue)
----
-# Person 1 
-# Terms
-continue button field: term_continue_button
-question: |
-  Term test! Click on the word {term} to test if it's working as intended. 
-terms: 
-  term: |
-    A term is a word that you click on if you don't know what the definition is. 
----
-continue button field: direct_showifs
 id: showifs
+continue button field: direct_showifs
 question: |
   Reveal showifs
 subquestion: |
   We start only seeing layer 1, the first question. All other layers are hidden to test finding various hidden fields in the DOM.
-  
+
   TODO:
-  
+
   - object
   - object_checkbox
-  
+
   No showifs: yesnomaybe: (buttons), buttons: (other), continue button field:
 fields:
   - Show layer 2: show_2
     datatype: yesno
-  - Show layer 3 (showif checkbox yesno): show_3
+  - Show layer 3: show_3
     datatype: yesno
     show if: show_2
+  - showif checkbox yesno: showif_checkbox_yesno
+    datatype: yesno
+    show if: show_3
   # A checkbox's none of the above `for` value is unique
   - showif checkboxes (multiple): showif_checkboxes_other
     datatype: checkboxes
     choices:
-      - showif checkbox other 1: showif_checkboxes_other_1
-      - showif checkbox other 2: showif_checkboxes_other_2
+      - showif checkbox none 1: showif_checkboxes_none_1
+      - showif checkbox none 2: showif_checkboxes_none_2
     show if: show_3
   - showif yesnoradio: showif_yesnoradio 
     datatype: yesnoradio
@@ -201,6 +129,7 @@ fields:
     choices:
       - showif radio multi 1: showif_radio_multi_1
       - showif radio multi 2: showif_radio_multi_2
+      - showif radio multi 3: showif_radio_multi_3
     show if: show_3
   - showif text input: showif_text_input
     show if: show_3
@@ -213,36 +142,68 @@ fields:
     - showif dropdown opt 1: showif_dropdown_1
     - showif dropdown opt 2: showif_dropdown_4
 ---
-# Person 3
-continue button field: page_3
-id: page 3
-question: |
-  Some fields
-fields:
-  - something else we will understand: good_var_name
----
 objects:
-  protagonist: Individual
-  antagonist: Individual
+  - obj_chkbx_opt_1: DAObject
+  - obj_chkbx_opt_2: DAObject
+  - obj_chkbx_opt_3: DAObject
 ---
 code: |
-  protagonist.name.first = "Harry"
-  protagonist.name.last = "Potter"
-  antagonist.name.first = "Tom"
-  antagonist.name.last = "Riddle"
+  obj_chkbx_opt_1.name = 'obj_chkbx_opt_1'
+  obj_chkbx_opt_2.name = 'obj_chkbx_opt_2'
+  obj_chkbx_opt_3.name = 'obj_chkbx_opt_3'
 ---
-mandatory: True
-# Person 4
-continue button field: page_4
-id: page 4
+id: object checkboxes
 question: |
-  Example: object_checkboxes
+  Object checkboxes
+subquestion: |
+  Made of list of objects. TODO: Add `object` choices dropdown.
 fields:
-  no label: selected_object_checkbox
-  datatype: object_checkboxes
-  choices:
-    - protagonist
-    - antagonist
+  - no label: object_checkboxes_test
+    datatype: object_checkboxes
+    choices:
+      - obj_chkbx_opt_1
+      - obj_chkbx_opt_2
+      - obj_chkbx_opt_3
+---
+id: buttons yesnomaybe
+question: |
+  Button (yes/no/maybe)
+yesnomaybe: buttons_yesnomaybe
+---
+id: buttons other
+question: |
+  Button (other)
+field: buttons_other
+buttons:
+  - button 1: button_1
+  - button 2: button_2
+  - button 3: button_3
+---
+id: button continue
+continue button field: button_continue
+question: |
+  Button (continue)
+---
+id: screen features
+continue button field: screen_features
+question: |
+  Other screen features
+subquestion: | 
+  * [Link: reload the page](${ interview_url() }).
+  * {Term} (working).
+  * {Broken term}.
+terms: 
+  term: |
+    A term is a word that you click on if you don't know what the definition is.
+---
+id: button event action
+question: |
+  Button (event action)
+field: button_event_action
+action buttons: 
+  - label: Do not pass go
+    action: end
+    icon: laugh-wink
 ---
 id: the end
 event: end
