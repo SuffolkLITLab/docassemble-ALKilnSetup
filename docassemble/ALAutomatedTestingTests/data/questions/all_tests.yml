@@ -24,16 +24,12 @@ comment: |
   ## Showif:
   - [x] Radio (yes/no)
   - [x] Radio (other)
-  - [ ] Checkbox (none of)
-  - [ ] Checkbox (yes/no)
-  - [ ] Checkbox (other)
-  - [ ] Buttons (yes/no)
-  - [ ] Buttons (other)
-  - [ ] Buttons (continue)
-  - [ ] Dropdown
-  - [ ] Text area
-  - [ ] Text input (type text)
-  - [ ] Text input (type date)
+  - [x] Checkbox (none of)
+  - [x] Checkbox (yes/no)
+  - [x] Checkbox (other)
+  - [x] Dropdown
+  - [x] Text area
+  - [x] Text input (type text)
   
   # Other things to include:
   - [x] Terms
@@ -57,8 +53,11 @@ code: |
   regular_yes_no_button_cont
   regular_button_other_cont
   regular_continue_button
+  direct_showifs
   page_2
   page_3
+  page_4
+  
   end
 ---
 # Person 1
@@ -168,13 +167,51 @@ terms:
   term: |
     A term is a word that you click on if you don't know what the definition is. 
 ---
-# Person 2
-continue button field: page_2
-id: page 2
+continue button field: direct_showifs
+id: showifs
 question: |
-  Some fields
+  Reveal showifs
+subquestion: |
+  We start only seeing layer 1, the first question. All other layers are hidden to test finding various hidden fields in the DOM.
+  
+  TODO:
+  
+  - object
+  - object_checkbox
+  
+  No showifs: yesnomaybe: (buttons), buttons: (other), continue button field:
 fields:
-  - something else we will understand: good_var_name
+  - Show layer 2: show_2
+    datatype: yesno
+  - Show layer 3 (showif checkbox yesno): show_3
+    datatype: yesno
+    show if: show_2
+  # A checkbox's none of the above `for` value is unique
+  - showif checkboxes (multiple): showif_checkboxes_other
+    datatype: checkboxes
+    choices:
+      - showif checkbox other 1: showif_checkboxes_other_1
+      - showif checkbox other 2: showif_checkboxes_other_2
+    show if: show_3
+  - showif yesnoradio: showif_yesnoradio 
+    datatype: yesnoradio
+    show if: show_3
+  - showif radio (multiple): showif_radio_other
+    datatype: radio
+    choices:
+      - showif radio multi 1: showif_radio_multi_1
+      - showif radio multi 2: showif_radio_multi_2
+    show if: show_3
+  - showif text input: showif_text_input
+    show if: show_3
+  - showif text input: showif_text_input
+    datatype: area
+    show if: show_3
+  - showif dropdown: showif_dropdown  
+    show if: show_3
+    choices: 
+    - showif dropdown opt 1: showif_dropdown_1
+    - showif dropdown opt 2: showif_dropdown_4
 ---
 # Person 3
 continue button field: page_3
@@ -183,6 +220,29 @@ question: |
   Some fields
 fields:
   - something else we will understand: good_var_name
+---
+objects:
+  protagonist: Individual
+  antagonist: Individual
+---
+code: |
+  protagonist.name.first = "Harry"
+  protagonist.name.last = "Potter"
+  antagonist.name.first = "Tom"
+  antagonist.name.last = "Riddle"
+---
+mandatory: True
+# Person 4
+continue button field: page_4
+id: page 4
+question: |
+  Example: object_checkboxes
+fields:
+  no label: selected_object_checkbox
+  datatype: object_checkboxes
+  choices:
+    - protagonist
+    - antagonist
 ---
 id: the end
 event: end
