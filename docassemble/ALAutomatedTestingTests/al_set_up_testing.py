@@ -14,11 +14,13 @@ from docassemble.base.core import DAObject
 
 class TestInstaller(DAObject):
   def init( self, *pargs, **kwargs ):
-    self.errors = []
+    self.errors = []  # Make set() instead?
     super().init(*pargs, **kwargs)
   
   def set_da_info( self ):
     """Use the interview url to get the user's Playground id."""
+    # Start clean (idempotent for da's loops).
+    self.errors = []
     # Can we get granular with error messages?
     server_match = re.match( r"^(http.+)\/interview\?i=docassemble\.playground(\d+).*$", self.playground_url )
     if server_match:
@@ -27,33 +29,48 @@ class TestInstaller(DAObject):
       self.server_url = server_match.group(1)
       self.playground_id = server_match.group(2)
     else:
-      self.server_url = None
-      self.playground_id = None
+      self.server_url = ''
+      self.playground_id = ''
       # Show error
       error = ErrorLikeObject( self.da_url_error )
       self.errors.append( error )
-      log( error, 'console' )
+      log( error.__dict__, 'console' )
     
     # TODO: Is it possible to try to log into their server to
     # make sure they've given the correct information?
     return self
   
-  # da auth and pushing
   def set_github_auth( self ):
     """Get and set all the information needed to authorize to GitHub"""
+    # Start clean. Other errors should have been handled already.
+    self.errors = []
+    
     self.get_github_info_from_repo_url()
-    
-    # TODO: detect types of errors
-    
     self.github = Github( self.token )
+    user = self.github.get_user()  # if no _login, token did not lead to user
     # Token doesn't auth: github.GithubException.BadCredentialsException (401, 403)
-    user = self.github.get_user()
+    try:
+      # Trigger for authentication error or feedback for the user
+      self.user_name = user.login
+    except Exception as error:
+      log( error.__dict__, 'console' )
+      error.data[ 'details' ] = self.github_token_error
+      self.errors.append( error )
+      
     # Repo doesn't exist: github.GithubException.UnknownObjectException (404)
-    self.repo = user.get_repo( self.repo_name )
-    self.owner_name = self.repo.owner.login
-    self.user_name = self.github.get_user().login  # feedback for the user
+    try:
+      self.repo = self.github.get_repo( self.owner_name + '/' + self.repo_name )
+    except Exception as error:
+      log( error.__dict__, 'console' )
+      error.data[ 'details' ] = self.github_repo_not_found_error
+      self.errors.append( error )
+    
     # TODO: Check user permissions: https://pygithub.readthedocs.io/en/latest/github_objects/Repository.html#github.Repository.Repository.get_collaborator_permission
     #self.repo.get_collaborator_permission( self.user_name )
+    
+    # Give as many errors at once as is possible
+    if len( self.errors ) > 0:
+      return self
     
     self.set_auth_for_secrets()
     
@@ -70,11 +87,17 @@ class TestInstaller(DAObject):
   def get_github_info_from_repo_url( self ):
     """Use repo address to parse out owner name and repo name. Needs self.repo_url"""
     # Match either the actual URL or the clone HTTP or SSH URL
-    matches = re.match(r"^.+github.com(?:\/|:)([^\/]*)\/([^\/.]*)(?:\..{3})?", self.repo_url)
+    matches = re.match( r"^.*github.com(?:\/|:)([^\/]*)\/?([^\/.]*)?(?:\..{3})?", self.repo_url )
     if matches:
+      self.owner_name = matches.group(1)
       self.repo_name = matches.group(2)
     else:
-      self.repo_name = None
+      self.owner_name = ''
+      self.repo_name = ''
+      # Show error
+      error = ErrorLikeObject( message='GitHub URL', details=self.github_url_error )
+      self.errors.append( error )
+      log( error.__dict__, 'console' )
       
     return self
   
@@ -200,6 +223,7 @@ class TestInstaller(DAObject):
 # handle errors
 class ErrorLikeObject():
   """Create object to match PyGithub data structure for errors."""
-  def __init__( self, message='' ):
-    self.status = 0
-    self.data = { 'message': message }
+  def __init__( self, status=0, message='', details='' ):
+    self.status = status
+    self.data = { 'message': message, 'details': details }
+  
