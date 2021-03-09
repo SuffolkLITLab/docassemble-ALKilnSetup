@@ -78,16 +78,16 @@ class TestInstaller(DAObject):
       branch_data = self.get_free_branch_name()
       self.branch_name = branch_data[ 'branch_name' ]
       if not branch_data[ 'found_free_name' ]:
-        error = ErrorLikeObject( message='Branch already exists', details=self.github_branch_name_error )
-        self.errors.append( error )
-        log( error.__dict__, 'console' )
+        error3 = ErrorLikeObject( message='Branch already exists', details=self.github_branch_name_error )
+        self.errors.append( error3 )
+        log( error3.__dict__, 'console' )
         
       # Check user has access to the repo (403)
       has_access = self.repo.has_in_collaborators( self.user_name )
       if not has_access:
-        error3 = ErrorLikeObject( message='Must have push access', details=self.github_access_error )
-        self.errors.append( error3 )
-        log( error3.__dict__, 'console' )
+        error4 = ErrorLikeObject( message='Must have push access', details=self.github_access_error )
+        self.errors.append( error4 )
+        log( error4.__dict__, 'console' )
     
     # Give as many errors at once as is possible
     if len( self.errors ) > 0:
@@ -179,7 +179,7 @@ class TestInstaller(DAObject):
     return self
   
   def make_new_branch( self ):
-    """Create new branch off the default branch. PyGithub .create_git_ref()"""
+    """Create new branch off the default branch."""
     # Get default branch
     repo = self.repo
     default_branch_name = repo.default_branch
