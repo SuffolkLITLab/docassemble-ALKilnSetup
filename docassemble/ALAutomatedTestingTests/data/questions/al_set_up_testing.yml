@@ -19,9 +19,9 @@ include:
 # I've done this once before. Trust me...
 mandatory: True
 code: |
-  ## for dev
-  #installer.repo_url = 'https://github.com/CaroRob/docassemble-DeadBrokeDads2'
-  #installer.playground_url = 'https://apps-dev.suffolklitlab.org/interview?i=docassemble.playground12ALTestingGHSendFiles%3Aal_set_up_testing.yml#page4'
+  # for dev
+  #installer.repo_url = 'https://github.com/plocket/install'
+  installer.playground_url = 'https://apps-dev.suffolklitlab.org/interview?i=docassemble.playground12ALTestingGHSendFiles%3Aal_set_up_testing.yml#page4'
   
   # show errors first thing on each loop
   if len( installer.errors ) > 0:
@@ -191,8 +191,8 @@ question: |
   Sorry, something went wrong
 subquestion: |
   % for error in installer.errors:
-  **Error:** ${ error.status if error.status else '' } ${ error.data[ 'message' ] if error.data[ 'message' ] else '' }
-  ${ '[BR]' + error.data[ 'details' ] if error.data[ 'details' ] else '' }
+  **Error: ${ error.status if error.status else '' } ${ error.data[ 'message' ] }**
+  ${ '[BR]' + error.data[ 'details' ] }
   <hr/>
   
   % endfor
@@ -204,7 +204,7 @@ code: |
 template: da_url_error
 content: |
   Cannot validate the interview URL **"${ installer.playground_url }"**. Example of a valid URL:[BR]
-  `https://dev.court-wizards.org/interview?i=docassemble.playground222ProjectName%3Asome_file.yml#page2` [BR]
+  `https://dev.court-wizards.org/interview?i=docassemble.playground222ProjectName%3Asome_file.yml` [BR]
   If you are sure you have the whole URL of a running interview, please file an issue and include your interview URL in the report.
 ---
 depends on: github_url_error
@@ -233,9 +233,25 @@ code: |
 ---
 template: github_repo_not_found_error
 content: |
-  GitHub cannot find **${ 'the ' + installer.repo_name if installer.repo_name else 'that' }** repository owned by **${ installer.owner_name if installer.owner_name else 'that user' }**. Example of a valid URL:
+  GitHub cannot find the **${ installer.repo_name }** repository owned by the owner **${ installer.owner_name }**. Example of a valid URL:
   
   `https://github.com/owner_name/repo_name`
   
-  You gave the repository address of **${ installer.repo_url }**. Are you sure that's correct?
+  You gave the repository address of **${ installer.repo_url }**. Are you sure that is correct?
+---
+depends on: github_access_error
+code: |
+  installer.github_access_error = github_access_error.content
+---
+template: github_access_error
+content: |
+  The user **${ installer.user_name }** does not have access to change the files in the **${ installer.repo_name }** repository owned by the owner **${ installer.owner_name }**. You can ask the admin to give correct access.
+---
+depends on: github_branch_name_error
+code: |
+  installer.github_branch_name_error = github_branch_name_error.content
+---
+template: github_branch_name_error
+content: |
+  It looks like all the allowed branch names are taken. To solve this, delete some of the branches that start with "${ installer.default_branch_name }".
 ---

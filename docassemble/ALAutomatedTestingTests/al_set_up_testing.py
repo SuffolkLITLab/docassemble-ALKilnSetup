@@ -14,6 +14,7 @@ from docassemble.base.core import DAObject
 
 class TestInstaller(DAObject):
   def init( self, *pargs, **kwargs ):
+    self.default_branch_name = "automated_testing"
     self.errors = []  # Make set() instead?
     super().init(*pargs, **kwargs)
   
@@ -32,7 +33,7 @@ class TestInstaller(DAObject):
       self.server_url = ''
       self.playground_id = ''
       # Show error
-      error = ErrorLikeObject( self.da_url_error )
+      error = ErrorLikeObject( message='Interview URL', details=self.da_url_error )
       self.errors.append( error )
       log( error.__dict__, 'console' )
     
@@ -41,32 +42,52 @@ class TestInstaller(DAObject):
     return self
   
   def set_github_auth( self ):
-    """Get and set all the information needed to authorize to GitHub"""
+    """Get and set all the information needed to authorize to
+    GitHub and handle all possible errors."""
     # Start clean. Other errors should have been handled already.
     self.errors = []
     
     self.get_github_info_from_repo_url()
     self.github = Github( self.token )
-    user = self.github.get_user()  # if no _login, token did not lead to user
-    # Token doesn't auth: github.GithubException.BadCredentialsException (401, 403)
+    user = self.github.get_user()
+    
+    # Check token credentials
     try:
       # Trigger for authentication error or feedback for the user
       self.user_name = user.login
-    except Exception as error:
-      log( error.__dict__, 'console' )
-      error.data[ 'details' ] = self.github_token_error
-      self.errors.append( error )
+    except Exception as error1:
+      # github.GithubException.BadCredentialsException (401, 403)
+      log( error1.__dict__, 'console' )
+      self.user_name = ''
+      error1.data[ 'details' ] = self.github_token_error
+      self.errors.append( error1 )
       
-    # Repo doesn't exist: github.GithubException.UnknownObjectException (404)
+    # Check if repo exists
     try:
       self.repo = self.github.get_repo( self.owner_name + '/' + self.repo_name )
-    except Exception as error:
-      log( error.__dict__, 'console' )
-      error.data[ 'details' ] = self.github_repo_not_found_error
-      self.errors.append( error )
+    except Exception as error2:
+      # github.GithubException.UnknownObjectException (404)
+      log( error2.__dict__, 'console' )
+      self.repo = None
+      error2.data[ 'details' ] = self.github_repo_not_found_error
+      self.errors.append( error2 )
     
-    # TODO: Check user permissions: https://pygithub.readthedocs.io/en/latest/github_objects/Repository.html#github.Repository.Repository.get_collaborator_permission
-    #self.repo.get_collaborator_permission( self.user_name )
+    if self.repo:
+      # Check if a branch name is free to use
+      # TODO: Allow user to pick a custom branch name or to push to default branch
+      branch_data = self.get_free_branch_name()
+      self.branch_name = branch_data[ 'branch_name' ]
+      if not branch_data[ 'found_free_name' ]:
+        error = ErrorLikeObject( message='Branch already exists', details=self.github_branch_name_error )
+        self.errors.append( error )
+        log( error.__dict__, 'console' )
+        
+      # Check user has access to the repo (403)
+      has_access = self.repo.has_in_collaborators( self.user_name )
+      if not has_access:
+        error3 = ErrorLikeObject( message='Must have push access', details=self.github_access_error )
+        self.errors.append( error3 )
+        log( error3.__dict__, 'console' )
     
     # Give as many errors at once as is possible
     if len( self.errors ) > 0:
@@ -101,6 +122,34 @@ class TestInstaller(DAObject):
       
     return self
   
+  def get_free_branch_name( self ):
+    """Return an object with two values:
+    - found_free_name: Whether an appropriate branch name was free
+    - branch_name: The last branch name that was tried"""
+    # Get all branches
+    all_branches = self.repo.get_branches()
+    
+    # Control how many times the loop will run
+    count = 0
+    max_count = 20
+    found_free_name = False  # Start the loop off correctly
+    branch_name_base = self.default_branch_name
+    branch_name = branch_name_base
+    # Try every permitted new branch name until one is free
+    while ( not found_free_name and count < max_count ):
+      count += 1  # Ensure no infinite loop
+      
+      found_free_name = True  # The name is free until proven otherwise
+      for existing_branch in all_branches:
+        existing_branch_name = existing_branch.name
+        # If branch already exists
+        if existing_branch_name == branch_name:
+          # Prep for next attempt
+          found_free_name = False
+          branch_name = branch_name_base + '_' + str( count )
+    
+    return { "found_free_name": found_free_name, "branch_name": branch_name }
+  
   def set_auth_for_secrets( self ):
     """Separated to allow easier removal when library finally supports secrets"""
     # The below is only needed because PyGithub does not handle secrets
@@ -130,30 +179,15 @@ class TestInstaller(DAObject):
     return self
   
   def make_new_branch( self ):
-    """Create new branch, trying to use a brand new name. https://pygithub.readthedocs.io/en/latest/github_objects/Repository.html#github.Repository.Repository.create_git_ref"""
+    """Create new branch off the default branch. PyGithub .create_git_ref()"""
     # Get default branch
     repo = self.repo
     default_branch_name = repo.default_branch
     default_branch = repo.get_branch( default_branch_name )
+    # Make new branch off of default branch
+    ref_path = "refs/heads/" + self.branch_name
+    response = repo.create_git_ref( ref_path, default_branch.commit.sha )
     
-    count = 0
-    max_count = 20
-    branch_name_base = "automated_testing"
-    self.branch_name = branch_name_base
-    while ( count < max_count ):
-      try:
-        ref_path = "refs/heads/" + self.branch_name
-        response = repo.create_git_ref( ref_path, default_branch.commit.sha )
-        break
-      except Exception as error:  # github.GithubException.GithubException
-        # Check branch already exists here
-        # Check permissions here? A bit late?
-        count += 1 # Prep for next attempt
-        self.branch_name = branch_name_base + '_' + str( count )
-    
-    # Must make this refreshable somehow so that if folks
-    # have to delete some branches to get it to run, it will
-    # try again.
     return self
   
   def push_files( self ):
