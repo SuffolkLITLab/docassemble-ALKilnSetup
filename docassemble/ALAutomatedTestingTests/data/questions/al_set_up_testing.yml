@@ -164,8 +164,6 @@ event: next_steps
 question: |
   Next steps
 subquestion: |
-  Instructions to come here
-comment: |
   % if defined( 'installer.pull_url' ):
   1. Check [the pull request](${ installer.pull_url }) and merge it in if it looks good.
   1. Once you've merged your pull request into your default branch (usually 'main') [go to your actions page](https://github.com/${ installer.owner_name }/${ installer.repo_name }/actions) to see the first practice test run.
@@ -182,7 +180,10 @@ comment: |
   1. When that test run is over, see if you can [run the workflow manually from the actions menu](https://docs.github.com/en/actions/managing-workflow-runs/manually-running-a-workflow#running-a-workflow-on-github).
 
   If everything passes, all should be well and you should be ready to write your first tests. Delete the [personal access token](https://github.com/settings/tokens) you created.
+comment: |
+  TODO: Should we offer to delete their personal access token for them in the interview itself?
   
+  TODO: Where do we want them to file issues?
   If you are still having trouble or have some feedback, we would love you to [make an issue in our testing package's repository](https://github.com/plocket/docassemble-cucumber/issues).
 ---
 id: show_errors
