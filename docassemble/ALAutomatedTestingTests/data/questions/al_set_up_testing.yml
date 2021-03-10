@@ -89,7 +89,11 @@ subquestion: |
   1. `.gitignore` is for developers who want to work in their local environment.
   1. `.env-example` can help guide developers who want to work in their local environment.
   
-  It will also add 3 [secrets](https://docs.github.com/en/actions/reference/encrypted-secrets): PLAYGROUND_EMAIL, PLAYGROUND_PASSWORD, and PLAYGROUND_ID
+  It will also add 3 [GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets):
+  
+  1. PLAYGROUND_EMAIL
+  1. PLAYGROUND_PASSWORD
+  1. PLAYGROUND_ID
 
 continue button field: intro
 ---
@@ -105,7 +109,7 @@ fields:
     datatype: password
   - note: |
       From inside the testing account, hit 'Save and Run' in the YAML file you want to test. What is the URL in the address bar? Example of a valid URL:[BR]
-      `https://dev.court-wizards.org/interview?i=docassemble.playground222ProjectName%3Asome_file.yml#page2`
+      `https://dev.court-wizards.org/interview?i=docassemble.playground222ProjectName%3Asome_file.yml`
   - Interview URL: installer.playground_url
 terms:
   Interview URL: |
@@ -166,25 +170,26 @@ question: |
 subquestion: |
   % if defined( 'installer.pull_url' ):
   1. Check [the pull request](${ installer.pull_url }) and merge it in if it looks good.
-  1. Once you've merged your pull request into your default branch (usually 'main') [go to your actions page](https://github.com/${ installer.owner_name }/${ installer.repo_name }/actions) to see the first practice test run.
-  % elif defined( 'installer.owner_name' ):
+  1. Once you've merged your pull request into your default branch (usually 'main') [go to your actions page](https://github.com/${ installer.owner_name }/${ installer.repo_name }/actions) to see the first example test being run.
+  % else:
   1. [Go to your actions page](https://github.com/${ installer.owner_name }/${ installer.repo_name }/actions) to see the example test being run.
   % endif
   1. If it fails the firs time, [rerun the test (job)](https://docs.github.com/en/actions/managing-workflow-runs/re-running-a-workflow).
   1. If it fails again:
       1. Check the .github/workflows/run_interview_tests.yml `env:` section to make sure your docassemble server name is right.
       1. If it is wrong, you can [edit the file in GitHub](https://docs.github.com/en/github/managing-files-in-a-repository/editing-files-in-your-repository).
-      1. Edit the values of [the repository secrets](https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-a-repository) manually to make sure that the email address, password, and id are for the correct account on the correct server. GitHub will not let you see the old values as that would be a breach of security.
+      1. [Edit the values](https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-a-repository) of [the repository secrets](https://github.com/${ installer.owner_name }/${ installer.repo_name }/secrets) manually to make sure that the email address, password, and id are for the correct account on the correct server. GitHub will not let you see the old values as that would be a breach of security.
       1. [Run the test manually](https://docs.github.com/en/actions/managing-workflow-runs/manually-running-a-workflow#running-a-workflow-on-github).
-      1. If tests still fail, [make an issue in our testing package's repository](https://github.com/plocket/docassemble-cucumber/issues).
+      1. If tests still fail, [see if someone has posted a related issue](https://github.com/plocket/docassemble-ALAutomatedTestingTests/issues) in our repository. If not, [file a new issue](https://github.com/plocket/docassemble-ALAutomatedTestingTests/issues/new) that includes the link to the manual test that was run. Leave that test alone so others can see what's going on. Avoid 'rerunning' that job.
   1. When that test run is over, see if you can [run the workflow manually from the actions menu](https://docs.github.com/en/actions/managing-workflow-runs/manually-running-a-workflow#running-a-workflow-on-github).
 
   If everything passes, all should be well and you should be ready to write your first tests. Delete the [personal access token](https://github.com/settings/tokens) you created.
-comment: |
-  TODO: Should we offer to delete their personal access token for them in the interview itself?
   
-  TODO: Where do we want them to file issues?
-  If you are still having trouble or have some feedback, we would love you to [make an issue in our testing package's repository](https://github.com/plocket/docassemble-cucumber/issues).
+  If you have some feedback, we would love to hear from you. [Make an issue in our repository](https://github.com/plocket/docassemble-ALAutomatedTestingTests/issues/new) to tell us about it.
+comment: |
+  TODO: Should we offer to delete their personal access token for them in the interview itself? Do we have enough permissions?
+  TODO: Implement feedback form instead of linking issues. See AL core for that coming soon.
+  TODO: Add link to documentation on writing tests.
 ---
 id: show_errors
 event: show_errors
@@ -192,8 +197,7 @@ question: |
   Sorry, something went wrong
 subquestion: |
   % for error in installer.errors:
-  **Error: ${ error.status if error.status else '' } ${ error.data[ 'message' ] }**
-  ${ '[BR]' + error.data[ 'details' ] }
+  **Error: ${ error.status if error.status else '' } ${ error.data[ 'message' ] }**${ '[BR]' + error.data[ 'details' ] }
   <hr/>
   
   % endfor
@@ -206,7 +210,7 @@ template: da_url_error
 content: |
   Cannot validate the interview URL **"${ installer.playground_url }"**. Example of a valid URL:[BR]
   `https://dev.court-wizards.org/interview?i=docassemble.playground222ProjectName%3Asome_file.yml` [BR]
-  If you are sure you have the whole URL of a running interview, please file an issue and include your interview URL in the report.
+  If you are sure you have the whole URL of a running interview, please [file an issue](https://github.com/plocket/docassemble-ALAutomatedTestingTests) and include your interview URL in the report.
 ---
 depends on: github_url_error
 code: |
@@ -218,7 +222,7 @@ content: |
   
   `https://github.com/owner_name/repo_name`
   
-  If you are sure you have the correct GitHub URL, please file an issue and include the GitHub URL.
+  If you are sure you have the correct GitHub URL, please [file an issue](https://github.com/plocket/docassemble-ALAutomatedTestingTests) and include the GitHub URL.
 ---
 depends on: github_token_error
 code: |

@@ -218,7 +218,7 @@ class TestInstaller(DAObject):
 - [x] .github/workflow/run_form_tests.yml
 '''  # TODO: Add issue # if desired
     response = self.repo.create_pull(base=base_name, head=head_name, title=title, body=description)
-    self.pull_url = response.url
+    self.pull_url = response.html_url
     
     return self
   
