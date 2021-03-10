@@ -13,12 +13,16 @@ from docassemble.base.core import DAObject
 # Mostly: https://pygithub.readthedocs.io/en/latest/introduction.html
 
 class TestInstaller(DAObject):
+  # In da `init` is the initializing function, NOT python's __init__
   def init( self, *pargs, **kwargs ):
-    self.errors = []
+    self.default_branch_name = "automated_testing"
+    self.errors = []  # Make set() instead?
     super().init(*pargs, **kwargs)
   
   def set_da_info( self ):
     """Use the interview url to get the user's Playground id."""
+    # Start clean (idempotent for da's loops).
+    self.errors = []
     # Can we get granular with error messages?
     server_match = re.match( r"^(http.+)\/interview\?i=docassemble\.playground(\d+).*$", self.playground_url )
     if server_match:
@@ -27,33 +31,68 @@ class TestInstaller(DAObject):
       self.server_url = server_match.group(1)
       self.playground_id = server_match.group(2)
     else:
-      self.server_url = None
-      self.playground_id = None
+      self.server_url = ''
+      self.playground_id = ''
       # Show error
-      error = ErrorLikeObject( self.da_url_error )
+      error = ErrorLikeObject( message='Interview URL', details=self.da_url_error )
       self.errors.append( error )
-      log( error, 'console' )
+      log( error.__dict__, 'console' )
     
     # TODO: Is it possible to try to log into their server to
     # make sure they've given the correct information?
     return self
   
-  # da auth and pushing
   def set_github_auth( self ):
-    """Get and set all the information needed to authorize to GitHub"""
+    """Get and set all the information needed to authorize to
+    GitHub and handle all possible errors."""
+    # Start clean. Other errors should have been handled already.
+    self.errors = []
+    
     self.get_github_info_from_repo_url()
-    
-    # TODO: detect types of errors
-    
     self.github = Github( self.token )
-    # Token doesn't auth: github.GithubException.BadCredentialsException (401, 403)
     user = self.github.get_user()
-    # Repo doesn't exist: github.GithubException.UnknownObjectException (404)
-    self.repo = user.get_repo( self.repo_name )
-    self.owner_name = self.repo.owner.login
-    self.user_name = self.github.get_user().login  # feedback for the user
-    # TODO: Check user permissions: https://pygithub.readthedocs.io/en/latest/github_objects/Repository.html#github.Repository.Repository.get_collaborator_permission
-    #self.repo.get_collaborator_permission( self.user_name )
+    
+    # Check token credentials
+    try:
+      # Trigger for authentication error or feedback for the user
+      self.user_name = user.login
+    except Exception as error1:
+      # github.GithubException.BadCredentialsException (401, 403)
+      log( error1.__dict__, 'console' )
+      self.user_name = ''
+      error1.data[ 'details' ] = self.github_token_error
+      self.errors.append( error1 )
+      
+    # Check if repo exists
+    try:
+      self.repo = self.github.get_repo( self.owner_name + '/' + self.repo_name )
+    except Exception as error2:
+      # github.GithubException.UnknownObjectException (404)
+      log( error2.__dict__, 'console' )
+      self.repo = None
+      error2.data[ 'details' ] = self.github_repo_not_found_error
+      self.errors.append( error2 )
+    
+    if self.repo:
+      # Check if a branch name is free to use
+      # TODO: Allow user to pick a custom branch name or to push to default branch
+      branch_data = self.get_free_branch_name()
+      self.branch_name = branch_data[ 'branch_name' ]
+      if not branch_data[ 'found_free_name' ]:
+        error3 = ErrorLikeObject( message='Branch already exists', details=self.github_branch_name_error )
+        self.errors.append( error3 )
+        log( error3.__dict__, 'console' )
+        
+      # Check user has access to the repo (403)
+      has_access = self.repo.has_in_collaborators( self.user_name )
+      if not has_access:
+        error4 = ErrorLikeObject( message='Must have push access', details=self.github_access_error )
+        self.errors.append( error4 )
+        log( error4.__dict__, 'console' )
+    
+    # Give as many errors at once as is possible
+    if len( self.errors ) > 0:
+      return self
     
     self.set_auth_for_secrets()
     
@@ -70,13 +109,47 @@ class TestInstaller(DAObject):
   def get_github_info_from_repo_url( self ):
     """Use repo address to parse out owner name and repo name. Needs self.repo_url"""
     # Match either the actual URL or the clone HTTP or SSH URL
-    matches = re.match(r"^.+github.com(?:\/|:)([^\/]*)\/([^\/.]*)(?:\..{3})?", self.repo_url)
+    matches = re.match( r"^.*github.com(?:\/|:)([^\/]*)\/?([^\/.]*)?(?:\..{3})?", self.repo_url )
     if matches:
+      self.owner_name = matches.group(1)
       self.repo_name = matches.group(2)
     else:
-      self.repo_name = None
+      self.owner_name = ''
+      self.repo_name = ''
+      # Show error
+      error = ErrorLikeObject( message='GitHub URL', details=self.github_url_error )
+      self.errors.append( error )
+      log( error.__dict__, 'console' )
       
     return self
+  
+  def get_free_branch_name( self ):
+    """Return an object with two values:
+    - found_free_name: Whether an appropriate branch name was free
+    - branch_name: The last branch name that was tried"""
+    # Get all branches
+    all_branches = self.repo.get_branches()
+    
+    # Control how many times the loop will run
+    count = 0
+    max_count = 20
+    found_free_name = False  # Start the loop off correctly
+    branch_name_base = self.default_branch_name
+    branch_name = branch_name_base
+    # Try every permitted new branch name until one is free
+    while ( not found_free_name and count < max_count ):
+      count += 1  # Ensure no infinite loop
+      
+      found_free_name = True  # The name is free until proven otherwise
+      for existing_branch in all_branches:
+        existing_branch_name = existing_branch.name
+        # If branch already exists
+        if existing_branch_name == branch_name:
+          # Prep for next attempt
+          found_free_name = False
+          branch_name = branch_name_base + '_' + str( count )
+    
+    return { "found_free_name": found_free_name, "branch_name": branch_name }
   
   def set_auth_for_secrets( self ):
     """Separated to allow easier removal when library finally supports secrets"""
@@ -107,30 +180,15 @@ class TestInstaller(DAObject):
     return self
   
   def make_new_branch( self ):
-    """Create new branch, trying to use a brand new name. https://pygithub.readthedocs.io/en/latest/github_objects/Repository.html#github.Repository.Repository.create_git_ref"""
+    """Create new branch off the default branch."""
     # Get default branch
     repo = self.repo
     default_branch_name = repo.default_branch
     default_branch = repo.get_branch( default_branch_name )
+    # Make new branch off of default branch
+    ref_path = "refs/heads/" + self.branch_name
+    response = repo.create_git_ref( ref_path, default_branch.commit.sha )
     
-    count = 0
-    max_count = 20
-    branch_name_base = "automated_testing"
-    self.branch_name = branch_name_base
-    while ( count < max_count ):
-      try:
-        ref_path = "refs/heads/" + self.branch_name
-        response = repo.create_git_ref( ref_path, default_branch.commit.sha )
-        break
-      except Exception as error:  # github.GithubException.GithubException
-        # Check branch already exists here
-        # Check permissions here? A bit late?
-        count += 1 # Prep for next attempt
-        self.branch_name = branch_name_base + '_' + str( count )
-    
-    # Must make this refreshable somehow so that if folks
-    # have to delete some branches to get it to run, it will
-    # try again.
     return self
   
   def push_files( self ):
@@ -200,6 +258,7 @@ class TestInstaller(DAObject):
 # handle errors
 class ErrorLikeObject():
   """Create object to match PyGithub data structure for errors."""
-  def __init__( self, message='' ):
-    self.status = 0
-    self.data = { 'message': message }
+  def __init__( self, status=0, message='', details='' ):
+    self.status = status
+    self.data = { 'message': message, 'details': details }
+  

@@ -23,7 +23,7 @@ code: |
   #installer.repo_url = 'https://github.com/plocket/install'
   #installer.playground_url = 'https://apps-dev.suffolklitlab.org/interview?i=docassemble.playground12ALTestingGHSendFiles%3Aal_set_up_testing.yml#page4'
   
-  # handle errors
+  # show errors first thing on each loop
   if len( installer.errors ) > 0:
     show_errors
   
@@ -105,7 +105,7 @@ fields:
     datatype: password
   - note: |
       From inside the testing account, hit 'Save and Run' in the YAML file you want to test. What is the URL in the address bar? Example of a valid URL:[BR]
-      `https://dev.court-wizards.org/interview?i=docassemble.playground222ProjectName%3Asome_file.yml#page2`"
+      `https://dev.court-wizards.org/interview?i=docassemble.playground222ProjectName%3Asome_file.yml#page2`
   - Interview URL: installer.playground_url
 terms:
   Interview URL: |
@@ -144,7 +144,7 @@ review:
       
       **Playground ID**: ${ installer.playground_id }
       
-      **URL of running testable interview**:[BR]
+      **URL for running testable interview**:[BR]
       [${ installer.playground_url }](${ installer.playground_url })
   - Edit: installer.repo_url
     button: |
@@ -191,17 +191,67 @@ question: |
   Sorry, something went wrong
 subquestion: |
   % for error in installer.errors:
-  **Error:** ${ error.data[ 'message' ] }
+  **Error: ${ error.status if error.status else '' } ${ error.data[ 'message' ] }**
+  ${ '[BR]' + error.data[ 'details' ] }
+  <hr/>
   
   % endfor
 ---
+depends on: da_url_error
 code: |
   installer.da_url_error = da_url_error.content
 ---
 template: da_url_error
 content: |
   Cannot validate the interview URL **"${ installer.playground_url }"**. Example of a valid URL:[BR]
-  `https://dev.court-wizards.org/interview?i=docassemble.playground222ProjectName%3Asome_file.yml#page2` [BR]
-  If you are sure you have the whole URL of a running interview, please report a bug and include your interview URL in the report.
+  `https://dev.court-wizards.org/interview?i=docassemble.playground222ProjectName%3Asome_file.yml` [BR]
+  If you are sure you have the whole URL of a running interview, please file an issue and include your interview URL in the report.
 ---
+depends on: github_url_error
+code: |
+  installer.github_url_error = github_url_error.content
+---
+template: github_url_error
+content: |
+  Cannot validate the GitHub URL **"${ installer.repo_url }"**. Example of a valid URL:
+  
+  `https://github.com/owner_name/repo_name`
+  
+  If you are sure you have the correct GitHub URL, please file an issue and include the GitHub URL.
+---
+depends on: github_token_error
+code: |
+  installer.github_token_error = github_token_error.content
+---
+template: github_token_error
+content: |
+  GitHub does not recognize [that personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token). You can try copying and pasting it again or you can try making a new one.
+---
+depends on: github_repo_not_found_error
+code: |
+  installer.github_repo_not_found_error = github_repo_not_found_error.content
+---
+template: github_repo_not_found_error
+content: |
+  GitHub cannot find the **${ installer.repo_name }** repository owned by the owner **${ installer.owner_name }**. Example of a valid URL:
+  
+  `https://github.com/owner_name/repo_name`
+  
+  You gave the repository address of **${ installer.repo_url }**. Are you sure that is correct?
+---
+depends on: github_access_error
+code: |
+  installer.github_access_error = github_access_error.content
+---
+template: github_access_error
+content: |
+  The user **${ installer.user_name }** does not have access to change the files in the **${ installer.repo_name }** repository owned by the owner **${ installer.owner_name }**. You can ask the admin to give correct access.
+---
+depends on: github_branch_name_error
+code: |
+  installer.github_branch_name_error = github_branch_name_error.content
+---
+template: github_branch_name_error
+content: |
+  It looks like all the allowed branch names are taken. To solve this, delete some of the branches that start with "${ installer.default_branch_name }".
 ---
