@@ -49,7 +49,7 @@ id: interview order
 code: |
   direct_standard_fields
   direct_showifs
-  object_checkboxes_test
+  #object_checkboxes_test
   buttons_yesnomaybe
   buttons_other
   button_continue
