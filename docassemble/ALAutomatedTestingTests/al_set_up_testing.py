@@ -13,6 +13,7 @@ from docassemble.base.core import DAObject
 # Mostly: https://pygithub.readthedocs.io/en/latest/introduction.html
 
 class TestInstaller(DAObject):
+  # In da `init` is the initializing function, NOT python's __init__
   def init( self, *pargs, **kwargs ):
     self.default_branch_name = "automated_testing"
     self.errors = []  # Make set() instead?
