@@ -170,7 +170,7 @@ question: |
 subquestion: |
   % if defined( 'installer.pull_url' ):
   1. Check [the pull request](${ installer.pull_url }) and merge it in if it looks good.
-  1. Once you've merged your pull request into your default branch (usually 'main') [go to your actions page](https://github.com/${ installer.owner_name }/${ installer.repo_name }/actions) to see the first example test being run.
+  1. Once you've merged your pull request into your default branch (usually 'main' or 'master') [go to your actions page](https://github.com/${ installer.owner_name }/${ installer.repo_name }/actions) to see the first example test being run.
   % else:
   1. [Go to your actions page](https://github.com/${ installer.owner_name }/${ installer.repo_name }/actions) to see the example test being run.
   % endif
