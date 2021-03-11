@@ -174,7 +174,7 @@ subquestion: |
   % else:
   1. [Go to your actions page](https://github.com/${ installer.owner_name }/${ installer.repo_name }/actions) to see the example test being run.
   % endif
-  1. If it fails the firs time, [rerun the test (job)](https://docs.github.com/en/actions/managing-workflow-runs/re-running-a-workflow).
+  1. If it fails the first time, [rerun the test (job)](https://docs.github.com/en/actions/managing-workflow-runs/re-running-a-workflow).
   1. If it fails again:
       1. Check the .github/workflows/run_interview_tests.yml `env:` section to make sure your docassemble server name is right.
       1. If it is wrong, you can [edit the file in GitHub](https://docs.github.com/en/github/managing-files-in-a-repository/editing-files-in-your-repository).
