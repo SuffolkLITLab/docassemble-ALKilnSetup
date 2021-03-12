@@ -133,7 +133,7 @@ fields:
     show if: show_3
   - showif text input: showif_text_input
     show if: show_3
-  - showif text input: showif_text_input
+  - showif text input: showif_textarea
     datatype: area
     show if: show_3
   - showif dropdown: showif_dropdown  
