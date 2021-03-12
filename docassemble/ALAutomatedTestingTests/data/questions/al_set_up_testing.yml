@@ -6,6 +6,8 @@ metadata:
 ---
 features:
   question back button: True
+  css:
+    - styles.css
 ---
 modules:
   - .al_set_up_testing
