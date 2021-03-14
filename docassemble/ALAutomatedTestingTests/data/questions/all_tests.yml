@@ -114,13 +114,14 @@ fields:
   - showif checkbox yesno: showif_checkbox_yesno
     datatype: yesno
     show if: show_3
+  # Reimplement when refactoring for #158 (in dc) is done
   # A checkbox's none of the above `for` value is unique
-  - showif checkboxes (multiple): showif_checkboxes_other
-    datatype: checkboxes
-    choices:
-      - showif checkbox nota 1: showif_checkboxes_nota_1
-      - showif checkbox nota 2: showif_checkboxes_nota_2
-    show if: show_3
+  #- showif checkboxes (multiple): showif_checkboxes_other
+  #  datatype: checkboxes
+  #  choices:
+  #    - showif checkbox nota 1: showif_checkboxes_nota_1
+  #    - showif checkbox nota 2: showif_checkboxes_nota_2
+  #  show if: show_3
   - showif yesnoradio: showif_yesnoradio 
     datatype: yesnoradio
     show if: show_3
