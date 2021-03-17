@@ -232,7 +232,7 @@ code: |
 ---
 template: github_token_error
 content: |
-  GitHub does not recognize [that personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token). You can try copying and pasting it again or you can try making a new one.
+  The permission levels of that [Github personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) are not sufficient. Are you sure it has 'repo' and 'workflow' level permissions? You can try copying and pasting it again or you can try [making a new one](https://github.com/settings/tokens).
 ---
 depends on: github_repo_not_found_error
 code: |
