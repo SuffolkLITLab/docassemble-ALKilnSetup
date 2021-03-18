@@ -80,7 +80,7 @@ subquestion: |
   
   We will need you to give us:
   
-  1. A [GitHub personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) with 'repo' level permissions.
+  1. A [GitHub personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) with 'repo' and 'workflow' level permissions.
   1. Your docassemble testing account's sign-in information. That can be your account if you want it to be.
 
   This tool will add some files to different folders in your interview's GitHub repository:
@@ -129,7 +129,7 @@ question: |
 subquestion: |
   In order to change files in your GitHub repository, we need permission. If you have permission to change the files of the repository, you can give us permission too.
   
-  To do that, create a [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token). You can delete the token any time after confirming the setup has worked. You can also use a new one anytime.
+  To do that, create a [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) that has 'repo' and 'workflow' level permissions. You can delete the token any time after confirming the setup has worked. You can also use a new one anytime.
 fields:
   - GitHub repository URL: installer.repo_url
     help: "The repository's URL will give us the name of the repo and its owner."
@@ -232,7 +232,7 @@ code: |
 ---
 template: github_token_error
 content: |
-  GitHub does not recognize [that personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token). You can try copying and pasting it again or you can try making a new one.
+  The permission levels of that [Github personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) are not sufficient. Are you sure it has 'repo' and 'workflow' level permissions? You can try copying and pasting it again or you can try [making a new one](https://github.com/settings/tokens).
 ---
 depends on: github_repo_not_found_error
 code: |

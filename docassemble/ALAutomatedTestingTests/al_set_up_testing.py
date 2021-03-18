@@ -199,7 +199,7 @@ class TestInstaller(DAObject):
     self.send_file( 'tests/features/example_test.feature', 'Add tests/features/example_test.feature', self.example_test_str )  # 2
     self.send_file( '.gitignore', 'Add .gitignore', self.gitignore_str )  # 3
     self.send_file( 'package.json', 'Add package.json', self.package_json_str )  # 4
-    self.send_file( '.github/workflow/run_form_tests.yml', 'Add r.github/workflow/run_form_tests.yml', self.run_form_tests_str )  # 5
+    self.send_file( '.github/workflows/run_form_tests.yml', 'Add r.github/workflows/run_form_tests.yml', self.run_form_tests_str )  # 5
     return self
   
   def send_file( self, path, msg, contents ):
@@ -234,7 +234,7 @@ class TestInstaller(DAObject):
 - [x] tests/features/example_test.feature
 - [x] .gitignore
 - [x] package.json
-- [x] .github/workflow/run_form_tests.yml
+- [x] .github/workflows/run_form_tests.yml
 '''  # TODO: Add issue # if desired
     response = self.repo.create_pull(base=base_name, head=head_name, title=title, body=description)
     self.pull_url = response.html_url
