@@ -195,13 +195,32 @@ class TestInstaller(DAObject):
     """Send files to folders in new branch in github.
     https://pygithub.readthedocs.io/en/latest/examples/Repository.html#create-a-new-file-in-the-repository'''
     # https://pygithub.readthedocs.io/en/latest/github_objects/Repository.html#github.Repository.Repository.create_file"""
-    self.repo.create_file('.env_example', 'Add .env_example', self.env_example_str, branch=self.branch_name)  # 1
-    self.repo.create_file('tests/features/example_test.feature', 'Add tests/features/example_test.feature', self.example_test_str, branch=self.branch_name)  # 2
-    self.repo.create_file('.gitignore', 'Add .gitignore', self.gitignore_str, branch=self.branch_name)  # 3
-    self.repo.create_file('package.json', 'Add package.json', self.package_json_str, branch=self.branch_name)  # 4
-    self.repo.create_file('.github/workflow/run_form_tests.yml', 'Add r.github/workflow/run_form_tests.yml', self.run_form_tests_str, branch=self.branch_name)  # 5
-    
+    self.send_file( '.env_example', 'Add .env_example', self.env_example_str )  # 1
+    self.send_file( 'tests/features/example_test.feature', 'Add tests/features/example_test.feature', self.example_test_str )  # 2
+    self.send_file( '.gitignore', 'Add .gitignore', self.gitignore_str )  # 3
+    self.send_file( 'package.json', 'Add package.json', self.package_json_str )  # 4
+    self.send_file( '.github/workflow/run_form_tests.yml', 'Add r.github/workflow/run_form_tests.yml', self.run_form_tests_str )  # 5
     return self
+  
+  def send_file( self, path, msg, contents ):
+    '''Either create a new file or update an existing file with the given data.
+       See https://stackoverflow.com/a/66673303/14144258.
+       TODO: Discuss removing `self` to make it data-based.
+       TODO: Shall we include the committer's user name, etc?'''
+    try:
+      # Try to create the file
+      self.repo.create_file( path, msg, contents, branch=self.branch_name )
+    except Exception as error:
+      # If a file already exists, update that file instead
+      if error.status == 422:
+        file = self.repo.get_contents( path )
+        self.repo.update_file( path, msg, contents, file.sha, branch=self.branch_name )
+      else:
+        # An undefined variable will make this error invisible as
+        # da has a special way of dealing with those.
+        raise error
+    
+    return self;
   
   def make_pull_request( self ):
     """Make a pull request with the new branch with changed files.
