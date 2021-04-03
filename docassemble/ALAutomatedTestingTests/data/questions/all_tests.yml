@@ -54,6 +54,8 @@ code: |
   buttons_other
   button_continue
   screen_features
+  signature_1
+  signature_2
   
   button_event_action
   end
@@ -196,6 +198,16 @@ subquestion: |
 terms: 
   term: |
     A term is a word that you click on if you don't know what the definition is.
+---
+id: first signature
+question: |
+  Signature 1
+signature: signature_1
+---
+id: second signature
+question: |
+  Signature 2
+signature: signature_2
 ---
 id: button event action
 question: |
