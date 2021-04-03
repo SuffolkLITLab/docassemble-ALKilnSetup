@@ -45,13 +45,11 @@ comment: |
   1. Should we test required fields? We do need unrequired ones for testing the story table
 ---
 objects:
-  - a_list: DAList.using(object_type=Individual, there_are_any=True)
+  - proxy_list: DAList.using(object_type=Individual, there_are_any=True)
 ---
 mandatory: True
 id: interview order
 code: |
-  a_list[0].name.first
-  a_list[1].name.first
   direct_standard_fields
   direct_showifs
   #object_checkboxes_test
@@ -59,6 +57,8 @@ code: |
   buttons_other
   button_continue
   screen_features
+  proxy_list[0].name.first
+  proxy_list[1].name.first
   signature_1
   signature_2
   
