@@ -136,42 +136,6 @@ fields:
     datatype: password
     help: "As long as you have permission to change the repository's files, your personal access token will give us permission to change them too."
 ---
-# By default, da will now allow editing of .feature files
-# https://github.com/jhpyle/docassemble/pull/394
-
-#id: files location
-#question: |
-#  Files
-#subquestion: |
-#  You can keep your test files in two places. This will affect how and where developers can edit them. We recommend picking just one location to keep things consistent.
-#  
-#  Where would you like to keep your test files?
-#fields:
-#  - The docassemble Sources folder: sources_folder
-#    datatype: yesno
-#  - note: |
-#      **Pros:**
-#      
-#      - Developers are often more familiar with editing code in the Playground.
-#      - Since tests will be updated at the same time as interview code, the developer has a chance to avoid working interviews failing just because the tests don't yet line up with the new code.
-#      - Developers can also edit the tests on their local machine.
-#      
-#      **Cons:**
-#      
-#      - The admin of your server must [set a server-wide configuration to allow `.feature` files to be edited](https://docassemble.org/docs/config.html#editable%20extensions).
-#  - The `tests/features` folder: tests_folder
-#    datatype: yesno
-#  - note: |
-#      **Pros:**
-#      
-#      - To set this up, you only have to finish this interview.
-#      - Developers can also edit the tests on their local machine.
-#      - Developers will still be able to edit the tests on your local machine.
-#      
-#      **Cons:**
-#      
-#      - Developers will not be able to edit the tests in the Playground.
----
 id: confirm info
 question: |
   Are you ready?
