@@ -197,7 +197,8 @@ class TestInstaller(DAObject):
     https://pygithub.readthedocs.io/en/latest/examples/Repository.html#create-a-new-file-in-the-repository'''
     # https://pygithub.readthedocs.io/en/latest/github_objects/Repository.html#github.Repository.Repository.create_file"""
     test_path = 'docassemble/' + self.package_name + '/data/sources/example_test.feature'
-    self.send_file( test_path, 'Add tests/features/example_test.feature', self.example_test_str )  # 2
+    test_commit_message = 'Add ' + test_path
+    self.send_file( test_path, test_commit_message, self.example_test_str )  # 2
     self.send_file( '.env_example', 'Add .env_example', self.env_example_str )  # 1
     self.send_file( '.gitignore', 'Add .gitignore', self.gitignore_str )  # 3
     self.send_file( 'package.json', 'Add package.json', self.package_json_str )  # 4
