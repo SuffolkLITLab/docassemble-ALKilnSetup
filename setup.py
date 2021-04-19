@@ -43,9 +43,9 @@ def find_package_data(where='.', package='', exclude=standard_exclude, exclude_d
     return out
 
 setup(name='docassemble.ALAutomatedTestingTests',
-      version='0.0.1',
+      version='0.1.0',
       description=('A docassemble extension for testing the AssemblyLine automated integrated testing framework.'),
-      long_description='# docassemble.ALAutomatedTestingTests\r\n\r\nA docassemble extension for testing the AssemblyLine automated integrated testing framework.\r\n\r\n# TODO\r\n## Testing the tester\r\n1. Add all fields in combination with show-ifs\r\n1. Add testing framework\r\n1. Add tests\r\n\r\n## Automating getting testing into your package\r\nUse the GitHub API to\r\n1. Make a secret\r\n1. Pull files the first time\r\n1. Update files thereafter',
+      long_description='# docassemble.ALAutomatedTestingTests\r\n\r\nA docassemble extension for testing the AssemblyLine automated integrated testing framework.\r\n\r\n# Functionality contained in this repo\r\n\r\n## Help set up automated integrated testing\r\n\r\nIn an online form, a developer can give permissions and info that will set up testing for a docassemble package. It requires a GitHub token with repo and workflow permissions. It will add necessary GitHub secrets, make a new branch, push files to the `sources` directory, and make a PR with that branch.\r\n\r\n### TODO\r\n1. Install interview on server and add link here.\r\n1. Improve error messages.\r\n1. Clarify instructions.\r\n\r\n## Test the testing framework\r\n\r\nProvide an interview with combinations of fields that will allow the testing framework to test its own functionality.\r\n\r\n### TODO\r\n1. See issues\r\n\r\n## TODO\r\n1. Add test generator to this repo.\r\n',
       long_description_content_type='text/markdown',
       author='',
       author_email='example@example.com',
