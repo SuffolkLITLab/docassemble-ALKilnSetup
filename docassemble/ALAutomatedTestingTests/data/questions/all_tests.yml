@@ -161,7 +161,9 @@ fields:
     show if: show_3
     choices: 
     - showif dropdown opt 1: showif_dropdown_1
-    - showif dropdown opt 2: showif_dropdown_4
+    - showif dropdown opt 2: showif_dropdown_2
+    - showif dropdown opt 3: showif_dropdown_3
+    - showif dropdown opt 4: showif_dropdown_4
 ---
 objects:
   - obj_chkbx_opt_1: DAObject
