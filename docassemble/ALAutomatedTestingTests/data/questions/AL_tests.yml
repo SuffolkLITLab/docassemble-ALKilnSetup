@@ -1,0 +1,19 @@
+metadata:
+  title: Test testing AssemblyLine-specific Steps
+  short title: Test ALKiln for AL
+  comment: Test the AssemblyLine automated integrated testing library for packages that use AssemblyLine itself
+---
+include:
+  - docassemble.AssemblyLine:al_package.yml
+---
+id: interview order
+mandatory: True
+code: |
+  users[0].name.first
+  users[0].address.address
+  end
+---
+id: end
+event: end
+question: Great test!
+---
