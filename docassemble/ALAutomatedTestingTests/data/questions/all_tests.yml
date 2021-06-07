@@ -212,7 +212,8 @@ continue button field: screen_features
 question: |
   Other screen features
 subquestion: | 
-  * [Link: reload the page](${ interview_url() }).
+  * [Link to external page](http://ecosia.org/). Its value is always the same.
+  * [Link: reload the page](${ interview_url() }). Its value changes.
   * {Term} (working).
   * {Broken term}.
 terms: 
