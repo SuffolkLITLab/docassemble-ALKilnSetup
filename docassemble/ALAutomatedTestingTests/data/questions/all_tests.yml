@@ -61,6 +61,7 @@ code: |
   proxy_list[1].name.first
   signature_1
   signature_2
+  see_simple_doc
   
   button_event_action
   end
@@ -238,6 +239,24 @@ action buttons:
   - label: Do not pass go
     action: end
     icon: laugh-wink
+---
+id: simple doc
+question: |
+  Document
+subquestion: |
+  [Tap to download](${ simple_doc.pdf.url_for( attachment=True ) })
+continue button field: see_simple_doc
+---
+id: simple attachment
+attachment:
+    variable name: simple_doc
+    pdf template file: simple.pdf
+    filename: simple-doc
+    skip undefined: True
+    editable: False
+    fields: 
+      - "proxy1_name_first": ${ proxy_list[0].name.first }
+      - "proxy1_signature": ${ proxy_list[0].signature }
 ---
 id: the end
 event: end
