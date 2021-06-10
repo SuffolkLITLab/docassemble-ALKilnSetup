@@ -3,6 +3,12 @@ metadata:
   short title: Test ALKiln
   comment: Test the automated integrated testing library for AssemblyLine
 ---
+# Necessary to tell us what the sought var is on each page
+# Every interview that wants testing will need to have an element like this
+default screen parts:
+  pre: |
+    <div data-variable="${ encode_name(str( user_info().variable )) }" id="sought_variable" aria-hidden="true" style="display: none;"></div>
+---
 # Do not edit this block
 comment: |
   # Fields to include
