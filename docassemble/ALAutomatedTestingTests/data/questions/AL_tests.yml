@@ -9,7 +9,7 @@ include:
 # Necessary to tell us what the sought var is on each page
 # Every interview that wants testing will need to have an element like this
 default screen parts:
-  pre: |
+  post: |
     <div data-variable="${ encode_name(str( user_info().variable )) }" id="sought_variable" aria-hidden="true" style="display: none;"></div>
 ---
 id: interview order
