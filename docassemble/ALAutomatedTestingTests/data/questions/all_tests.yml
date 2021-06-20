@@ -63,8 +63,7 @@ code: |
   buttons_other
   button_continue
   screen_features
-  proxy_list[0].name.first
-  proxy_list[1].name.first
+  proxy_list.gather()
   signature_1
   signature_2
   see_simple_doc
@@ -75,9 +74,15 @@ code: |
 id: proxy vars
 generic object: DAList
 question: |
-  Proxy vars
+  Proxy var ${ i + 1 }
 fields:
-  - Name of person in list: x[i].name.first
+  - ${ ordinal(i) } proxy name: x[i].name.first
+---
+id: is there another generic
+generic object: DAList
+question: |
+  Is there another proxy var?
+yesno: x.there_is_another
 ---
 id: direct standard fields
 continue button field: direct_standard_fields
