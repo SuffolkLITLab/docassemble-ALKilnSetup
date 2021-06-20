@@ -10,7 +10,7 @@ include:
 # Every interview that wants testing will need to have an element like this
 default screen parts:
   post: |
-    <div data-variable="${ encode_name(str( user_info().variable )) }" id="sought_variable" aria-hidden="true" style="display: none;"></div>
+    <div data-variable="${ encode_name(str( user_info().variable )) }" id="trigger" aria-hidden="true" style="display: none;"></div>
 ---
 id: interview order
 mandatory: True
