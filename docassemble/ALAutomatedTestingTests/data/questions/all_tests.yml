@@ -50,12 +50,10 @@ comment: |
   # Questions
   1. Should we test required fields? We do need unrequired ones for testing the story table
 ---
-objects:
-  - proxy_list: DAList.using(object_type=Individual, there_are_any=True)
----
 mandatory: True
 id: interview order
 code: |
+  double_quote_dict["double_quote_key"]
   direct_standard_fields
   direct_showifs
   #object_checkboxes_test
@@ -71,18 +69,24 @@ code: |
   button_event_action
   end
 ---
-id: proxy vars
-generic object: DAList
+id: group of complex fields
 question: |
-  Proxy var ${ i + 1 }
+  Some complex fields
 fields:
-  - ${ ordinal(i) } proxy name: x[i].name.first
----
-id: is there another generic
-generic object: DAList
-question: |
-  Is there another proxy var?
-yesno: x.there_is_another
+  - Singly quoted key: single_quote_dict['single_quote_key']
+    datatype: checkboxes
+    required: False
+    choices:
+      - 1: sq_one
+      - 2: sq_two
+      - 3: sq_three
+  - Doubly quoted key: double_quote_dict["double_quote_key"]
+    datatype: checkboxes
+    required: False
+    choices:
+      - 1: dq_one
+      - 2: dq_two
+      - 3: dq_three
 ---
 id: direct standard fields
 continue button field: direct_standard_fields
@@ -231,6 +235,26 @@ subquestion: |
 terms: 
   term: |
     A term is a word that you click on if you don't know what the definition is.
+---
+objects:
+  - proxy_list: DAList.using(object_type=Individual, there_are_any=True)
+---
+id: proxy vars
+generic object: DAList
+question: |
+  Proxy var ${ i + 1 }
+fields:
+  - ${ ordinal(i) } proxy name: x[i].name.first
+---
+id: is there another generic
+generic object: DAList
+question: |
+  Is there another proxy var?
+yesno: x.there_is_another
+---
+objects:
+  - single_quote_dict: DADict
+  - double_quote_dict: DADict
 ---
 id: first signature
 question: |
