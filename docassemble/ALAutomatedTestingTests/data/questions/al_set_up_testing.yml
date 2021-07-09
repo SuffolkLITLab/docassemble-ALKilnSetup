@@ -31,6 +31,10 @@ code: |
   
   intro
   
+  if will_test_on_this_server:
+    if not logged_into_test_account_on_interview_server:
+      log_into_test_account
+  
   # da stuff
   installer.password
   set_da_info
@@ -102,7 +106,7 @@ subquestion: |
   ---
   
   Your answers will be encrypted end-to-end and on the server. No one other than you will have access to them.
-
+  
 continue button field: intro
 ---
 template: files_list
@@ -119,10 +123,44 @@ content: |
   * PLAYGROUND_PASSWORD
   * PLAYGROUND_ID
 ---
+id: on testing server
+question: |
+  Before we start
+subquestion: |
+  Look at the url of this page. Is this the server where the tests will run?
+yesno: will_test_on_this_server
+---
+id: logged_into_test_account_on_interview_server
+question: |
+  What account are you logged in on?
+subquestion: |
+  Are you logged into the docassemble account where the tests will run?
+yesno: logged_into_test_account
+---
+id: log_into_test_account
+question: |
+  Before you continue
+subquestion: |
+  You will probably need to log into the account where the tests will run. Since this form is on the same server and you are not logged into that account, you can do one of 3 things:
+  
+  * Open an incognito window and log into that account there.
+  * Go to a different browser to log into that account.
+  * Leave this interview, log into the account, and start this interview again.
+
+  Tap to continue when you have done one of those.
+
+continue button field: log_into_test_account
+---
 id: server info
 question: |
   Docassemble
 subquestion: |
+  These tests will create projects in an account on your docassemble server, pull in the GitHub code, and run the interview.
+  
+  Pick an account. It can be your own or one you have created just for testing. Log into that account now.
+  
+  
+  
   Answer the questions below using the information for the docassemble account that should run the tests. You can use your own account as the testing account.
 fields:
   - Testing account's email: installer.email
