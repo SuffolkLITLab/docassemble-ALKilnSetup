@@ -103,7 +103,7 @@ subquestion: |
 
   ${ files_list }
   
-  It will add 3 [GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets) to the repository:
+  It will add 3 [GitHub "SECRETS"](https://docs.github.com/en/actions/reference/encrypted-secrets) to the repository to store encrypted information safely:
   
   ${ secrets_list }
   
@@ -186,15 +186,23 @@ id: github auth
 question: |
   GitHub authorization
 subquestion: |
-  In order to change files in your GitHub repository, we need permission. If you have permission to change the files of the repository, you can give us permission too.
+  You must be an admin on the GitHub repository so you can temporarily give this form permission to add files and set "SECRETS". Once you are logged in as an admin:
   
-  To do that, create a [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) that has 'repo' and 'workflow' level permissions. You can delete the token later.
+  1. Start making a [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) for your GitHub account.
+  1. Tap the checkbox for 'workflow' permissions. That should also trigger 'repo' permissions. This form needs both.
+  1. Finish creating the token.
+  1. Copy the token and paste it below.
 fields:
-  - GitHub repository URL: installer.repo_url
-    help: "The repository's URL will give us the name of the repo and its owner."
   - Personal access token: installer.token
     datatype: password
-    help: "As long as you have permission to change the repository's files, your personal access token will give us permission to change them too."
+    help: |
+      The token must have 'repo' and 'workflow' permissions.
+  - note: |
+      We also need the GitHub repository URL of the package. Example:[BR]
+      `https://github.com/LawMagic/docassemble-GreatForm`
+  - GitHub URL: installer.repo_url
+    help: |
+      The repository's URL will give us the name of the repo and its owner.
 ---
 id: confirm info
 question: |
