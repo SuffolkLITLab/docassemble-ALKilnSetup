@@ -206,34 +206,52 @@ fields:
 ---
 id: confirm info
 question: |
-  Are you ready?
+  Is all this information correct?
+subquestion: |
+  You will not be able to come back here after continuing.
 review:
   - Edit: installer.playground_url
     button: |
-      #####Docassemble info
+      #####Docassemble account and server:
       
-      **Email of testing account**:[BR]
+      * **Account email**:[BR]
       ${ installer.email }
       
-      **Playground ID**: ${ installer.playground_id }
+      * **Account password**: Not shown
       
-      **URL for running testable interview**:[BR]
+      * **URL for running testable interview**:[BR]
       [${ installer.playground_url }](${ installer.playground_url })
+      
+      ######**Your answers also gave us this information:**
+      
+      * **Account Playground ID**: ${ installer.playground_id }
+      
+      * **Server to test on**:[BR]
+      ${ installer.server_url }
+      
+      ---
   - Edit: installer.repo_url
     button: |
-      #####GitHub info
-      **Your username**:[BR]
+      #####GitHub repo and permission
+      
+      * **Repository URL**:[BR]
+      [https://github.com/${ installer.owner_name }/${ installer.repo_name }](https://github.com/${ installer.owner_name }/${ installer.repo_name })
+      
+      * **Admin personal token**: Not shown
+      
+      ######**Your answers also gave us this information:**
+      
+      * **Your username**:[BR]
       ${ installer.user_name }
       
-      **Package name with correct capitalization**:[BR]
+      * **Owner of the repository**:[BR]
+      ${ installer.owner_name }
+      
+      * **Package name**:[BR]
       ${ installer.package_name }
-      
-      **Path to testing files in GitHub**:[BR]
-      `${ 'docassemble/' + installer.package_name + '/data/sources' }`
-      
-      **Repository URL**:[BR]
-      [https://github.com/${ installer.owner_name }/${ installer.repo_name }](https://github.com/${ installer.owner_name }/${ installer.repo_name })
+  - note: You will not be able to come back to this page.
 continue button field: is_ready
+continue button label: Finish
 ---
 # TODO: Add link to PR if it was made
 # TODO: Add link to actions page if it was merged with default

@@ -36,3 +36,9 @@ ul {
   text-decoration: underline dashed;
   text-underline-offset: 2px;
 }
+
+.da-review ul {
+  list-style: none;
+  padding: .5em;
+  border: 4px solid #55555555;
+}
