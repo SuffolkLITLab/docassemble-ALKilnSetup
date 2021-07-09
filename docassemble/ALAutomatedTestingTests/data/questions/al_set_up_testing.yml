@@ -73,6 +73,9 @@ code: |
   installer.update_github()
   update_github = True
 ---
+auto terms:
+  - the docassemble account where the tests will run: Remember that **you can use your own account** and you can always change this later.
+---
 # TODO: Add link to docs where we explain how the library makes a project, etc.
 # TODO: Add links to the actual github repo and files and folders
 # TODO: only show 'other than you' if the person is logged in
@@ -86,10 +89,11 @@ subquestion: |
   
   ---
   
-  **Make sure you:**
+  **Make sure:**
   
-  * Have admin permissions on the project's GitHub repository.
-  * Are logged into the docassemble account that will run the tests. **You can use your own account.**
+  * The package is in a GitHub repository.
+  * You have admin permissions on the package's GitHub repository.
+  * You are logged into the docassemble account where the tests will run.
   
   ---
 
@@ -113,9 +117,9 @@ template: files_list
 content: |
   * `tests/features/example_test.feature` is a very simple example of a test.
   * `.github/workflows/run_interview_tests.yml` tells GitHub when and how to run the tests.
-  * `package.json` lets GitHub load other packages needed to run the tests.
+  * `package.json` lets GitHub load other packages it needs to run the tests.
   * `.gitignore` is for developers who want to work in their local environment.
-  * `.env-example` can help guide developers who want to work in their local environment set up environment variables.
+  * `.env-example` can help guide developers who want to work in their local environment to set up the environment variables.
 ---
 template: secrets_list
 content: |
@@ -134,10 +138,8 @@ id: logged_into_test_account_on_interview_server
 question: |
   What account are you logged in on?
 subquestion: |
-  Are you logged into {the docassemble account where the tests will run}?
+  Are you logged into the docassemble account where the tests will run?
 yesno: logged_into_test_account_on_interview_server
-terms: 
-  - the docassemble account where the tests will run: Remember that **you can use your own account** and you can always change this later.
 ---
 id: log_into_test_account
 question: |
@@ -157,25 +159,27 @@ id: server info
 question: |
   Docassemble
 subquestion: |
-  These tests will create projects in an account on your docassemble server, pull in the GitHub code, and run the interview.
+  These tests will create Projects in an account on your docassemble server, pull in the GitHub code, and run the interviews.
   
-  Pick an account. It can be your own or one you have created just for testing. Log into that account now.
+  Next:
   
+  1. Decide on the docassemble account where the tests will run.
+  1. Make sure you are logged into that account.
+  1. [Make a new Project and pull in GitHub code for the package](https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/github#get-github-code-into-your-playground). The Project name does not matter.
   
-  
-  Answer the questions below using the information for the docassemble account that should run the tests. You can use your own account as the testing account.
+  Answer the questions below for the account. If you want to use your own account, put your own docassemble email and password below.
 fields:
-  - Testing account's email: installer.email
+  - Email: installer.email
     datatype: email
-  - Testing account's password: installer.password
+  - Password: installer.password
     datatype: password
   - note: |
-      From inside the testing account, hit 'Save and Run' in the YAML file you want to test. What is the URL in the address bar? Example of a valid URL:[BR]
-      `https://dev.court-wizards.org/interview?i=docassemble.playground222ProjectName%3Asome_file.yml`
+      In the Playground, open the YAML file for which you want automated tests. Run it. What is the URL in the address bar? Example:[BR]
+      `https://dev.legal.org/interview?i=docassemble.playground22ProjectName%3Asome_file.yml`
   - Interview URL: installer.playground_url
-terms:
-  Interview URL: |
-    The interview URL will give us the account's Playground ID and the address of the server that the account is on.
+auto terms:
+  - the URL in the address bar: |
+      The interview URL will give us the account's Playground ID and the address of the server that the account is on.    
 ---
 # TODO: Add instructions on how to find the GitHub repo url on Packages page (maybe point to docs)
 id: github auth

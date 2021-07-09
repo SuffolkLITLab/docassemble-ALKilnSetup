@@ -17,12 +17,11 @@ ol li:before {
   content: counter(mycounter);
   counter-increment: mycounter;
   position: absolute;
-  top: 0.15em;
   left: -2em;
   width: 1.5em;
   height: 1.3em;
   line-height: 1.3em;
-  border-radius: 50%;
+  border-radius: 2px;
   color: #212529;
   background: white;
   text-align: center;
