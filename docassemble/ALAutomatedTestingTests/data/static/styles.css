@@ -32,3 +32,8 @@ ol li:before {
 ul {
   padding-inline-start: 1em;
 }
+
+.daterm, .daterm:hover {
+  text-decoration: underline dashed;
+  text-underline-offset: 2px;
+}

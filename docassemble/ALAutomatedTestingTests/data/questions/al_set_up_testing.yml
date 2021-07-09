@@ -134,8 +134,10 @@ id: logged_into_test_account_on_interview_server
 question: |
   What account are you logged in on?
 subquestion: |
-  Are you logged into the docassemble account where the tests will run?
-yesno: logged_into_test_account
+  Are you logged into {the docassemble account where the tests will run}?
+yesno: logged_into_test_account_on_interview_server
+terms: 
+  - the docassemble account where the tests will run: Remember that **you can use your own account** and you can always change this later.
 ---
 id: log_into_test_account
 question: |
