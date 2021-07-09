@@ -22,8 +22,13 @@ ol li:before {
   width: 1.5em;
   height: 1.3em;
   line-height: 1.3em;
-  border-radius: 2px;
-  color: #fff;
-  background: #212529de;
+  border-radius: 50%;
+  color: #212529;
+  background: white;
   text-align: center;
+  border: 1px solid #212529;
+}
+
+ul {
+  padding-inline-start: 1em;
 }

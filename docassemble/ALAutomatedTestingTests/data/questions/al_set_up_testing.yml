@@ -76,32 +76,48 @@ id: intro
 question: |
   Set up AL automated integrated testing
 subquestion: |
-  This interview will help you set up automated integrated GitHub testing for your docassemble project.
-  
-  Your answers will be encrypted end-to-end and on the server. No one other than you will have access to it. You **must** make sure your GitHub account has permission to change files in the correct repository.
+  This interview will help you set up automated integrated GitHub testing for a docassemble project.
 
-  :clock: This could take about 20 minutes
+  :clock: This could take about 40 minutes
   
-  We will need you to give us:
+  ---
   
-  1. A [GitHub personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) with 'repo' and 'workflow' level permissions.
-  1. Your docassemble testing account's sign-in information. You can use your own account if you want.
+  **Make sure you:**
+  
+  * Have admin permissions on the project's GitHub repository.
+  * Are logged into the docassemble account that will run the tests. **You can use your own account.**
+  
+  ---
 
-  This tool will add some files to different folders in your interview's GitHub repository:
+  **Sneak Peak**
 
-  1. `tests/features/example_test.feature` is a very simple example of a test.
-  1. `.github/workflows/run_interview_tests.yml` tells GitHub when and how to run the tests.
-  1. `package.json` tells GitHub what packages the tests need.
-  1. `.gitignore` is for developers who want to work in their local environment.
-  1. `.env-example` can help guide developers who want to work in their local environment.
+  This tool will add folders and files to the project:
+
+  ${ files_list }
   
-  It will also add 3 [GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets):
+  It will add 3 [GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets) to the repository:
   
-  1. PLAYGROUND_EMAIL
-  1. PLAYGROUND_PASSWORD
-  1. PLAYGROUND_ID
+  ${ secrets_list }
+  
+  ---
+  
+  Your answers will be encrypted end-to-end and on the server. No one other than you will have access to them.
 
 continue button field: intro
+---
+template: files_list
+content: |
+  * `tests/features/example_test.feature` is a very simple example of a test.
+  * `.github/workflows/run_interview_tests.yml` tells GitHub when and how to run the tests.
+  * `package.json` lets GitHub load other packages needed to run the tests.
+  * `.gitignore` is for developers who want to work in their local environment.
+  * `.env-example` can help guide developers who want to work in their local environment set up environment variables.
+---
+template: secrets_list
+content: |
+  * PLAYGROUND_EMAIL
+  * PLAYGROUND_PASSWORD
+  * PLAYGROUND_ID
 ---
 id: server info
 question: |
