@@ -50,7 +50,7 @@ code: |
   update_github
   
   #instructions
-  next_steps
+  force_ask( 'next_steps' )
 ---
 code: |
   installer.set_da_info()
@@ -83,7 +83,7 @@ id: intro
 question: |
   Set up AL automated integrated testing
 subquestion: |
-  This interview will help you set up automated integrated GitHub testing for a docassemble project.
+  This interview will help you set up automated integrated GitHub testing for a docassemble package.
 
   :clock: This could take about 40 minutes
   
@@ -249,42 +249,67 @@ review:
       
       * **Package name**:[BR]
       ${ installer.package_name }
-  - note: You will not be able to come back to this page.
+  - note: Continue when you are ready. You will not be able to come back to this page.
 continue button field: is_ready
 continue button label: Finish
 ---
-# TODO: Add link to PR if it was made
-# TODO: Add link to actions page if it was merged with default
-# TODO: Add link to documentation (maybe put instructions for failing runs in there)
-# TODO: Use the github feedback functionality AL provides
+
+---
 event: next_steps
+prevent going back: True
 question: |
   Next steps
 subquestion: |
-  Follow the instructions below to finish installing your automated integrated testing.
+  This should have created a [Pull Request in the package's GitHub repository](${ installer.pull_url }). New folders and files should have been added to the package:
+  
+  ${ files_list }
+  
+  Also, 3 [GitHub "SECRETS"](https://docs.github.com/en/actions/reference/encrypted-secrets) were set to store encrypted docassemble login information safely:
+  
+  ${ secrets_list }
+  
+  ---
+  
+  To finish setup:
 
-  % if defined( 'installer.pull_url' ):
-  1. Check [the pull request](${ installer.pull_url }) and merge it in if it looks good.
-  1. Once you've merged your pull request into your default branch (usually 'main' or 'master') [go to your actions page](https://github.com/${ installer.owner_name }/${ installer.repo_name }/actions) to see the first example test being run.
-  % else:
-  1. [Go to your actions page](https://github.com/${ installer.owner_name }/${ installer.repo_name }/actions) to see the example test being run.
-  % endif
-  
-  If the test fails the first time, [rerun the test (job)](https://docs.github.com/en/actions/managing-workflow-runs/re-running-a-workflow). If it fails again:
-  
-  1. Check the .github/workflows/run_interview_tests.yml `env:` section to make sure your docassemble server name is right.
-  1. If it is wrong, you can [edit the file in GitHub](https://docs.github.com/en/github/managing-files-in-a-repository/editing-files-in-your-repository).
-  1. [Edit the values](https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-a-repository) of [the repository secrets](https://github.com/${ installer.owner_name }/${ installer.repo_name }/secrets) manually. The fields will be blank - GitHub will not let you see the old values as that would be a breach of security. Make sure that the email address, password, and id are for the correct account on the correct server. 
-  1. [Run the test manually](https://docs.github.com/en/actions/managing-workflow-runs/manually-running-a-workflow#running-a-workflow-on-github).
-  1. If tests still fail, [see if someone has posted a related issue](https://github.com/plocket/docassemble-ALAutomatedTestingTests/issues) in our repository. If not, [file a new issue](https://github.com/plocket/docassemble-ALAutomatedTestingTests/issues/new) that includes the link to the manual test that was run. Leave that test alone so others can see what's going on. Avoid 'rerunning' that job.
-  
-  When that first test run is over, see if you can [run the workflow manually from the actions menu](https://docs.github.com/en/actions/managing-workflow-runs/manually-running-a-workflow#running-a-workflow-on-github).
+  1. [Go to your actions page](https://github.com/${ installer.owner_name }/${ installer.repo_name }/actions) to see the first test being run. It may take a minute, but if all the information was correct it should pass and get a green checkmark.
+  1. Go to [the pull request](${ installer.pull_url }).
+  1. [Request a review](https://docs.github.com/en/github/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/requesting-a-pull-request-review) of that PR or just merge it.
+  1. If the test fails the first time and gets a red "x", [rerun the test (a.k.a. the job)](https://docs.github.com/en/actions/managing-workflow-runs/re-running-a-workflow). If it fails again, contact us.
+  1. Delete the [personal access token](https://github.com/settings/tokens) you created.
 
-  If everything passes, all should be well and you should be ready to create your first tests in your docassemble Sources folder.
+  ---
   
-  Delete the [personal access token](https://github.com/settings/tokens) you created.
+  Write your first test:
   
-  If you have some feedback, we would love to hear from you. [Make an issue in our repository](https://github.com/plocket/docassemble-ALAutomatedTestingTests/issues/new) to tell us about it.
+  1. Pull the new code into a new Project.
+  1. In the Playground, go to your Sources folder.
+  1. Add a new file called 'interview_loads.feature'.
+  1. Copy this code into the example file:
+  
+        <pre>
+        @loads
+        Feature: Interview loads
+
+        Scenario: _____ loads with no error
+          Given I start the interview at "_____"
+        </pre>
+
+  5. Replace `_____` with the name of the YAML file you're testing.
+  1. Save the file.
+  1. On your Packages page Sources section, select the file.
+  1. Save the package.
+  1. Commit the change to GitHub on a new branch.
+  1. [Go to your actions page](https://github.com/${ installer.owner_name }/${ installer.repo_name }/actions) and explore.
+  1. If it passes, make a pull request, request a review, and get the branch merged in.
+
+  ---
+  
+  You can read some rough docs at [https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/automated_integrated_testing](https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/automated_integrated_testing/).
+  
+  ---
+  
+  If you have some feedback, we would love to hear from you. [Make an "issue" in our repository](https://github.com/plocket/docassemble-ALAutomatedTestingTests/issues/new) or let us know in chat!
 buttons:
   - Restart: restart
 comment: |
@@ -351,7 +376,7 @@ code: |
 ---
 template: github_access_error
 content: |
-  The user **${ installer.user_name }** does not have access to change the files in the **${ installer.repo_name }** repository owned by the owner **${ installer.owner_name }**. You can ask the admin to give correct access.
+  The user **${ installer.user_name }** does not have admin access to change the files or ["SECRETS"](https://docs.github.com/en/actions/reference/encrypted-secrets) in the **${ installer.repo_name }** repository owned by the owner **${ installer.owner_name }**. You can ask the admin to give correct access.
 ---
 depends on: github_branch_name_error
 code: |
