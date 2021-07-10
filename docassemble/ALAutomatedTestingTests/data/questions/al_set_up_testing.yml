@@ -289,7 +289,7 @@ subquestion: |
   
         <pre>
       @load
-      Feature: Interview loads
+      Feature: Interviews load
 
         Scenario: \\_\\_\\_\\_ loads with no error
           Given I start the interview at "\\_\\_\\_\\_"
