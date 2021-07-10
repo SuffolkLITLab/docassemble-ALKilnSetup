@@ -291,11 +291,11 @@ subquestion: |
         @loads
         Feature: Interview loads
 
-        Scenario: _____ loads with no error
-          Given I start the interview at "_____"
+        Scenario: \\_\\_\\_\\_ loads with no error
+          Given I start the interview at "\\_\\_\\_\\_"
         </pre>
 
-  5. Replace `_____` with the name of the YAML file you're testing.
+  5. Replace `____` with the name of the YAML file you're testing.
   1. Save the file.
   1. On your Packages page Sources section, select the file.
   1. Save the package.
