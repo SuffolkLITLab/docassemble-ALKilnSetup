@@ -288,8 +288,8 @@ subquestion: |
   1. Copy this code into the example file:
   
         <pre>
-        @loads
-        Feature: Interview loads
+      @load
+      Feature: Interview loads
 
         Scenario: \\_\\_\\_\\_ loads with no error
           Given I start the interview at "\\_\\_\\_\\_"
