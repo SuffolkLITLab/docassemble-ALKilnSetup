@@ -31,6 +31,10 @@ code: |
   
   intro
   
+  if will_test_on_this_server:
+    if not logged_into_test_account_on_interview_server:
+      log_into_test_account
+  
   # da stuff
   installer.password
   set_da_info
@@ -46,7 +50,7 @@ code: |
   update_github
   
   #instructions
-  next_steps
+  force_ask( 'next_steps' )
 ---
 code: |
   installer.set_da_info()
@@ -69,6 +73,9 @@ code: |
   installer.update_github()
   update_github = True
 ---
+auto terms:
+  - the docassemble account where the tests will run: Remember that **you can use your own account** and you can always change this later.
+---
 # TODO: Add link to docs where we explain how the library makes a project, etc.
 # TODO: Add links to the actual github repo and files and folders
 # TODO: only show 'other than you' if the person is logged in
@@ -76,129 +83,233 @@ id: intro
 question: |
   Set up AL automated integrated testing
 subquestion: |
-  This interview will help you set up automated integrated GitHub testing for your docassemble project.
-  
-  Your answers will be encrypted end-to-end and on the server. No one other than you will have access to it. You **must** make sure your GitHub account has permission to change files in the correct repository.
+  This interview will help you set up automated integrated GitHub testing for a docassemble package.
 
-  :clock: This could take about 20 minutes
+  :clock: This could take about 40 minutes
   
-  We will need you to give us:
+  ---
   
-  1. A [GitHub personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) with 'repo' and 'workflow' level permissions.
-  1. Your docassemble testing account's sign-in information. You can use your own account if you want.
+  **Make sure:**
+  
+  * The package is in a GitHub repository.
+  * You have admin permissions on the package's GitHub repository.
+  * You are logged into the docassemble account where the tests will run.
+  
+  ---
 
-  This tool will add some files to different folders in your interview's GitHub repository:
+  **Sneak Peak**
 
-  1. `tests/features/example_test.feature` is a very simple example of a test.
-  1. `.github/workflows/run_interview_tests.yml` tells GitHub when and how to run the tests.
-  1. `package.json` tells GitHub what packages the tests need.
-  1. `.gitignore` is for developers who want to work in their local environment.
-  1. `.env-example` can help guide developers who want to work in their local environment.
-  
-  It will also add 3 [GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets):
-  
-  1. PLAYGROUND_EMAIL
-  1. PLAYGROUND_PASSWORD
-  1. PLAYGROUND_ID
+  This tool will add folders and files to the project:
 
+  ${ files_list }
+  
+  It will add 3 [GitHub "SECRETS"](https://docs.github.com/en/actions/reference/encrypted-secrets) to the repository to store encrypted information safely:
+  
+  ${ secrets_list }
+  
+  ---
+  
+  Your answers will be encrypted end-to-end and on the server. No one other than you will have access to them.
+  
 continue button field: intro
+---
+template: files_list
+content: |
+  * `tests/features/example_test.feature` is a very simple example of a test.
+  * `.github/workflows/run_interview_tests.yml` tells GitHub when and how to run the tests.
+  * `package.json` lets GitHub load other packages it needs to run the tests.
+  * `.gitignore` is for developers who want to work in their local environment.
+  * `.env-example` can help guide developers who want to work in their local environment to set up the environment variables.
+---
+template: secrets_list
+content: |
+  * PLAYGROUND_EMAIL
+  * PLAYGROUND_PASSWORD
+  * PLAYGROUND_ID
+---
+id: on testing server
+question: |
+  Before we start
+subquestion: |
+  Look at the url of this page. Is this the server where the tests will run?
+yesno: will_test_on_this_server
+---
+id: logged_into_test_account_on_interview_server
+question: |
+  What account are you logged in on?
+subquestion: |
+  Are you logged into the docassemble account where the tests will run?
+yesno: logged_into_test_account_on_interview_server
+---
+id: log_into_test_account
+question: |
+  Before you continue
+subquestion: |
+  You will probably need to log into the account where the tests will run. Since this form is on the same server and you are not logged into that account, you can do one of 3 things:
+  
+  * Open an incognito window and log into that account there.
+  * Go to a different browser to log into that account.
+  * Leave this interview, log into the account, and start this interview again.
+
+  Tap to continue when you have done one of those.
+
+continue button field: log_into_test_account
 ---
 id: server info
 question: |
   Docassemble
 subquestion: |
-  Answer the questions below using the information for the docassemble account that should run the tests. You can use your own account as the testing account.
+  These tests will create Projects in an account on your docassemble server, pull in the GitHub code, and run the interviews.
+  
+  Next:
+  
+  1. Decide on the docassemble account where the tests will run.
+  1. Make sure you are logged into that account.
+  1. [Make a new Project and pull in GitHub code for the package](https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/github#get-github-code-into-your-playground). The Project name does not matter.
+  
+  Answer the questions below for the account. If you want to use your own account, put your own docassemble email and password below.
 fields:
-  - Testing account's email: installer.email
+  - Email: installer.email
     datatype: email
-  - Testing account's password: installer.password
+  - Password: installer.password
     datatype: password
   - note: |
-      From inside the testing account, hit 'Save and Run' in the YAML file you want to test. What is the URL in the address bar? Example of a valid URL:[BR]
-      `https://dev.court-wizards.org/interview?i=docassemble.playground222ProjectName%3Asome_file.yml`
+      In the Playground, open the YAML file for which you want automated tests. Run it. What is the URL in the address bar? Example:[BR]
+      `https://dev.legal.org/interview?i=docassemble.playground22ProjectName%3Asome_file.yml`
   - Interview URL: installer.playground_url
-terms:
-  Interview URL: |
-    The interview URL will give us the account's Playground ID and the address of the server that the account is on.
+auto terms:
+  - the URL in the address bar: |
+      The interview URL will give us the account's Playground ID and the address of the server that the account is on.    
 ---
 # TODO: Add instructions on how to find the GitHub repo url on Packages page (maybe point to docs)
 id: github auth
 question: |
   GitHub authorization
 subquestion: |
-  In order to change files in your GitHub repository, we need permission. If you have permission to change the files of the repository, you can give us permission too.
+  You must be an admin on the GitHub repository so you can temporarily give this form permission to add files and set "SECRETS". Once you are logged in as an admin:
   
-  To do that, create a [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) that has 'repo' and 'workflow' level permissions. You can delete the token later.
+  1. Start making a [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) for your GitHub account.
+  1. Tap the checkbox for 'workflow' permissions. That should also trigger 'repo' permissions. This form needs both.
+  1. Finish creating the token.
+  1. Copy the token and paste it below.
 fields:
-  - GitHub repository URL: installer.repo_url
-    help: "The repository's URL will give us the name of the repo and its owner."
   - Personal access token: installer.token
     datatype: password
-    help: "As long as you have permission to change the repository's files, your personal access token will give us permission to change them too."
+    help: |
+      The token must have 'repo' and 'workflow' permissions.
+  - note: |
+      We also need the GitHub repository URL of the package. Example:[BR]
+      `https://github.com/LawMagic/docassemble-GreatForm`
+  - GitHub URL: installer.repo_url
+    help: |
+      The repository's URL will give us the name of the repo and its owner.
 ---
 id: confirm info
 question: |
-  Are you ready?
+  Is all this information correct?
+subquestion: |
+  You will not be able to come back here after continuing.
 review:
   - Edit: installer.playground_url
     button: |
-      #####Docassemble info
+      #####Docassemble account and server:
       
-      **Email of testing account**:[BR]
+      * **Account email**:[BR]
       ${ installer.email }
       
-      **Playground ID**: ${ installer.playground_id }
+      * **Account password**: Not shown
       
-      **URL for running testable interview**:[BR]
+      * **URL for running testable interview**:[BR]
       [${ installer.playground_url }](${ installer.playground_url })
+      
+      ######**Your answers also gave us this information:**
+      
+      * **Account Playground ID**: ${ installer.playground_id }
+      
+      * **Server to test on**:[BR]
+      ${ installer.server_url }
+      
+      ---
   - Edit: installer.repo_url
     button: |
-      #####GitHub info
-      **Your username**:[BR]
+      #####GitHub repo and permission
+      
+      * **Repository URL**:[BR]
+      [https://github.com/${ installer.owner_name }/${ installer.repo_name }](https://github.com/${ installer.owner_name }/${ installer.repo_name })
+      
+      * **Admin personal token**: Not shown
+      
+      ######**Your answers also gave us this information:**
+      
+      * **Your username**:[BR]
       ${ installer.user_name }
       
-      **Package name with correct capitalization**:[BR]
+      * **Owner of the repository**:[BR]
+      ${ installer.owner_name }
+      
+      * **Package name**:[BR]
       ${ installer.package_name }
-      
-      **Path to testing files in GitHub**:[BR]
-      `${ 'docassemble/' + installer.package_name + '/data/sources' }`
-      
-      **Repository URL**:[BR]
-      [https://github.com/${ installer.owner_name }/${ installer.repo_name }](https://github.com/${ installer.owner_name }/${ installer.repo_name })
+  - note: Continue when you are ready. You will not be able to come back to this page.
 continue button field: is_ready
+continue button label: Finish
 ---
-# TODO: Add link to PR if it was made
-# TODO: Add link to actions page if it was merged with default
-# TODO: Add link to documentation (maybe put instructions for failing runs in there)
-# TODO: Use the github feedback functionality AL provides
+
+---
 event: next_steps
+prevent going back: True
 question: |
   Next steps
 subquestion: |
-  Follow the instructions below to finish installing your automated integrated testing.
+  This should have created a [Pull Request in the package's GitHub repository](${ installer.pull_url }). New folders and files should have been added to the package:
+  
+  ${ files_list }
+  
+  Also, 3 [GitHub "SECRETS"](https://docs.github.com/en/actions/reference/encrypted-secrets) were set to store encrypted docassemble login information safely:
+  
+  ${ secrets_list }
+  
+  ---
+  
+  To finish setup:
 
-  % if defined( 'installer.pull_url' ):
-  1. Check [the pull request](${ installer.pull_url }) and merge it in if it looks good.
-  1. Once you've merged your pull request into your default branch (usually 'main' or 'master') [go to your actions page](https://github.com/${ installer.owner_name }/${ installer.repo_name }/actions) to see the first example test being run.
-  % else:
-  1. [Go to your actions page](https://github.com/${ installer.owner_name }/${ installer.repo_name }/actions) to see the example test being run.
-  % endif
-  
-  If the test fails the first time, [rerun the test (job)](https://docs.github.com/en/actions/managing-workflow-runs/re-running-a-workflow). If it fails again:
-  
-  1. Check the .github/workflows/run_interview_tests.yml `env:` section to make sure your docassemble server name is right.
-  1. If it is wrong, you can [edit the file in GitHub](https://docs.github.com/en/github/managing-files-in-a-repository/editing-files-in-your-repository).
-  1. [Edit the values](https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-a-repository) of [the repository secrets](https://github.com/${ installer.owner_name }/${ installer.repo_name }/secrets) manually. The fields will be blank - GitHub will not let you see the old values as that would be a breach of security. Make sure that the email address, password, and id are for the correct account on the correct server. 
-  1. [Run the test manually](https://docs.github.com/en/actions/managing-workflow-runs/manually-running-a-workflow#running-a-workflow-on-github).
-  1. If tests still fail, [see if someone has posted a related issue](https://github.com/plocket/docassemble-ALAutomatedTestingTests/issues) in our repository. If not, [file a new issue](https://github.com/plocket/docassemble-ALAutomatedTestingTests/issues/new) that includes the link to the manual test that was run. Leave that test alone so others can see what's going on. Avoid 'rerunning' that job.
-  
-  When that first test run is over, see if you can [run the workflow manually from the actions menu](https://docs.github.com/en/actions/managing-workflow-runs/manually-running-a-workflow#running-a-workflow-on-github).
+  1. [Go to your actions page](https://github.com/${ installer.owner_name }/${ installer.repo_name }/actions) to see the first test being run. It may take a minute, but if all the information was correct it should pass and get a green checkmark.
+  1. Go to [the pull request](${ installer.pull_url }).
+  1. [Request a review](https://docs.github.com/en/github/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/requesting-a-pull-request-review) of that PR or just merge it.
+  1. If the test fails the first time and gets a red "x", [rerun the test (a.k.a. the job)](https://docs.github.com/en/actions/managing-workflow-runs/re-running-a-workflow). If it fails again, contact us.
+  1. Delete the [personal access token](https://github.com/settings/tokens) you created.
 
-  If everything passes, all should be well and you should be ready to create your first tests in your docassemble Sources folder.
+  ---
   
-  Delete the [personal access token](https://github.com/settings/tokens) you created.
+  Write your first test:
   
-  If you have some feedback, we would love to hear from you. [Make an issue in our repository](https://github.com/plocket/docassemble-ALAutomatedTestingTests/issues/new) to tell us about it.
+  1. Pull the new code into a new Project.
+  1. In the Playground, go to your Sources folder.
+  1. Add a new file called 'interview_loads.feature'.
+  1. Copy this code into the example file:
+  
+        <pre>
+      @load
+      Feature: Interviews load
+
+        Scenario: \\_\\_\\_\\_ loads with no error
+          Given I start the interview at "\\_\\_\\_\\_"
+        </pre>
+
+  5. Replace `____` with the name of the YAML file you're testing.
+  1. Save the file.
+  1. On your Packages page Sources section, select the file.
+  1. Save the package.
+  1. Commit the change to GitHub on a new branch.
+  1. [Go to your actions page](https://github.com/${ installer.owner_name }/${ installer.repo_name }/actions) and explore.
+  1. If it passes, make a pull request, request a review, and get the branch merged in.
+
+  ---
+  
+  You can read some rough docs at [https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/automated_integrated_testing](https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/automated_integrated_testing/).
+  
+  ---
+  
+  If you have some feedback, we would love to hear from you. [Make an "issue" in our repository](https://github.com/plocket/docassemble-ALAutomatedTestingTests/issues/new) or let us know in chat!
 buttons:
   - Restart: restart
 comment: |
@@ -265,7 +376,7 @@ code: |
 ---
 template: github_access_error
 content: |
-  The user **${ installer.user_name }** does not have access to change the files in the **${ installer.repo_name }** repository owned by the owner **${ installer.owner_name }**. You can ask the admin to give correct access.
+  The user **${ installer.user_name }** does not have admin access to change the files or ["SECRETS"](https://docs.github.com/en/actions/reference/encrypted-secrets) in the **${ installer.repo_name }** repository owned by the owner **${ installer.owner_name }**. You can ask the admin to give correct access.
 ---
 depends on: github_branch_name_error
 code: |
