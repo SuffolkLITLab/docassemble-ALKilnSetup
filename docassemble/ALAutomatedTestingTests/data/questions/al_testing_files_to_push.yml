@@ -3,7 +3,6 @@ comment: |
   Templates use Mako to fill in the needed custom details.
   Templates are used as strings with PyGithub.
 ---
-# TODO: Make an interview that will generate a .env for people to download or maybe just copy/paste as it's a hidden file
 template: installer.env_example
 content: |
   # Username and password to log in to a docassemble playground to run tests
@@ -127,7 +126,7 @@ content: |
           node-version: [12.x]
 
       env:
-        BASE_URL: ${ installer.server_url }
+        BASE_URL: ${ '${{' } secrets.SERVER_URL ${ '}}' }
         PLAYGROUND_EMAIL: ${ '${{' } secrets.PLAYGROUND_EMAIL ${ '}}' }
         PLAYGROUND_PASSWORD: ${ '${{' } secrets.PLAYGROUND_PASSWORD ${ '}}' }
         PLAYGROUND_ID: ${ '${{' } secrets.PLAYGROUND_ID ${ '}}' }
