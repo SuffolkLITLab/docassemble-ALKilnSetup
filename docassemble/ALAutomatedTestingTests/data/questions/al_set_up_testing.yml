@@ -49,8 +49,7 @@ code: |
     # DO NOT define has_secrets
   
   if not has_secrets:
-    # Get secrets, org or repo
-    pass
+    get_secrets
   
   # Get file pushing permission. may need to set up token
   # If setting up files, get repo address
@@ -88,15 +87,15 @@ code: |
   installer.password
   set_da_info
       
-  handle_set_secrets = True
----
-code: |
-  installer.set_org_secrets()
-  set_org_secrets = True
+  get_secrets = True
 ---
 code: |
   installer.set_da_info()
   set_da_info = True
+---
+code: |
+  installer.set_org_secrets()
+  set_org_secrets = True
 ---
 code: |
   installer.set_github_auth()
@@ -193,36 +192,48 @@ fields:
       val('wants_to_set_up_tests') && !val('wants_to_set_repo_secrets') && !val('wants_to_set_org_secrets')
 validation code: |
   if (wants_to_set_up_tests
-      and not wants_to_set_repo_secrets
-      and not wants_to_set_org_secrets
+      and (not defined('wants_to_set_org_secrets')
+        or not wants_to_set_org_secrets)
+      and (not defined('wants_to_set_repo_secrets')
+        or not wants_to_set_repo_secrets)
       and not has_secrets):
     validation_error("If you want to set up tests and the package does not have access to secrets, you must choose a way to set secrets.")
   if (not wants_to_set_up_tests
-      and not wants_to_set_org_secrets
-      and not wants_to_set_repo_secrets):
+      and (not defined('wants_to_set_org_secrets')
+        or not wants_to_set_org_secrets)
+      and (not defined('wants_to_set_repo_secrets')
+        or not wants_to_set_repo_secrets)):
     validation_error("You must mark at least one choice.")
-  # Make sure has_secrets is defined with this validation code?
+  # Make sure has_secrets is defined in this validation code?
 ---
 # If non-admin and want to set up testing
 id: which secrets exist non-admin
 question: |
   GitHub secrets
 subquestion: |
-  For tests to work, a repository needs [GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets) set by the organization or repo admin. What is the status of the secrets now? If you don't know, ask the admin of the organization or repository if these secrets are set:
+  For tests to work, a repository needs access to [GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets) set by the organization or repo admin. What is the status of the secrets now? If you don't know, ask the admin of the organization or repository if these secrets are set:
 
   ${ secrets_list }
   
-  ${ how_to_see_repo_secrets }
+  ${ how_to_see_repo_secrets } ${ check_secrets_access }
+  
+  Does the package have access to those secrets?
 fields:
-  - Does the package have access to those secrets?: has_secrets
-    datatype: radio
-    choices:
-      - The package has access to those secrets: True
-      - The repository has those secrets: repo
+  - The repository has access to organization secrets: has_secrets
+    datatype: yesnowide
+  - The repository has access to repository secrets: has_secrets
+    datatype: yesnowide
+validation code: |
+  if not has_secrets:
+    validation_error("The package must have access to these secrets for you to continue setting up tests.")
 ---
 template: how_to_see_repo_secrets
 content: |
   To see a repository's secrets, an admin can go to the same place as where they [set the repository's secrets](https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-a-repository).
+---
+template: check_secrets_access
+content: |
+  If the organization has these secrets, but those secrets are not showing up in the package's repository, the admin may need to [change the access levels for the secret](https://docs.github.com/en/actions/reference/encrypted-secrets#reviewing-access-to-organization-level-secrets).
 ---
 comment: |
   You need to be an organization admin to set up organization secrets. Contact your admin and give them a link to this interview so they can set up the organization secrets.
