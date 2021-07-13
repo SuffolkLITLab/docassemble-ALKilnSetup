@@ -42,7 +42,7 @@ code: |
     wants_to_set_up_tests
     if not defined('has_secrets'):
       has_secrets = False
-  else:
+  else:  # only contributor
     wants_to_set_org_secrets = False
     wants_to_set_repo_secrets = False
     wants_to_set_up_tests = True
@@ -55,79 +55,6 @@ code: |
   # Get file pushing permission. may need to set up token
   # If setting up files, get repo address
   
-  #if wants_to_set_up_tests and not wants_to_set_org_secrets and not wants_to_set_repo_secrets:
-  #
-  #
-  #if wants_to_set_up_tests:
-  #  # do secrets exist already?
-  #  # admins will have been asked this already
-  #  has_secrets
-  #
-  #if wants_to_set_up_tests:
-  #  if not has_secrets:
-  #    #must have secrets to set up tests kickout
-  #    pass
-  #
-  #if wants_to_set_org_secrets:
-  #  #set_org_secrets
-  #  
-  #
-  #  if not wants_to_set_org_secrets and not wants_to_set_repo_secrets:
-  #    if not existing_secrets['org'] and not existing_secrets['repo']:
-  #    if is_org_admin:
-  #      #set_org_secrets
-  #      pass
-  #    
-  #    elif is_repo_admin:
-  #      #set_repo_secrets
-  #      pass
-  #      
-  #    else:
-  #      pass
-  #      
-  #
-  #
-  #if is_org_admin:
-  #  if wants_to_set_org_secrets:
-  #    #set_org_secrets
-  #    pass
-  #  elif wants_to_set_repo_secrets:
-  #    #set_repo_secrets
-  #    pass
-  #elif is_repo_admin:
-  #  if wants_to_set_repo_secrets:
-  #    #set_repo_secrets
-  #    pass
-  #elif is_org_contributor or is_repo_contributor:
-  #  if not existing_secrets['org'] and not existing_secrets['repo']:
-  #    #no_secrets_kickout
-  #    pass
-  #
-  #
-  #if  not has_set_secrets && wants_to_set_up_tests:
-  #  pass
-  #
-  ## The tricky one is the admin who wants to set up tests, but not secrets
-  ## If admin and want to set up tests, but not want to set up secrets, ask if already has secrets (existing_secrets)
-  ## if not, set secrets
-  #
-  ##permissions_status
-  ##'contributor'
-  ##'admin'
-  ##if installer.goal == 'org_secrets':
-  ##  if permissions_status == 'admin':
-  ##    get_org_secrets_info
-  ##    set_org_secrets
-  ##  if permissions_status == 'contributor':
-  ##    need_to_be_an_org_admin
-  ##if installer.goal == 'one_package':
-  ##  if permissions_status == 'contributor':
-  ##    if part_of_an_org and (org_has_secrets_already or wants_only_repo_secrets):
-  ##      pass
-  ##    else:
-  ##      need_to_be_a_repo_admin
-  ##  # Not kicked out so far
-  ##  repo_intro
   #
   #if will_test_on_this_server:
   #  if not logged_into_test_account_on_interview_server:
@@ -162,15 +89,6 @@ code: |
   set_da_info
       
   handle_set_secrets = True
----
-code: |
-  if wants_to_set_repo_secrets:
-    #set_repo_secrets
-    pass
-  handle_repo_secrets = True
----
-code: |
-  handle_has_secrets = True
 ---
 code: |
   installer.set_org_secrets()
@@ -306,61 +224,37 @@ template: how_to_see_repo_secrets
 content: |
   To see a repository's secrets, an admin can go to the same place as where they [set the repository's secrets](https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-a-repository).
 ---
-  #- What are you setting up this time?: installer.goal
-  #  datatype: radio
-  #  choices:
-  #    - I'm setting up organization [GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets): org_secrets
-  #    - I'm setting up testing for one package: one_package
-  #    #- I'm setting up testing for multiple packages: multiple_packages
-  #- What kind of GitHub permissions do you have for this?: permissions_status
-  #  datatype: radio
-  #  choices:
-  #    - I am a contributor, but I do not have access to security settings: contributor
-  #    - I am an admin and have access to security settings: admin
+comment: |
+  You need to be an organization admin to set up organization secrets. Contact your admin and give them a link to this interview so they can set up the organization secrets.
+  You need to be an admin on a repository to set up automated tests. Contact your admin and give them a link to this interview so they can set up automated testing for this package.
 ---
-#if: installer.goal == 'one_package' and
-event: nothing
+id: on testing server
 question: |
-  thing
+  Before we start
 subquestion: |
+  Look at the url of this page. Is this the server where the tests will run?
+yesno: will_test_on_this_server
+---
+id: logged_into_test_account_on_interview_server
+question: |
+  What account are you logged in on?
+subquestion: |
+  Are you logged into the docassemble account where the tests will run?
+yesno: logged_into_test_account_on_interview_server
+---
+id: log_into_test_account
+question: |
+  Before you continue
+subquestion: |
+  You will probably need to log into the account where the tests will run. Since this form is on the same server and you are not logged into that account, you can do one of 3 things:
   
-  - How do you want to set up testing?: repo_scope
-    datatype: radio
-    enabled if:
-      variable: installer.goal
-      is: one_package
-    choices:
-      - As part of an organization: org
-      - Independent of an organization: independent
-  - 
-    datatype: yesno
-  
-    datatype: yesno
-    disable if:
-      variable: installer.goal
-      is: one_package
-  - note: |
-      Ask an admin in the GitHub organization if the organization already has these secrets:
-      
-      ${ secrets_list }
-      
-    show if: part_of_an_org
-  - This organization already has the necessary secrets: org_has_secrets_already
-    datatype: yesno
-    show if: org_package
-  #- Does the docassemble package or packages belong to an organization?: is_org_package
-  #  datatype: yesnomayberadio
-  #- Which of these best describes you?: type_of_org_user
-  #  show if:
-  #    variable: is_org_package
-  #    is: True
-  #  datatype: radio
-  #  choices:
-  #    - I am a GitHub contributor, but I have no access to security settings
-  #    - I am a GitHub contributor for a GitHub organization's packages, but I have no access to security settings for this package's repository: org_dev
-  #    - I am a GitHub contributor for one package's repository, but I have no access to security settings: repo_dev
-  #    - I am an admin for this package's repository and can access security settings: repo_admin
-  #    - I am an admin of this package's organization: org_admin
+  * Open an incognito window and log into that account there.
+  * Go to a different browser to log into that account.
+  * Leave this interview, log into the account, and start this interview again.
+
+  Tap to continue when you have done one of those.
+
+continue button field: log_into_test_account
 ---
 id: org secrets
 #if: installer.goal == 'org_secrets' and permissions_status == 'admin'
@@ -395,25 +289,6 @@ fields:
       We also need the GitHub organizatoin name with correct capitalization. Example:[BR]
       `SuffolkLITLab`
   - Organization: installer.owner_name
----
-id: not org admin kickout
-event: need_to_be_an_org_admin
-question: |
-  You need to be an admin
-subquestion: |
-  You need to be an organization admin to set up organization secrets. Contact your admin and give them a link to this interview so they can set up the organization secrets.
----
-id: non admin repo questions
-question: |
-  Where will your secrets be?
-  part_of_an_org and (org_has_secrets_already or wants_only_repo_secrets)
----
-id: non admin repo kickout
-event: need_to_be_a_repo_admin
-question: |
-  You need to be an admin
-subquestion: |
-  You need to be an admin on a repository to set up automated tests. Contact your admin and give them a link to this interview so they can set up automated testing for this package.
 ---
 # TODO: Add link to docs where we explain how the library makes a project, etc.
 # TODO: Add links to the actual github repo and files and folders
@@ -466,34 +341,6 @@ content: |
   * PLAYGROUND_EMAIL
   * PLAYGROUND_PASSWORD
   * PLAYGROUND_ID
----
-id: on testing server
-question: |
-  Before we start
-subquestion: |
-  Look at the url of this page. Is this the server where the tests will run?
-yesno: will_test_on_this_server
----
-id: logged_into_test_account_on_interview_server
-question: |
-  What account are you logged in on?
-subquestion: |
-  Are you logged into the docassemble account where the tests will run?
-yesno: logged_into_test_account_on_interview_server
----
-id: log_into_test_account
-question: |
-  Before you continue
-subquestion: |
-  You will probably need to log into the account where the tests will run. Since this form is on the same server and you are not logged into that account, you can do one of 3 things:
-  
-  * Open an incognito window and log into that account there.
-  * Go to a different browser to log into that account.
-  * Leave this interview, log into the account, and start this interview again.
-
-  Tap to continue when you have done one of those.
-
-continue button field: log_into_test_account
 ---
 id: org secrets info
 question: |
