@@ -159,14 +159,18 @@ class TestInstaller(DAObject):
     auth_bytes = codecs.encode(bytes( self.owner_name + ':' + self.token, 'utf8'), 'base64')
     self.basic_auth = 'Basic ' + auth_bytes.decode().strip()
     # The base url string needed for making requests to the repo.
-    self.github_repo_base = "https://api.github.com/repos/" + self.owner_name + "/" + self.repo_name
-    self.set_key_values()
+    if installer.goal == 'org_secrets':
+      self.github_secrets_base = "https://api.github.com/orgs/" + self.owner_name
+    if installer.goal == 'one_package':
+      self.github_secrets_base = "https://api.github.com/repos/" + self.owner_name + "/" + self.repo_name
+      
+    self.set_secrets_key_values()
     
     return self
   
-  def set_key_values( self ):
+  def set_secrets_key_values( self ):
     """Gets and sets GitHub key id for the repo for secrets"""
-    key_url = self.github_repo_base + "/actions/secrets/public-key"
+    key_url = self.github_secrets_base + "/actions/secrets/public-key"
     key_payload = ""
     key_headers = {
       'Accept': 'application/vnd.github.v3+json',
@@ -243,15 +247,36 @@ class TestInstaller(DAObject):
     self.pull_url = response.html_url
     
     return self
+    
+  def set_org_secrets( self ):
+    # We have self.token and self.owner_name (org). What can we do with that? We need to set secrets
+    # Check that token is valid for that org. Maybe just try to get org secrets
+    # Already handled:
+    #set_auth_for_secrets
+    #self.owner_name
+    #self.token
+    #set_secrets_key_values
+    #self.github_secrets_base
+    #self.basic_auth
+    #create_secrets
+    #self.public_key
+    #self.key_id
+    
+    self.create_secrets()
+    
+    return self
   
   def create_secrets( self ):
     """Set the GitHub repo secrets the tests need to log into the da server and
-    create projects to contain the interviews being tested. TODO: use PyGithub's secret handling https://pygithub.readthedocs.io/en/latest/github_objects/Repository.html?highlight=secret#github.Repository.Repository.create_secret. Org scope still missing: https://github.com/PyGithub/PyGithub/issues/1373#issuecomment-856616652."""
-    self.put_secret( 'SERVER_URL', self.server_url )
-    self.put_secret( 'PLAYGROUND_EMAIL', self.email )
-    self.put_secret( 'PLAYGROUND_PASSWORD', self.password )
-    self.put_secret( 'PLAYGROUND_ID', self.playground_id )
-    return self
+    create projects to contain the interviews being tested.
+    https://docs.github.com/en/rest/reference/actions#create-or-update-an-organization-secret--parameters
+    Org scope still missing from PyGithub: https://github.com/PyGithub/PyGithub/issues/1373#issuecomment-856616652."""
+    responses = [];
+    responses.append( self.put_secret( 'SERVER_URL', self.server_url ))
+    responses.append( self.put_secret( 'PLAYGROUND_EMAIL', self.email ))
+    responses.append( self.put_secret( 'PLAYGROUND_PASSWORD', self.password ))
+    responses.append( self.put_secret( 'PLAYGROUND_ID', self.playground_id ))
+    return responses
   
   def put_secret( self, name, value ):
     """Add or update one secret to the GitHub repo."""
@@ -262,20 +287,20 @@ class TestInstaller(DAObject):
     encrypted = sealed_box.encrypt( value.encode( "utf-8" ))  # LibSodium
     base64_encrypted = b64encode( encrypted ).decode( "utf-8" )  # turns into string
     
-    url = self.github_repo_base + "/actions/secrets/" + name
+    url = self.github_secrets_base + "/actions/secrets/" + name
     payload = '{"encrypted_value":"' + base64_encrypted + '", "key_id":"' + self.key_id + '"}'
     headers = {
       'Accept': "application/vnd.github.v3+json",
       'Authorization': self.basic_auth,
     }
     
-    secret_put = requests.request( "PUT", url, data=payload, headers=headers )
+    secret_put_response = requests.request( "PUT", url, data=payload, headers=headers )
     # Cannot check the value, but can check it exists
-    secret_get = requests.request( "GET", url, data="", headers=headers )
+    secret_get_response = requests.request( "GET", url, data="", headers=headers )
     #log( response.text, 'console' )
     # TODO: create org secret: https://docs.github.com/en/rest/reference/actions#create-or-update-an-organization-secret
     
-    return self
+    return secret_put_response
 
 
 # handle errors
