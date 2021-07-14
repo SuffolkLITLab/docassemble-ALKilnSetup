@@ -41,31 +41,28 @@ code: |
   if is_org_admin or is_repo_admin:
     wants_to_set_up_tests
     if not defined('has_secrets'):
-      has_secrets = False
-  else:  # only contributor
+      has_secrets = DADict('has_secrets', there_are_any=False)  # None are true
+  else:  # non-admins
     wants_to_set_org_secrets = False
     wants_to_set_repo_secrets = False
     wants_to_set_up_tests = True
     # DO NOT define has_secrets
   
-  if not has_secrets:
-    get_secrets
+  # Everyone has to set up secrets if they don't have them
+  if not has_secrets.any_true():
+    if not is_org_admin or is_repo_admin:
+      needs_secrets_kickout
+    # Otherwise carry on
+    get_secrets_info
   
-  # Get file pushing permission. may need to set up token
-  # If setting up files, get repo address
-  
+  ## Get github token. Different wording for contributor vs. admin
+  #installer.token
+  #set_github_auth
   #
-  #if will_test_on_this_server:
-  #  if not logged_into_test_account_on_interview_server:
-  #    log_into_test_account
+  ## If setting up test files, get repo address
+  
+  
   ##
-  ### da stuff
-  ##installer.password
-  ##set_da_info
-  ##
-  ### github stuff
-  ##installer.token
-  ##set_github_auth
   ##
   ### confirm
   ##is_ready
@@ -79,7 +76,6 @@ code: |
   force_ask( 'next_steps_org' )
 ---
 code: |
-  
   if will_test_on_this_server:
     if not logged_into_test_account_on_interview_server:
       log_into_test_account
@@ -87,7 +83,7 @@ code: |
   installer.password
   set_da_info
       
-  get_secrets = True
+  get_secrets_info = True
 ---
 code: |
   installer.set_da_info()
@@ -126,6 +122,8 @@ question: |
 subquestion: |
   This tool helps developers or organizations set up automated integrated testing for docassemble packages that have a GitHub repository.
   
+  :clock: This task can take up to 30 minutes.
+  
   What you can do depends on your situation and what kind of GitHub permissions you have.
   
   Which descriptions fit you? Pick at least one.
@@ -150,7 +148,7 @@ id: admin goal
 question: |
   What do you want to do?
 subquestion: |
-  These tests need to make a Project on your docassemble server and then run an interview from that Project. [GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets) store and encrypt the information the tests need in order to do that. The tests need these secrets:
+  For tests to run, they need to be able to make a Project on your docassemble server and then run an interview from that Project. [GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets) store and encrypt the information the tests need in order to do that. You can use this tool to set these secrets:
   
   ${ secrets_list }
   
@@ -184,8 +182,11 @@ fields:
   - note: A package must have access to GitHub secrets in order to run tests.
     js show if: |
       val('wants_to_set_up_tests') && !val('wants_to_set_repo_secrets') && !val('wants_to_set_org_secrets')
-  - The package already has access to organization or repository secrets: has_secrets
-    datatype: yesnowide
+  - no label: has_secrets
+    datatype: checkboxes
+    none of the above: False
+    choices:
+      - The package already has access to organization or repository secrets: yes
     help: |
       ${ how_to_see_repo_secrets } (see above for link)
     js show if: |
@@ -196,7 +197,7 @@ validation code: |
         or not wants_to_set_org_secrets)
       and (not defined('wants_to_set_repo_secrets')
         or not wants_to_set_repo_secrets)
-      and not has_secrets):
+      and not has_secrets.any_true()):
     validation_error("If you want to set up tests and the package does not have access to secrets, you must choose a way to set secrets.")
   if (not wants_to_set_up_tests
       and (not defined('wants_to_set_org_secrets')
@@ -206,12 +207,13 @@ validation code: |
     validation_error("You must mark at least one choice.")
   # Make sure has_secrets is defined in this validation code?
 ---
-# If non-admin and want to set up testing
 id: which secrets exist non-admin
 question: |
   GitHub secrets
 subquestion: |
-  For tests to work, a repository needs access to [GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets) set by the organization or repo admin. What is the status of the secrets now? If you don't know, ask the admin of the organization or repository if these secrets are set:
+  For tests to run, a repository needs access to [GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets) set by the organization or repo admin. We need to know the status of the secrets.
+  
+  If they are not set yet, give the admin the link to this form. If you don't know, ask the admin of the organization or repository if these secrets are set:
 
   ${ secrets_list }
   
@@ -219,13 +221,11 @@ subquestion: |
   
   Does the package have access to those secrets?
 fields:
-  - The repository has access to organization secrets: has_secrets
-    datatype: yesnowide
-  - The repository has access to repository secrets: has_secrets
-    datatype: yesnowide
-validation code: |
-  if not has_secrets:
-    validation_error("The package must have access to these secrets for you to continue setting up tests.")
+  - no label: has_secrets
+    datatype: checkboxes
+    choices:
+      - The repository has access to organization secrets: org
+      - The repository has access to repository secrets: repo
 ---
 template: how_to_see_repo_secrets
 content: |
@@ -235,9 +235,12 @@ template: check_secrets_access
 content: |
   If the organization has these secrets, but those secrets are not showing up in the package's repository, the admin may need to [change the access levels for the secret](https://docs.github.com/en/actions/reference/encrypted-secrets#reviewing-access-to-organization-level-secrets).
 ---
-comment: |
-  You need to be an organization admin to set up organization secrets. Contact your admin and give them a link to this interview so they can set up the organization secrets.
-  You need to be an admin on a repository to set up automated tests. Contact your admin and give them a link to this interview so they can set up automated testing for this package.
+id: no admin or secrets kickout
+event: needs_secrets_kickout
+question: |
+  The repository needs secrets
+subquestion: |
+  To get these tests to run, an admin needs to set up secrets. Contact your admin and give them a link to this interview. It will help them set up the right secrets.
 ---
 id: on testing server
 question: |
@@ -267,15 +270,43 @@ subquestion: |
 
 continue button field: log_into_test_account
 ---
-id: org secrets
+id: da server info
+question: |
+  GitHub secrets
+subquestion: |
+  As described, the tests need access to server login information. This tool will help you set up these encrypted [GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets):
+  
+  ${ secrets_list }
+
+  If you have not already done so:
+  
+  1. Decide on the docassemble account where the tests will run.
+  1. Make sure you are logged in there.
+  1. Answer the questions below for that account. If you want to use your own account, put your own docassemble email and password below.
+fields:
+  - Email: installer.email
+    datatype: email
+  - Password: installer.password
+    datatype: password
+  - note: |
+      Go to the Playground of the account and run any working YAML file. For example, test.yml. What is the URL in the address bar? Example:[BR]
+      `https://legal-dev.org/interview?i=docassemble.playground22%3Atest.yml`
+  - URL: installer.playground_url
+    hint: https://legal-dev.org/interview?i=docassemble.playground22%3Atest.yml
+
+auto terms:
+  - the URL in the address bar: |
+      The interview URL will give us the account's Playground ID and the address of the server that the account is on.
+---
+id: org github auth
 #if: installer.goal == 'org_secrets' and permissions_status == 'admin'
 continue button field: get_org_secrets_info
 question: |
-  Setting up GitHub secrets for your organization
+  Setting up GitHub secrets
 subquestion: |
   [Organization-wide secrets](https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-an-organization) will allow any of your contributors to very easily add automated testing to any of your organization's packages. If they can push to the repository, they can set up testing for it.
 
-  :clock: This could take about 10 minutes
+  :clock: Setting up secrets could take about 20 minutes
   
   ---
   
@@ -284,8 +315,6 @@ subquestion: |
   ${ secrets_list }
   
   ---
-  
-  You must be an admin on the GitHub organization so you can temporarily give this tool permission to create secrets. Once you are logged into GitHub as an admin:
   
   1. Start making a [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) for your GitHub account. You will be able to delete it after you are finished here.
   1. Tap the checkbox for "admin:org" permissions.
@@ -300,101 +329,6 @@ fields:
       We also need the GitHub organizatoin name with correct capitalization. Example:[BR]
       `SuffolkLITLab`
   - Organization: installer.owner_name
----
-# TODO: Add link to docs where we explain how the library makes a project, etc.
-# TODO: Add links to the actual github repo and files and folders
-# TODO: only show 'other than you' if the person is logged in
-id: intro personal repo
-question: |
-  Set up Document Assembly Line automated integrated testing
-subquestion: |
-  This interview will help you set up automated integrated GitHub testing for a docassemble package.
-
-  :clock: This could take about 40 minutes
-  
-  ---
-  
-  **Make sure:**
-  
-  * The package is in a GitHub repository.
-  * You have admin permissions on the package's GitHub repository.
-  * You are logged into the docassemble account where the tests will run.
-  
-  ---
-
-  **Sneak Peak**
-
-  This tool will add folders and files to the project:
-
-  ${ files_list }
-  
-  It will add 3 [GitHub "SECRETS"](https://docs.github.com/en/actions/reference/encrypted-secrets) to the repository to store encrypted information safely:
-  
-  ${ secrets_list }
-  
-  ---
-  
-  Your answers will be encrypted end-to-end and on the server. No one other than you will have access to them.
-  
-continue button field: repo_intro
----
-template: files_list
-content: |
-  * `tests/features/example_test.feature` is a very simple example of a test.
-  * `.github/workflows/run_interview_tests.yml` tells GitHub when and how to run the tests.
-  * `package.json` lets GitHub load other packages it needs to run the tests.
-  * `.gitignore` is for developers who want to work in their local environment.
-  * `.env-example` can help guide developers who want to work in their local environment to set up the environment variables.
----
-template: secrets_list
-content: |
-  * SERVER_URL
-  * PLAYGROUND_EMAIL
-  * PLAYGROUND_PASSWORD
-  * PLAYGROUND_ID
----
-id: org secrets info
-question: |
-  Docassemble
-subquestion: |
-  Tests will create Projects in an account on your docassemble server, pull in the GitHub code, and run the interviews.
-  
-  Decide on the docassemble account where the tests will run. Answer the questions below for the account. If you want to use your own account, put your own docassemble email and password below.
-fields:
-  - Account email: installer.email
-    datatype: email
-  - Account password: installer.password
-    datatype: password
-  - note: |
-      What is the address of your docassemble server? Example:[BR]
-      `https://dev.legal-help.org`
-  - no label: installer.server_url
-auto terms:
-  - the URL in the address bar: |
-      The interview URL will give us the account's Playground ID and the address of the server that the account is on.
----
-id: server info
-question: |
-  Docassemble
-subquestion: |
-  These tests will create Projects in an account on your docassemble server, pull in the GitHub code, and run the interviews. To do that, they need docassemble login information. This is what will be in the encrypted GitHub secrets.
-  
-  1. Decide on the docassemble account where the tests will run
-  1. Make sure you are logged into that account.
-  1. Answer the questions below for the docassemble account that will run tests. If you want to use your own account, put your own docassemble email and password below.
-  
-fields:
-  - Email: installer.email
-    datatype: email
-  - Password: installer.password
-    datatype: password
-  - note: |
-      Go to the Playground of the account and run any working YAML file. For example, test.yml. What is the URL in the address bar? Example:[BR]
-      `https://dev.legal.org/interview?i=docassemble.playground22%3Atest.yml`
-  - URL: installer.playground_url
-auto terms:
-  - the URL in the address bar: |
-      The interview URL will give us the account's Playground ID and the address of the server that the account is on.    
 ---
 # TODO: Add instructions on how to find the GitHub repo url on Packages page (maybe point to docs)
 id: github auth
@@ -418,6 +352,58 @@ fields:
   - GitHub URL: installer.repo_url
     help: |
       The repository's URL will give us the name of the repo and its owner.
+---
+## TODO: Add link to docs where we explain how the library makes a project, etc.
+## TODO: Add links to the actual github repo and files and folders
+## TODO: only show 'other than you' if the person is logged in
+#id: intro personal repo
+#question: |
+#  Set up Document Assembly Line automated integrated testing
+#subquestion: |
+#  This interview will help you set up automated integrated GitHub testing for a docassemble package.
+#
+#  :clock: This could take about 40 minutes
+#  
+#  ---
+#  
+#  **Make sure:**
+#  
+#  * The package is in a GitHub repository.
+#  * You have admin permissions on the package's GitHub repository.
+#  * You are logged into the docassemble account where the tests will run.
+#  
+#  ---
+#
+#  **Sneak Peak**
+#
+#  This tool will add folders and files to the project:
+#
+#  ${ files_list }
+#  
+#  It will add 3 [GitHub "SECRETS"](https://docs.github.com/en/actions/reference/encrypted-secrets) to the repository to store encrypted information safely:
+#  
+#  ${ secrets_list }
+#  
+#  ---
+#  
+#  Your answers will be encrypted end-to-end and on the server. No one other than you will have access to them.
+#  
+#continue button field: repo_intro
+---
+template: files_list
+content: |
+  * `tests/features/example_test.feature` is a very simple example of a test.
+  * `.github/workflows/run_interview_tests.yml` tells GitHub when and how to run the tests.
+  * `package.json` lets GitHub load other packages it needs to run the tests.
+  * `.gitignore` is for developers who want to work in their local environment.
+  * `.env-example` can help guide developers who want to work in their local environment to set up the environment variables.
+---
+template: secrets_list
+content: |
+  * PLAYGROUND_EMAIL
+  * PLAYGROUND_PASSWORD
+  * PLAYGROUND_ID
+  * SERVER_URL
 ---
 id: confirm info
 question: |
