@@ -246,7 +246,8 @@ class TestInstaller(DAObject):
   
   def create_secrets( self ):
     """Set the GitHub repo secrets the tests need to log into the da server and
-    create projects to contain the interviews being tested. PyGithub does not yet handle secrets. See issue: https://github.com/PyGithub/PyGithub/issues/1373."""
+    create projects to contain the interviews being tested. TODO: use PyGithub's secret handling https://pygithub.readthedocs.io/en/latest/github_objects/Repository.html?highlight=secret#github.Repository.Repository.create_secret. Org scope still missing: https://github.com/PyGithub/PyGithub/issues/1373#issuecomment-856616652."""
+    self.put_secret( 'SERVER_URL', self.server_url )
     self.put_secret( 'PLAYGROUND_EMAIL', self.email )
     self.put_secret( 'PLAYGROUND_PASSWORD', self.password )
     self.put_secret( 'PLAYGROUND_ID', self.playground_id )
