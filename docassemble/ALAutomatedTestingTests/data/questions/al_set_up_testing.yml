@@ -14,6 +14,8 @@ modules:
 ---
 objects:
   - installer: TestInstaller
+  # TODO: see if this can work instead of other shinannigans
+  #- has_secrets: DADict  #.using(there_are_any=False)
 ---
 include:
   - al_testing_files_to_push.yml
@@ -55,12 +57,13 @@ code: |
     # Otherwise carry on
     get_secrets_info
   
-  ## Get github token. Different wording for contributor vs. admin
-  #installer.token
+  # Get github token. Different wording for different goals
+  installer.token
   #set_github_auth
   #
   ## If setting up test files, get repo address
   
+  # TODO: next steps for secrets - ensure the secret has the access settings you want
   
   ##
   ##
@@ -81,7 +84,7 @@ code: |
       log_into_test_account
       
   installer.password
-  set_da_info
+  #set_da_info
       
   get_secrets_info = True
 ---
@@ -148,13 +151,15 @@ id: admin goal
 question: |
   What do you want to do?
 subquestion: |
-  For tests to run, they need to be able to make a Project on your docassemble server and then run an interview from that Project. [GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets) store and encrypt the information the tests need in order to do that. You can use this tool to set these secrets:
+  For tests to run, they need to be able to make a Project on your docassemble server and then run an interview from that Project. [GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets) store and encrypt the information the tests need in order to do that. This interview will help you set these secrets:
   
   ${ secrets_list }
   
-  If an admin sets up organization secrets they are availalble for all organization repositories and you don't need repository secrets.
+  Once an organization admin sets up secrets, repository secrets will be unnecessary and any developer that can push to a repository can set up automated tests for it with no other special permissions.
   
   ${ how_to_see_repo_secrets }
+  
+  ${ check_secrets_access }
   
   What do you want to do?
 fields:
@@ -192,20 +197,26 @@ fields:
     js show if: |
       val('wants_to_set_up_tests') && !val('wants_to_set_repo_secrets') && !val('wants_to_set_org_secrets')
 validation code: |
+  # Define undefined values
+  # Considered bad practice generally, but currently seems more maintainable
+  # If it becomes less maintainable, we can move this elsewhere
+  if not defined('wants_to_set_org_secrets'):
+    wants_to_set_org_secrets = False
+  if not defined('wants_to_set_repo_secrets'):
+    wants_to_set_repo_secrets = False
+  if not defined('has_secrets'):
+    has_secrets = DADict('has_secrets', there_are_any=False)  # None are true
+    
+  # Validate
   if (wants_to_set_up_tests
-      and (not defined('wants_to_set_org_secrets')
-        or not wants_to_set_org_secrets)
-      and (not defined('wants_to_set_repo_secrets')
-        or not wants_to_set_repo_secrets)
+      and not wants_to_set_org_secrets
+      and not wants_to_set_repo_secrets
       and not has_secrets.any_true()):
     validation_error("If you want to set up tests and the package does not have access to secrets, you must choose a way to set secrets.")
   if (not wants_to_set_up_tests
-      and (not defined('wants_to_set_org_secrets')
-        or not wants_to_set_org_secrets)
-      and (not defined('wants_to_set_repo_secrets')
-        or not wants_to_set_repo_secrets)):
+      and not wants_to_set_org_secrets
+      and not wants_to_set_repo_secrets):
     validation_error("You must mark at least one choice.")
-  # Make sure has_secrets is defined in this validation code?
 ---
 id: which secrets exist non-admin
 question: |
@@ -298,60 +309,59 @@ auto terms:
   - the URL in the address bar: |
       The interview URL will give us the account's Playground ID and the address of the server that the account is on.
 ---
-id: org github auth
-#if: installer.goal == 'org_secrets' and permissions_status == 'admin'
-continue button field: get_org_secrets_info
-question: |
-  Setting up GitHub secrets
-subquestion: |
-  [Organization-wide secrets](https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-an-organization) will allow any of your contributors to very easily add automated testing to any of your organization's packages. If they can push to the repository, they can set up testing for it.
-
-  :clock: Setting up secrets could take about 20 minutes
-  
-  ---
-  
-  You will set these secrets:
-  
-  ${ secrets_list }
-  
-  ---
-  
-  1. Start making a [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) for your GitHub account. You will be able to delete it after you are finished here.
-  1. Tap the checkbox for "admin:org" permissions.
-  1. Finish creating the token.
-  1. Copy the token and paste it below.
-fields:
-  - Personal access token: installer.token
-    datatype: password
-    help: |
-      The token must have "admin:org" permissions.
-  - note: |
-      We also need the GitHub organizatoin name with correct capitalization. Example:[BR]
-      `SuffolkLITLab`
-  - Organization: installer.owner_name
----
-# TODO: Add instructions on how to find the GitHub repo url on Packages page (maybe point to docs)
 id: github auth
 question: |
-  GitHub authorization
+  Authorizing for GitHub
 subquestion: |
-  You must be an admin on the GitHub repository so you can temporarily give this form permission to add files and set "SECRETS". Once you are logged in as an admin:
+  You now need to create temporary authorization for GitHub using a [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token).
   
-  1. Start making a [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) for your GitHub account.
-  1. Tap the checkbox for 'workflow' permissions. That should also trigger 'repo' permissions. This form needs both.
+  1. Start making a [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token). You will be able to delete it after you are finished here.
+  % if wants_to_set_org_secrets:
+  1. Tap the checkbox for "admin:org" permissions.
+  % elif wants_to_set_repo_secrets:
+  1. Tap the checkbox for "workflow" permissions. That should also trigger "repo" permissions.
+  % else:
+  1. Tap the checkbox for "repo" permissions.
+  % endif
   1. Finish creating the token.
   1. Copy the token and paste it below.
 fields:
   - Personal access token: installer.token
     datatype: password
     help: |
-      The token must have 'repo' and 'workflow' permissions.
+      The token must have ${ token_permissions_level } permissions.
   - note: |
       We also need the GitHub repository URL of the package. Example:[BR]
-      `https://github.com/LawMagic/docassemble-GreatForm`
-  - GitHub URL: installer.repo_url
+      `https://github.com/TheLawFantastic/docassemble-GreatForm`
+    show if:
+      code: |
+        wants_to_set_up_tests or wants_to_set_repo_secrets
+  - Repo URL: installer.repo_url
     help: |
       The repository's URL will give us the name of the repo and its owner.
+    show if:
+      code: |
+        wants_to_set_up_tests or wants_to_set_repo_secrets
+  - note: |
+      We also need the name of the GitHub organization. Example:[BR]
+      `SuffolkLITLab`
+    show if:
+      code: |
+        not wants_to_set_up_tests and wants_to_set_org_secrets
+  - Organization name: installer.owner_name
+    show if:
+      code: |
+        not wants_to_set_up_tests and wants_to_set_org_secrets
+---
+template: token_permissions_level
+content: |
+  % if wants_to_set_org_secrets:
+  "admin:org"
+  % elif wants_to_set_repo_secrets:
+  "workflow"
+  % else:
+  "repo"
+  % endif
 ---
 ## TODO: Add link to docs where we explain how the library makes a project, etc.
 ## TODO: Add links to the actual github repo and files and folders
