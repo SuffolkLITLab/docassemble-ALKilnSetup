@@ -6,7 +6,7 @@ import codecs
 from base64 import b64encode
 import re
 import json
-from docassemble.base.util import log
+from docassemble.base.util import log, value
 from docassemble.base.core import DAObject
 
 # reference:
@@ -48,7 +48,6 @@ class TestInstaller(DAObject):
     # Start clean. Other errors should have been handled already.
     self.errors = []
     
-    self.get_github_info_from_repo_url()
     self.github = Github( self.token )
     user = self.github.get_user()
     
@@ -62,6 +61,68 @@ class TestInstaller(DAObject):
       self.user_name = ''
       error1.data[ 'details' ] = self.github_token_error
       self.errors.append( error1 )
+    
+    # DEV: working
+    if ( value( 'wants_to_set_org_secrets' )):
+      self.validate_org_admin_auth( user )
+      
+    # DEV: needs testing
+    if ( not value( 'wants_to_set_org_secrets' ) or value( 'wants_to_set_up_tests' )):
+      if self.validate_repo():
+        if self.validate_repo_collaborator_auth()  # Minimum permissions required
+        if ( value( 'wants_to_set_repo_secrets' )):
+          self.validate_repo_admin_auth( user )
+    
+    # Give as many errors at once as is possible
+    if len( self.errors ) > 0:
+      return self
+    
+    #self.set_auth_for_secrets()
+    
+    return self
+
+  def validate_org_admin_auth( self, user ):
+    """Make sure org auth information is valid."""
+    # Check if org exists
+    try:
+      # Trigger for authentication error or feedback for the user
+      org = self.github.get_organization( self.owner_name )
+    except Exception as error1:
+      # UnknownObjectException: 404 {"message": "Not Found", "documentation_url": "https://docs.github.com/rest/reference/orgs#get-an-organization"}
+      org = None
+      log( error1.__dict__, 'console' )
+      error1.data[ 'details' ] = self.org_does_not_exist_error
+      self.errors.append( error1 )
+    
+    if org and user:
+      # Check if user belongs to org
+      try:
+        membership = user.get_organization_membership( org.login )
+        role = membership.role
+      except Exception as error2:
+        role = None
+        log( error2.__dict__, 'console' )
+        error2.data[ 'details' ] = self.not_an_org_member_error
+        self.errors.append( error2 )
+      
+      # Check if user is admin of org
+      if role != 'admin':
+        # Show error
+        error3 = ErrorLikeObject( message='Not organization admin', details=self.not_org_admin_error )
+        log( error3.__dict__, 'console' )
+        self.errors.append( error3 )
+        
+    #if len( self.errors ) > 0:
+    #  return False  # Invalid
+    #return True  # Valid
+    return self
+  
+  def validate_repo( self ):
+    """Make sure repo exists."""
+    names = self.get_github_info_from_repo_url()
+    self.repo_name = names["repo_name"]
+    self.owner_name = names["owner_name"]
+    self.package_name = names["package_name"]
       
     # Check if repo exists
     try:
@@ -72,7 +133,33 @@ class TestInstaller(DAObject):
       self.repo = None
       error2.data[ 'details' ] = self.github_repo_not_found_error
       self.errors.append( error2 )
-    
+        
+    if len( self.errors ) > 0:
+      return False  # Invalid
+    return True  # Valid
+  
+  def validate_repo_collaborator_auth( self ):
+    """Make sure repo autho information is valid."""
+    # Check user has access to the repo (403)
+    has_access = self.repo.has_in_collaborators( self.user_name )
+    if not has_access:
+      error4 = ErrorLikeObject( message='Must have push access', details=self.github_access_error )
+      self.errors.append( error4 )
+      log( error4.__dict__, 'console' )
+
+    if len( self.errors ) > 0:
+      return False  # Invalid
+    return True  # Valid
+  
+  def validate_repo_admin_auth( self, user ):
+    self.repo.get_collaborator_permission( self.user_name )
+
+    #if len( self.errors ) > 0:
+    #  return False  # Invalid
+    #return True  # Valid
+    return self
+  
+  def check_branches( self, user ):
     if self.repo:
       # Check if a branch name is free to use
       # TODO: Allow user to pick a custom branch name or to push to default branch
@@ -82,21 +169,12 @@ class TestInstaller(DAObject):
         error3 = ErrorLikeObject( message='Branch already exists', details=self.github_branch_name_error )
         self.errors.append( error3 )
         log( error3.__dict__, 'console' )
-        
-      # Check user has access to the repo (403)
-      has_access = self.repo.has_in_collaborators( self.user_name )
-      if not has_access:
-        error4 = ErrorLikeObject( message='Must have push access', details=self.github_access_error )
-        self.errors.append( error4 )
-        log( error4.__dict__, 'console' )
     
     # Give as many errors at once as is possible
     if len( self.errors ) > 0:
-      return self
+      return False  # Invalid
     
-    self.set_auth_for_secrets()
-    
-    return self
+    return True  # Valid
   
   def update_github( self ):
     """Update github with what it needs and make a PR."""
@@ -122,7 +200,7 @@ class TestInstaller(DAObject):
       self.errors.append( error )
       log( error.__dict__, 'console' )
       
-    return self
+    return { "repo_name": self.repo_name, "owner_name": self.owner_name, "package_name": self.package_name }
   
   def get_free_branch_name( self ):
     """Return an object with two values:
@@ -159,9 +237,9 @@ class TestInstaller(DAObject):
     auth_bytes = codecs.encode(bytes( self.owner_name + ':' + self.token, 'utf8'), 'base64')
     self.basic_auth = 'Basic ' + auth_bytes.decode().strip()
     # The base url string needed for making requests to the repo.
-    if installer.goal == 'org_secrets':
+    if 'wants_to_set_org_secrets':
       self.github_secrets_base = "https://api.github.com/orgs/" + self.owner_name
-    if installer.goal == 'one_package':
+    else:
       self.github_secrets_base = "https://api.github.com/repos/" + self.owner_name + "/" + self.repo_name
       
     self.set_secrets_key_values()
@@ -305,7 +383,7 @@ class TestInstaller(DAObject):
 
 # handle errors
 class ErrorLikeObject():
-  """Create object to match PyGithub data structure for errors."""
+  """Create object to match PyGithub data structure for errors. https://pygithub.readthedocs.io/en/latest/utilities.html#module-github.GithubException"""
   def __init__( self, status=0, message='', details='' ):
     self.status = status
     self.data = { 'message': message, 'details': details }

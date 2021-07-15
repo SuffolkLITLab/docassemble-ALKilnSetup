@@ -57,10 +57,10 @@ code: |
     # Otherwise carry on
     get_secrets_info
   
-  # Get github token. Different wording for different goals
+  # Get and test github PAT (token) and either repo url or org name
   installer.token
-  #set_github_auth
-  #
+  set_github_auth
+  
   ## If setting up test files, get repo address
   
   # TODO: next steps for secrets - ensure the secret has the access settings you want
@@ -84,7 +84,7 @@ code: |
       log_into_test_account
       
   installer.password
-  #set_da_info
+  set_da_info
       
   get_secrets_info = True
 ---
@@ -93,12 +93,12 @@ code: |
   set_da_info = True
 ---
 code: |
-  installer.set_org_secrets()
-  set_org_secrets = True
----
-code: |
   installer.set_github_auth()
   set_github_auth = True
+---
+code: |
+  installer.set_org_secrets()
+  set_org_secrets = True
 ---
 code: |
   # These vars need to be defined before creating a branch.
@@ -302,7 +302,7 @@ fields:
   - note: |
       Go to the Playground of the account and run any working YAML file. For example, test.yml. What is the URL in the address bar? Example:[BR]
       `https://legal-dev.org/interview?i=docassemble.playground22%3Atest.yml`
-  - URL: installer.playground_url
+  - Interview URL: installer.playground_url
     hint: https://legal-dev.org/interview?i=docassemble.playground22%3Atest.yml
 
 auto terms:
@@ -576,6 +576,30 @@ code: |
 template: github_token_error
 content: |
   The permission levels of that [Github personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) are not sufficient. Are you sure it has 'repo' and 'workflow' level permissions? You can try copying and pasting it again or you can try [making a new one](https://github.com/settings/tokens).
+---
+depends on: org_does_not_exist_error
+code: |
+  installer.org_does_not_exist_error = org_does_not_exist_error.content
+---
+template: org_does_not_exist_error
+content: |
+  GitHub cannot find an organization called **${ installer.owner_name }**. 
+---
+depends on: not_an_org_member_error
+code: |
+  installer.not_an_org_member_error = not_an_org_member_error.content
+---
+template: not_an_org_member_error
+content: |
+  **${ installer.user_name }** might not be a member of **${ installer.owner_name }**. Try double checking the names.
+---
+depends on: not_org_admin_error
+code: |
+  installer.not_org_admin_error = not_org_admin_error.content
+---
+template: not_org_admin_error
+content: |
+  **${ installer.user_name }** might not be an admin of **${ installer.owner_name }**. Try double checking the names.
 ---
 depends on: github_repo_not_found_error
 code: |
