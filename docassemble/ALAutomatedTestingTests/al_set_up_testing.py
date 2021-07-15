@@ -42,6 +42,10 @@ class TestInstaller(DAObject):
     # make sure they've given the correct information?
     return self
   
+
+  ##########################
+  # github: verify existance and auth, set values needed for future operations
+  ##########################
   def set_github_auth( self ):
     """Get and set all the information needed to authorize to
     GitHub and handle all possible errors."""
@@ -96,14 +100,6 @@ class TestInstaller(DAObject):
     
     self.set_auth_for_secrets()
     
-    return self
-  
-  def update_github( self ):
-    """Update github with what it needs and make a PR."""
-    self.make_new_branch()
-    self.push_files()
-    self.make_pull_request()
-    self.create_secrets()
     return self
   
   def get_github_info_from_repo_url( self ):
@@ -174,6 +170,19 @@ class TestInstaller(DAObject):
     self.key_id = key_json[ 'key_id' ]
     self.public_key = key_json[ 'key' ]
     
+    return self
+  
+
+  ###############################
+  # github: set secrets and create files
+  # All checks should have passed at this point
+  ###############################
+  def update_github( self ):
+    """Update github with what it needs and make a PR."""
+    self.make_new_branch()
+    self.push_files()
+    self.make_pull_request()
+    self.create_secrets()
     return self
   
   def make_new_branch( self ):
@@ -274,7 +283,7 @@ class TestInstaller(DAObject):
     return self
 
 
-# handle errors
+# Error helpers
 class ErrorLikeObject():
   """Create object to match PyGithub data structure for errors."""
   def __init__( self, status=0, message='', details='' ):
