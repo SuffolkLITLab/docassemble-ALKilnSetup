@@ -160,12 +160,8 @@ class TestInstaller(DAObject):
     self.basic_auth = 'Basic ' + auth_bytes.decode().strip()
     # The base url string needed for making requests to the repo.
     self.github_repo_base = "https://api.github.com/repos/" + self.owner_name + "/" + self.repo_name
-    self.set_key_values()
-    
-    return self
-  
-  def set_key_values( self ):
-    """Gets and sets GitHub key id for the repo for secrets"""
+
+    # Get and set GitHub key id for the repo for secrets
     key_url = self.github_repo_base + "/actions/secrets/public-key"
     key_payload = ""
     key_headers = {
