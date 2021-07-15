@@ -52,13 +52,11 @@ class TestInstaller(DAObject):
     # Start clean. Other errors should have been handled already.
     self.errors = []
     
-    self.get_github_info_from_repo_url()
+    # Check token credentials
     self.github = Github( self.token )
     user = self.github.get_user()
     
-    # Check token credentials
     try:
-      # Trigger for authentication error or feedback for the user
       self.user_name = user.login
     except Exception as error1:
       # github.GithubException.BadCredentialsException (401, 403)
@@ -68,14 +66,8 @@ class TestInstaller(DAObject):
       self.errors.append( error1 )
       
     # Check if repo exists
-    try:
-      self.repo = self.github.get_repo( self.owner_name + '/' + self.repo_name )
-    except Exception as error2:
-      # github.GithubException.UnknownObjectException (404)
-      log( error2.__dict__, 'console' )
-      self.repo = None
-      error2.data[ 'details' ] = self.github_repo_not_found_error
-      self.errors.append( error2 )
+    self.set_github_info_from_repo_url()
+    self.repo = self.get_repo()
     
     if self.repo:
       # Check if a branch name is free to use
@@ -102,7 +94,7 @@ class TestInstaller(DAObject):
     
     return self
   
-  def get_github_info_from_repo_url( self ):
+  def set_github_info_from_repo_url( self ):
     """Use repo address to parse out owner name and repo name. Needs self.repo_url"""
     # Match either the actual URL or the clone HTTP or SSH URL
     matches = re.match( r"^.*github.com(?:\/|:)([^\/]*)\/?([^\/.]*)?(?:\..{3})?", self.repo_url )
@@ -119,6 +111,19 @@ class TestInstaller(DAObject):
       log( error.__dict__, 'console' )
       
     return self
+
+  def get_repo( self ):
+    """Return repo obj or None. Needs self.owner_name, self.repo_name."""
+    try:
+      repo = self.github.get_repo( self.owner_name + '/' + self.repo_name )
+    except Exception as error2:
+      # github.GithubException.UnknownObjectException (404)
+      log( error2.__dict__, 'console' )
+      repo = None
+      error2.data[ 'details' ] = self.github_repo_not_found_error
+      self.errors.append( error2 )
+
+    return repo
   
   def get_free_branch_name( self ):
     """Return an object with two values:
