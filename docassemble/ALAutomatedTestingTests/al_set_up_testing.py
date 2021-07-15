@@ -70,21 +70,9 @@ class TestInstaller(DAObject):
     self.repo = self.get_repo()
     
     if self.repo:
-      # Check if a branch name is free to use
+      has_access = self.is_repo_collaborator()
       # TODO: Allow user to pick a custom branch name or to push to default branch
-      branch_data = self.get_free_branch_name()
-      self.branch_name = branch_data[ 'branch_name' ]
-      if not branch_data[ 'found_free_name' ]:
-        error3 = ErrorLikeObject( message='Branch already exists', details=self.github_branch_name_error )
-        self.errors.append( error3 )
-        log( error3.__dict__, 'console' )
-        
-      # Check user has access to the repo (403)
-      has_access = self.repo.has_in_collaborators( self.user_name )
-      if not has_access:
-        error4 = ErrorLikeObject( message='Must have push access', details=self.github_access_error )
-        self.errors.append( error4 )
-        log( error4.__dict__, 'console' )
+      self.branch_name = self.get_free_branch_name()
     
     # Give as many errors at once as is possible
     if len( self.errors ) > 0:
@@ -124,11 +112,19 @@ class TestInstaller(DAObject):
       self.errors.append( error2 )
 
     return repo
+
+  def is_repo_collaborator( self ):
+    """Return True if user has collaborator access to the repo, else False and add error (403)"""
+    has_access = self.repo.has_in_collaborators( self.user_name )
+    if not has_access:
+      error4 = ErrorLikeObject( message='Must have push access', details=self.github_access_error )
+      self.errors.append( error4 )
+      log( error4.__dict__, 'console' )
+    return has_access
   
   def get_free_branch_name( self ):
-    """Return an object with two values:
-    - found_free_name: Whether an appropriate branch name was free
-    - branch_name: The last branch name that was tried"""
+    """Return str of valid avialable branch name or None. Add appropriate errors."""
+    branch_name = None
     # Get all branches
     all_branches = self.repo.get_branches()
     
@@ -150,8 +146,14 @@ class TestInstaller(DAObject):
           # Prep for next attempt
           found_free_name = False
           branch_name = branch_name_base + '_' + str( count )
+
+    if not found_free_name:
+      error3 = ErrorLikeObject( message='Branch already exists', details=self.github_branch_name_error )
+      log( error3.__dict__, 'console' )
+      branch_name = None
+      self.errors.append( error3 )
     
-    return { "found_free_name": found_free_name, "branch_name": branch_name }
+    return branch_name
   
   def set_auth_for_secrets( self ):
     """Separated to allow easier removal when library finally supports secrets"""
