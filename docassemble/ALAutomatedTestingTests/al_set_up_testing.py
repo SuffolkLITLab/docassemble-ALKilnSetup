@@ -71,6 +71,24 @@ class TestInstaller(DAObject):
       self.org = self.get_org()
       if self.org and user:
         is_valid_org_admin = self.is_valid_org_admin( user, self.org.login )
+    
+    # If wants to do any repo stuff
+    if value( 'wants_to_set_repo_secrets' ):
+      self.repo = self.get_repo( self.repo_url )
+      if self.repo:
+        self.is_repo_collaborator()  
+        self.is_repo_admin()
+        
+    #has_valid_min_repo_permissions = False
+    #if value( 'wants_to_set_repo_secrets' ):  # or value( 'wants_to_set_up_tests' ):
+    #  if self.validate_repo():
+    #    if self.validate_repo_collaborator_auth()  # Minimum permissions required
+    #      has_valid_min_repo_permissions = True
+    #
+    #if has_valid_min_repo_permissions and value( 'wants_to_set_repo_secrets' ):
+    #  if self.validate_repo_admin_auth():
+    #    # Set repo secrets
+    #    pass
       
     ## Check if repo exists
     #self.set_github_info_from_repo_url()
@@ -126,36 +144,42 @@ class TestInstaller(DAObject):
     
     return valid
   
-  def set_github_info_from_repo_url( self ):
-    """Use repo address to parse out owner name and repo name. Needs self.repo_url"""
+  def get_repo( self, repo_url ):
+    """Get repo obj of given repo. Make sure repo exists."""
+    self.owner_name, self.repo_name, self.package_name = self.get_github_info_from_repo_url( repo_url )
+    
+    repo = None
+    if self.repo_name:
+      # Check if repo exists
+      try:
+        repo = self.github.get_repo( self.owner_name + '/' + self.repo_name )
+      except Exception as error2:
+        # github.GithubException.UnknownObjectException (404)
+        log( error2.__dict__, 'console' )
+        repo = None
+        error2.data[ 'details' ] = self.github_repo_not_found_error
+        self.errors.append( error2 )
+        
+    return repo
+  
+  def get_github_info_from_repo_url( self, repo_url ):
+    """Use repo address to parse out owner name and repo name."""
     # Match either the actual URL or the clone HTTP or SSH URL
-    matches = re.match( r"^.*github.com(?:\/|:)([^\/]*)\/?([^\/.]*)?(?:\..{3})?", self.repo_url )
+    matches = re.match( r"^.*github.com(?:\/|:)([^\/]*)\/?([^\/.]*)?(?:\..{3})?", repo_url )
     if matches:
-      self.owner_name = matches.group(1)
-      self.repo_name = matches.group(2)
-      self.package_name = re.sub( r'docassemble-', '', self.repo_name )
+      owner_name = matches.group(1)
+      repo_name = matches.group(2)
+      package_name = re.sub( r'docassemble-', '', repo_name )
     else:
-      self.owner_name = ''
-      self.repo_name = ''
+      owner_name = ''
+      repo_name = ''
+      package_name = ''
       # Show error
       error = ErrorLikeObject( message='GitHub URL', details=self.github_url_error )
       self.errors.append( error )
       log( error.__dict__, 'console' )
       
-    return self
-
-  def get_repo( self ):
-    """Return repo obj or None. Needs self.owner_name, self.repo_name."""
-    try:
-      repo = self.github.get_repo( self.owner_name + '/' + self.repo_name )
-    except Exception as error2:
-      # github.GithubException.UnknownObjectException (404)
-      log( error2.__dict__, 'console' )
-      repo = None
-      error2.data[ 'details' ] = self.github_repo_not_found_error
-      self.errors.append( error2 )
-
-    return repo
+    return [ owner_name, repo_name, package_name ]
 
   def is_repo_collaborator( self ):
     """Return True if user has collaborator access to the repo, else False and add error (403)"""
@@ -165,6 +189,17 @@ class TestInstaller(DAObject):
       self.errors.append( error4 )
       log( error4.__dict__, 'console' )
     return has_access
+  
+  def is_repo_admin( self ):
+    "Check that user is admin of repo."
+    role = self.repo.get_collaborator_permission( self.user_name )
+    if role != 'admin':
+      # Show error
+      error3 = ErrorLikeObject( message='Not an admin', details=self.not_org_admin_error )
+      log( error3.__dict__, 'console' )
+      self.errors.append( error3 )
+    
+    return role != 'admin'
   
   def get_free_branch_name( self ):
     """Return str of valid avialable branch name or None. Add appropriate errors."""

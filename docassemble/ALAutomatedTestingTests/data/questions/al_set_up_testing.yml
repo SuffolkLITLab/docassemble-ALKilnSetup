@@ -31,9 +31,11 @@ comment: |
 ---
 mandatory: True
 code: |
-  ## for dev
+  # for dev
   #installer.repo_url = 'https://github.com/plocket/install'
-  #installer.playground_url = 'https://apps-dev.suffolklitlab.org/interview?i=docassemble.playground12ALTestingGHSendFiles%3Aal_set_up_testing.yml#page4'
+  installer.playground_url = 'https://apps-dev.suffolklitlab.org/interview?i=docassemble.playground12ALTestingGHSendFiles%3Aal_set_up_testing.yml#page4'
+  installer.email = 'a@example.com'
+  installer.password = 'asldkjflsdkjfldsjflsdjf'
   
   # show errors first thing on each loop
   if len( installer.errors ) > 0:
@@ -52,7 +54,7 @@ code: |
   
   # Everyone has to set up secrets if they don't have them
   if not has_secrets.any_true():
-    if not is_org_admin or is_repo_admin:
+    if not is_org_admin and not is_repo_admin:
       needs_secrets_kickout
     # Otherwise carry on
     get_secrets_info
@@ -622,7 +624,7 @@ code: |
 ---
 template: github_access_error
 content: |
-  The user **${ installer.user_name }** does not have admin access to change the files or ["SECRETS"](https://docs.github.com/en/actions/reference/encrypted-secrets) in the **${ installer.repo_name }** repository owned by the owner **${ installer.owner_name }**. You can ask the admin to give correct access.
+  The user **${ installer.user_name }** does not have collaborator access to change the files in the **${ installer.repo_name }** repository owned by the owner **${ installer.owner_name }**. You can ask the admin to give correct access.
 ---
 depends on: github_branch_name_error
 code: |
