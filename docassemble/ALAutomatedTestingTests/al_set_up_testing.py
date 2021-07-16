@@ -1,4 +1,5 @@
 from github import Github  # PyGithub
+from github import PublicKey
 import requests
 from nacl import encoding, public  # pynacl
 # TODO: Reduce to just one encryption library :/
@@ -42,18 +43,20 @@ class TestInstaller(DAObject):
     # make sure they've given the correct information?
     return self
   
+
+  ##########################
+  # github: verify existance and auth, set values needed for future operations
+  ##########################
   def set_github_auth( self ):
     """Get and set all the information needed to authorize to
     GitHub and handle all possible errors."""
     # Start clean. Other errors should have been handled already.
     self.errors = []
     
+    # Check token credentials
     self.github = Github( self.token )
     user = self.github.get_user()
-    
-    # Check token credentials
     try:
-      # Trigger for authentication error or feedback for the user
       self.user_name = user.login
     except Exception as error1:
       # github.GithubException.BadCredentialsException (401, 403)
@@ -62,27 +65,34 @@ class TestInstaller(DAObject):
       error1.data[ 'details' ] = self.github_token_error
       self.errors.append( error1 )
     
-    # DEV: working
+    # Set org secrets
+    is_valid_org_admin = False
     if ( value( 'wants_to_set_org_secrets' )):
-      self.validate_org_admin_auth( user )
+      self.org = self.get_org()
+      if self.org and user:
+        is_valid_org_admin = self.is_valid_org_admin( user )
+        if is_valid_org_admin:
+          self.set_auth_for_secrets()
       
-    # DEV: needs testing
-    if ( not value( 'wants_to_set_org_secrets' ) or value( 'wants_to_set_up_tests' )):
-      if self.validate_repo():
-        if self.validate_repo_collaborator_auth()  # Minimum permissions required
-        if ( value( 'wants_to_set_repo_secrets' )):
-          self.validate_repo_admin_auth( user )
-    
-    # Give as many errors at once as is possible
-    if len( self.errors ) > 0:
-      return self
-    
+    ## Check if repo exists
+    #self.set_github_info_from_repo_url()
+    #self.repo = self.get_repo()
+    #
+    #if self.repo:
+    #  has_access = self.is_repo_collaborator()
+    #  # TODO: Allow user to pick a custom branch name or to push to default branch
+    #  self.branch_name = self.get_free_branch_name()
+    #
+    ## Give as many errors at once as is possible
+    #if len( self.errors ) > 0:
+    #  return self
+    #
     #self.set_auth_for_secrets()
     
     return self
-
-  def validate_org_admin_auth( self, user ):
-    """Make sure org auth information is valid."""
+  
+  def get_org( self ):
+    """Return org if it exists, otherwise None."""
     # Check if org exists
     try:
       # Trigger for authentication error or feedback for the user
@@ -94,97 +104,33 @@ class TestInstaller(DAObject):
       error1.data[ 'details' ] = self.org_does_not_exist_error
       self.errors.append( error1 )
     
-    if org and user:
-      # Check if user belongs to org
-      try:
-        membership = user.get_organization_membership( org.login )
-        role = membership.role
-      except Exception as error2:
-        role = None
-        log( error2.__dict__, 'console' )
-        error2.data[ 'details' ] = self.not_an_org_member_error
-        self.errors.append( error2 )
-      
-      # Check if user is admin of org
-      if role != 'admin':
-        # Show error
-        error3 = ErrorLikeObject( message='Not organization admin', details=self.not_org_admin_error )
-        log( error3.__dict__, 'console' )
-        self.errors.append( error3 )
-        
-    #if len( self.errors ) > 0:
-    #  return False  # Invalid
-    #return True  # Valid
-    return self
-  
-  def validate_repo( self ):
-    """Make sure repo exists."""
-    names = self.get_github_info_from_repo_url()
-    self.repo_name = names["repo_name"]
-    self.owner_name = names["owner_name"]
-    self.package_name = names["package_name"]
-      
-    # Check if repo exists
+    return org
+    
+  def is_valid_org_admin( self, user ):
+    """Make sure org auth information is valid."""
+    valid = True
+    # Check if user belongs to org
     try:
-      self.repo = self.github.get_repo( self.owner_name + '/' + self.repo_name )
+      membership = user.get_organization_membership( self.org.login )
+      role = membership.role
     except Exception as error2:
-      # github.GithubException.UnknownObjectException (404)
+      valid = False
+      role = None
       log( error2.__dict__, 'console' )
-      self.repo = None
-      error2.data[ 'details' ] = self.github_repo_not_found_error
+      error2.data[ 'details' ] = self.not_an_org_member_error
       self.errors.append( error2 )
-        
-    if len( self.errors ) > 0:
-      return False  # Invalid
-    return True  # Valid
-  
-  def validate_repo_collaborator_auth( self ):
-    """Make sure repo autho information is valid."""
-    # Check user has access to the repo (403)
-    has_access = self.repo.has_in_collaborators( self.user_name )
-    if not has_access:
-      error4 = ErrorLikeObject( message='Must have push access', details=self.github_access_error )
-      self.errors.append( error4 )
-      log( error4.__dict__, 'console' )
 
-    if len( self.errors ) > 0:
-      return False  # Invalid
-    return True  # Valid
-  
-  def validate_repo_admin_auth( self, user ):
-    self.repo.get_collaborator_permission( self.user_name )
-
-    #if len( self.errors ) > 0:
-    #  return False  # Invalid
-    #return True  # Valid
-    return self
-  
-  def check_branches( self, user ):
-    if self.repo:
-      # Check if a branch name is free to use
-      # TODO: Allow user to pick a custom branch name or to push to default branch
-      branch_data = self.get_free_branch_name()
-      self.branch_name = branch_data[ 'branch_name' ]
-      if not branch_data[ 'found_free_name' ]:
-        error3 = ErrorLikeObject( message='Branch already exists', details=self.github_branch_name_error )
-        self.errors.append( error3 )
-        log( error3.__dict__, 'console' )
+    # Check if user is admin of org
+    if role != 'admin':
+      valid = False
+      # Show error
+      error3 = ErrorLikeObject( message='Not an admin', details=self.not_org_admin_error )
+      log( error3.__dict__, 'console' )
+      self.errors.append( error3 )
     
-    # Give as many errors at once as is possible
-    if len( self.errors ) > 0:
-      return False  # Invalid
-    
-    return True  # Valid
+    return valid
   
-  def update_github( self ):
-    """Update github with what it needs and make a PR."""
-    self.make_new_branch()
-    self.push_files()
-    self.make_pull_request()
-    self.create_secrets()
-    return self
-  
-  def get_github_info_from_repo_url( self ):
+  def set_github_info_from_repo_url( self ):
     """Use repo address to parse out owner name and repo name. Needs self.repo_url"""
     # Match either the actual URL or the clone HTTP or SSH URL
     matches = re.match( r"^.*github.com(?:\/|:)([^\/]*)\/?([^\/.]*)?(?:\..{3})?", self.repo_url )
@@ -200,12 +146,33 @@ class TestInstaller(DAObject):
       self.errors.append( error )
       log( error.__dict__, 'console' )
       
-    return { "repo_name": self.repo_name, "owner_name": self.owner_name, "package_name": self.package_name }
+    return self
+
+  def get_repo( self ):
+    """Return repo obj or None. Needs self.owner_name, self.repo_name."""
+    try:
+      repo = self.github.get_repo( self.owner_name + '/' + self.repo_name )
+    except Exception as error2:
+      # github.GithubException.UnknownObjectException (404)
+      log( error2.__dict__, 'console' )
+      repo = None
+      error2.data[ 'details' ] = self.github_repo_not_found_error
+      self.errors.append( error2 )
+
+    return repo
+
+  def is_repo_collaborator( self ):
+    """Return True if user has collaborator access to the repo, else False and add error (403)"""
+    has_access = self.repo.has_in_collaborators( self.user_name )
+    if not has_access:
+      error4 = ErrorLikeObject( message='Must have push access', details=self.github_access_error )
+      self.errors.append( error4 )
+      log( error4.__dict__, 'console' )
+    return has_access
   
   def get_free_branch_name( self ):
-    """Return an object with two values:
-    - found_free_name: Whether an appropriate branch name was free
-    - branch_name: The last branch name that was tried"""
+    """Return str of valid avialable branch name or None. Add appropriate errors."""
+    branch_name = None
     # Get all branches
     all_branches = self.repo.get_branches()
     
@@ -227,27 +194,35 @@ class TestInstaller(DAObject):
           # Prep for next attempt
           found_free_name = False
           branch_name = branch_name_base + '_' + str( count )
+
+    if not found_free_name:
+      error3 = ErrorLikeObject( message='Branch already exists', details=self.github_branch_name_error )
+      log( error3.__dict__, 'console' )
+      branch_name = None
+      self.errors.append( error3 )
     
-    return { "found_free_name": found_free_name, "branch_name": branch_name }
+    return branch_name
   
   def set_auth_for_secrets( self ):
     """Separated to allow easier removal when library finally supports secrets"""
     # The below is only needed because PyGithub does not handle secrets
     # The value for the GitHub 'Authorization' key
     auth_bytes = codecs.encode(bytes( self.owner_name + ':' + self.token, 'utf8'), 'base64')
-    self.basic_auth = 'Basic ' + auth_bytes.decode().strip()
+    #log( bytes( self.owner_name + ':' + self.token, 'utf8'), 'console' )
+    #log( auth_bytes, 'console' )
+    #log( auth_bytes.decode(), 'console' )
+    self.basic_auth = 'Basic ' + auth_bytes.decode().replace("\n", "").strip()
+    #log( self.basic_auth, 'console' )
+    
     # The base url string needed for making requests to the repo.
     if 'wants_to_set_org_secrets':
       self.github_secrets_base = "https://api.github.com/orgs/" + self.owner_name
     else:
       self.github_secrets_base = "https://api.github.com/repos/" + self.owner_name + "/" + self.repo_name
-      
-    self.set_secrets_key_values()
     
-    return self
-  
-  def set_secrets_key_values( self ):
-    """Gets and sets GitHub key id for the repo for secrets"""
+    # self.blah.url
+
+    # Get and set GitHub key id for the repo for secrets
     key_url = self.github_secrets_base + "/actions/secrets/public-key"
     key_payload = ""
     key_headers = {
@@ -259,6 +234,194 @@ class TestInstaller(DAObject):
     key_json = json.loads( key_response.text )
     self.key_id = key_json[ 'key_id' ]
     self.public_key = key_json[ 'key' ]
+    log( 'key_response', 'console' )
+    log( key_response, 'console' )
+    log( json.dumps(key_json), 'console' )
+    
+    return self
+  
+
+  ###############################
+  # github: set secrets and create files
+  # All checks should have passed at this point
+  ###############################
+  def update_github( self ):
+    """Update github with what it needs and make a PR."""
+    self.create_secrets()
+    #self.make_new_branch()
+    #self.push_files()
+    #self.make_pull_request()
+    return self
+  
+  def create_secrets( self ):
+    """Set the GitHub repo secrets the tests need to log into the da server and
+    create projects to contain the interviews being tested. TODO: use PyGithub's secret handling https://pygithub.readthedocs.io/en/latest/github_objects/Repository.html?highlight=secret#github.Repository.Repository.create_secret. Org scope still missing: https://github.com/PyGithub/PyGithub/issues/1373#issuecomment-856616652."""
+    self.put_secret( 'SERVER_URL', self.server_url )
+    log(1, 'console' )
+    self.put_secret( 'PLAYGROUND_EMAIL', self.email )
+    log(2, 'console' )
+    self.put_secret( 'PLAYGROUND_PASSWORD', self.password )
+    log(3, 'console' )
+    self.put_secret( 'PLAYGROUND_ID', self.playground_id )
+    log(4, 'console' )
+    return self
+  
+  def put_secret( self, secret_name, secret_value ):
+    """Add or update one secret to the GitHub repo."""
+    # Create repo secret: https://docs.github.com/en/rest/reference/actions#create-or-update-a-repository-secret
+    url = self.github_secrets_base + "/actions/secrets/" + secret_name
+    
+    if value('wants_to_set_org_secrets'):
+      
+      #headers1, data = self.org._requester.requestJsonAndCheck(
+      #  "GET", f"{ self.org.url }/actions/secrets/public-key"
+      #)
+      #log( 'public key', 'console' )
+      #log( headers1, 'console' )
+      #log( json.dumps(data), 'console' )
+      #
+      #public_key = PublicKey.PublicKey(
+      #  self.org._requester, headers1, data, completed=True
+      #)
+      ##public_key = self.get_public_key()
+      #payload = public_key.encrypt( secret_value )
+      #log( 'payload', 'console' )
+      #log( payload, 'console' )
+      #put_parameters = {
+      #  "key_id": public_key.key_id,
+      #  "encrypted_value": payload,
+      #}
+      #status, headers, data = self.org._requester.requestJson(
+      #  "PUT", f"{ self.org.url }/actions/secrets/{ secret_name }", input=put_parameters
+      #)
+      #
+      #log( status, 'console' )
+      #log( headers, 'console' )
+      #log( self.org.url, 'console' )
+      
+      ################
+      ## from above
+      #auth_bytes = codecs.encode(bytes( self.owner_name + ':' + self.token, 'utf8'), 'base64')
+      ##log( bytes( self.owner_name + ':' + self.token, 'utf8'), 'console' )
+      ##log( auth_bytes, 'console' )
+      ##log( auth_bytes.decode(), 'console' )
+      #self.basic_auth = 'Basic ' + auth_bytes.decode().replace("\n", "").strip()
+      
+      # https://github.com/PyGithub/PyGithub/blob/master/github/PublicKey.py#L39-L44
+      public_key = public.PublicKey( self.public_key.encode("utf-8"), encoding.Base64Encoder() )
+      sealed_box = public.SealedBox( public_key )  # ?
+      encrypted = sealed_box.encrypt( secret_value.encode( "utf-8" ))  # LibSodium (?)
+      base64 = b64encode( encrypted ).decode( "utf-8" )  # turns into string
+      
+      payload = '{"encrypted_value":"' + base64 + '", "key_id":"' + self.key_id + '", "visibility": "all"}'
+      headers = {
+        'Accept': "application/vnd.github.v3+json",
+        'Authorization': self.basic_auth,
+      }
+      
+      secret_put = requests.request( "PUT", url, data=payload, headers=headers )
+      # Cannot check the value, but can check it exists
+      secret_get = requests.request( "GET", url, data="", headers=headers )
+      #log( response.text, 'console' )
+      # TODO: create org secret: https://docs.github.com/en/rest/reference/actions#create-or-update-an-organization-secret
+      log('put', 'console' )
+      log(secret_put.__dict__, 'console' )
+      log('get', 'console' )
+      log(secret_get, 'console' )
+    
+    elif value('wants_to_set_repo_secrets'):
+      self.repo.create_secret( secret_name, secret_value )
+    
+    
+    #if value('wants_to_set_org_secrets'):
+    #  # https://github.com/PyGithub/PyGithub/blob/master/github/Repository.py#L1420-L1438
+    #  # https://pygithub.readthedocs.io/en/latest/github_objects/PublicKey.html
+    #  
+    #  #headers, data = self._requester.requestJsonAndCheck(
+    #  #    "GET", f"{self.url}/actions/secrets/public-key"
+    #  #)
+    #  #return github.PublicKey.PublicKey(
+    #  #    self._requester, headers, data, completed=True
+    #  #)
+    #  
+    #  
+    #  ## Get and set GitHub key id for the repo for secrets
+    #  #key_url = self.github_secrets_base + "/actions/secrets/public-key"
+    #  #key_payload = ""
+    #  #key_headers = {
+    #  #  'Accept': 'application/vnd.github.v3+json',
+    #  #  'Authorization': self.basic_auth,
+    #  #}
+    #  #
+    #  #key_response = requests.request( 'GET', key_url, data=key_payload, headers=key_headers )
+    #  #key_json = json.loads( key_response.text )
+    #  #self.key_id = key_json[ 'key_id' ]
+    #  #self.public_key = key_json[ 'key' ]
+    #  headers1, data = self.org._requester.requestJsonAndCheck(
+    #        "GET", f"{ self.org.url }/actions/secrets/public-key"
+    #    )
+    #  public_key = PublicKey(
+    #      self.org._requester, headers1, data, completed=True
+    #  )
+    #  
+    #  payload = public_key.encrypt( secret_value )
+    #  put_parameters = {
+    #      "key_id": public_key.key_id,
+    #      "encrypted_value": payload,
+    #  }
+    #  status, headers2, data = self.org._requester.requestJson(
+    #      "PUT", f"{ self.org.url }/actions/secrets/{ secret_name }", input=put_parameters
+    #  )
+    #  
+    #  ##public_key = self.public_key
+    #  #payload = public_key.encrypt( secret_value )
+    #  #put_parameters = {
+    #  #    "key_id": public_key.key_id,
+    #  #    "encrypted_value": payload,
+    #  #}
+    #  ##status, headers, data = self._requester.requestJson(
+    #  ##    "PUT", f"{self.url}/actions/secrets/{secret_name}", input=put_parameters
+    #  ##)
+    #  #
+    #  #headers = {
+    #  #  'Accept': "application/vnd.github.v3+json",
+    #  #  'Authorization': self.basic_auth,
+    #  #}
+    #  #
+    #  #secret_get = requests.request( "PUT", url, data=payload, headers=headers )
+    #  #log('put', 'console' )
+    #  #log(secret_put, 'console' )
+    #  ## Cannot check the value, but can check it exists
+    #  #secret_get = requests.request( "GET", url, data="", headers=headers )
+    #  #log('get', 'console' )
+    #  #log(secret_get, 'console' )
+    #  ##log( response.text, 'console' )
+
+      
+    # Convert the message and key to Uint8Array's (Buffer implements that interface)
+    #encrypted_key = public.PublicKey( self.public_key.encode("utf-8"), encoding.Base64Encoder() )
+    #sealed_box = public.SealedBox( encrypted_key )  # ?
+    #encrypted = sealed_box.encrypt( secret_value.encode( "utf-8" ))  # LibSodium
+    #base64_encrypted = b64encode( encrypted ).decode( "utf-8" )  # turns into string
+    #log('A', 'console' )
+    #
+    #url = self.github_secrets_base + "/actions/secrets/" + name
+    #payload = '{"encrypted_value":"' + base64_encrypted + '", "key_id":"' + self.key_id + '"}'
+    #headers = {
+    #  'Accept': "application/vnd.github.v3+json",
+    #  'Authorization': self.basic_auth,
+    #}
+    #log('B', 'console' )
+    #
+    #secret_put = requests.request( "PUT", url, data=payload, headers=headers )
+    #log('put', 'console' )
+    #log(secret_put, 'console' )
+    ## Cannot check the value, but can check it exists
+    #secret_get = requests.request( "GET", url, data="", headers=headers )
+    #log('get', 'console' )
+    #log(secret_get, 'console' )
+    ##log( response.text, 'console' )
+    ## TODO: create org secret: https://docs.github.com/en/rest/reference/actions#create-or-update-an-organization-secret
     
     return self
   
@@ -325,66 +488,11 @@ class TestInstaller(DAObject):
     self.pull_url = response.html_url
     
     return self
-    
-  def set_org_secrets( self ):
-    # We have self.token and self.owner_name (org). What can we do with that? We need to set secrets
-    # Check that token is valid for that org. Maybe just try to get org secrets
-    # Already handled:
-    #set_auth_for_secrets
-    #self.owner_name
-    #self.token
-    #set_secrets_key_values
-    #self.github_secrets_base
-    #self.basic_auth
-    #create_secrets
-    #self.public_key
-    #self.key_id
-    
-    self.create_secrets()
-    
-    return self
-  
-  def create_secrets( self ):
-    """Set the GitHub repo secrets the tests need to log into the da server and
-    create projects to contain the interviews being tested.
-    https://docs.github.com/en/rest/reference/actions#create-or-update-an-organization-secret--parameters
-    Org scope still missing from PyGithub: https://github.com/PyGithub/PyGithub/issues/1373#issuecomment-856616652."""
-    responses = [];
-    responses.append( self.put_secret( 'SERVER_URL', self.server_url ))
-    responses.append( self.put_secret( 'PLAYGROUND_EMAIL', self.email ))
-    responses.append( self.put_secret( 'PLAYGROUND_PASSWORD', self.password ))
-    responses.append( self.put_secret( 'PLAYGROUND_ID', self.playground_id ))
-    return responses
-  
-  def put_secret( self, name, value ):
-    """Add or update one secret to the GitHub repo."""
-    # Create repo secret: https://docs.github.com/en/rest/reference/actions#create-or-update-a-repository-secret
-    # Convert the message and key to Uint8Array's (Buffer implements that interface)
-    encrypted_key = public.PublicKey( self.public_key.encode("utf-8"), encoding.Base64Encoder() )
-    sealed_box = public.SealedBox( encrypted_key )  # ?
-    encrypted = sealed_box.encrypt( value.encode( "utf-8" ))  # LibSodium
-    base64_encrypted = b64encode( encrypted ).decode( "utf-8" )  # turns into string
-    
-    url = self.github_secrets_base + "/actions/secrets/" + name
-    payload = '{"encrypted_value":"' + base64_encrypted + '", "key_id":"' + self.key_id + '"}'
-    headers = {
-      'Accept': "application/vnd.github.v3+json",
-      'Authorization': self.basic_auth,
-    }
-    
-    secret_put_response = requests.request( "PUT", url, data=payload, headers=headers )
-    # Cannot check the value, but can check it exists
-    secret_get_response = requests.request( "GET", url, data="", headers=headers )
-    #log( response.text, 'console' )
-    # TODO: create org secret: https://docs.github.com/en/rest/reference/actions#create-or-update-an-organization-secret
-    
-    return secret_put_response
 
 
-# handle errors
+# Error helpers
 class ErrorLikeObject():
-  """Create object to match PyGithub data structure for errors. https://pygithub.readthedocs.io/en/latest/utilities.html#module-github.GithubException"""
+  """Create object to match PyGithub data structure for errors."""
   def __init__( self, status=0, message='', details='' ):
     self.status = status
     self.data = { 'message': message, 'details': details }
-  
