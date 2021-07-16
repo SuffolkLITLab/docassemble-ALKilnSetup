@@ -632,6 +632,3 @@ template: github_branch_name_error
 content: |
   It looks like all the allowed branch names are taken. To solve this, delete some of the branches that start with "${ installer.default_branch_name }".
 ---
-include:
-  - temp.yml
----
