@@ -139,17 +139,17 @@ fields:
   - I am an admin of the GitHub organization with access to security settings: is_org_admin
     datatype: yesnowide
     default: false
-  - I am a contributor of the GitHub organization WITHOUT access to security settings: is_org_contributor
+  - I am a collaborator of the GitHub organization WITHOUT access to security settings: is_org_collaborator
     datatype: yesnowide
   - I am an admin of the package's GitHub repository with access to security settings: is_repo_admin
     datatype: yesnowide
-  - I am a contributor to the package's GitHub repository WITHOUT access to security settings: is_repo_contributor
+  - I am a collaborator to the package's GitHub repository WITHOUT access to security settings: is_repo_collaborator
     datatype: yesnowide
 validation code: |
   if (not is_org_admin
-      and not is_org_contributor
+      and not is_org_collaborator
       and not is_repo_admin
-      and not is_repo_contributor):
+      and not is_repo_collaborator):
     validation_error("You cannot set up tests if you don't have at least one of these roles.")
 ---
 id: admin goal
@@ -321,11 +321,12 @@ subquestion: |
   You now need to create temporary authorization for GitHub using a [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token).
   
   1. Start making a [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token). You will be able to delete it after you are finished here.
-  % if wants_to_set_org_secrets:
+  % elif wants_to_set_org_secrets:
   1. Tap the checkbox for "admin:org" permissions.
   % elif wants_to_set_repo_secrets:
   1. Tap the checkbox for "workflow" permissions. That should also trigger "repo" permissions.
-  % else:
+  % endif
+  % if wants_to_set_up_tests and not wants_to_set_repo_secrets:
   1. Tap the checkbox for "repo" permissions.
   % endif
   1. Finish creating the token.
@@ -360,7 +361,9 @@ fields:
 ---
 template: token_permissions_level
 content: |
-  % if wants_to_set_org_secrets:
+  % if wants_to_set_up_tests and wants_to_set_org_secrets:
+  "admin:org" and "repo"
+  % elif wants_to_set_org_secrets:
   "admin:org"
   % elif wants_to_set_repo_secrets:
   "workflow"
@@ -537,7 +540,7 @@ question: |
 subquestion: |
   [Check that you have set up the secrets for your organization](https://github.com/organizations/${ installer.owner_name }/settings/secrets/actions)
   
-  You should be finished. Your contributors can now use this interview to set up testing for their repositories without the need for special permissions.
+  You should be finished. Your collaborators can now use this interview to set up testing for their repositories without the need for special permissions.
 buttons:
   - Restart: restart
 ---
