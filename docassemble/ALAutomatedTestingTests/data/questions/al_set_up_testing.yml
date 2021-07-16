@@ -315,6 +315,7 @@ auto terms:
       The interview URL will give us the account's Playground ID and the address of the server that the account is on.
 ---
 # TODO: Can an org admin sometimes not have push access to an org repo?
+# TODO: Will org admins try to also add tests to a non-org repo?
 id: github auth
 question: |
   Authorizing for GitHub
@@ -637,4 +638,7 @@ code: |
 template: github_branch_name_error
 content: |
   It looks like all the allowed branch names are taken. To solve this, delete some of the branches that start with "${ installer.default_branch_name }".
+---
+include:
+  - temp.yml
 ---

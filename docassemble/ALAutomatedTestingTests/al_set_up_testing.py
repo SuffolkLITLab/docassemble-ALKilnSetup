@@ -65,22 +65,22 @@ class TestInstaller(DAObject):
       error1.data[ 'details' ] = self.github_token_error
       self.errors.append( error1 )
     
+    # If wants to do any repo stuff. Also defines self.owner_name if it's not defined already.
+    if value( 'wants_to_set_repo_secrets' ) or value( 'wants_to_set_up_tests' ):
+      self.repo = self.get_repo( self.repo_url )
+      if self.repo:
+        is_valid_collaborator = self.is_repo_collaborator()
+        self.is_repo_admin()
+    
     # Set org secrets
     is_valid_org_admin = False
     if ( value( 'wants_to_set_org_secrets' )):
       self.org = self.get_org()
       if self.org and user:
         is_valid_org_admin = self.is_valid_org_admin( user, self.org.login )
-    
-    # If wants to do any repo stuff
-    if value( 'wants_to_set_repo_secrets' ):
-      self.repo = self.get_repo( self.repo_url )
-      if self.repo:
-        self.is_repo_collaborator()  
-        self.is_repo_admin()
         
     #has_valid_min_repo_permissions = False
-    #if value( 'wants_to_set_repo_secrets' ):  # or value( 'wants_to_set_up_tests' ):
+    #if value( 'wants_to_set_repo_secrets' ):  #
     #  if self.validate_repo():
     #    if self.validate_repo_collaborator_auth()  # Minimum permissions required
     #      has_valid_min_repo_permissions = True
@@ -258,11 +258,12 @@ class TestInstaller(DAObject):
   
   def put_secret( self, secret_name, secret_value ):
     """Add or update one secret to the GitHub repo."""
+    # Encryption by hand in case the lib gets discontinued: https://gist.github.com/plocket/af03ac9326b2ae6d36c937b125b2ea0a
     # Create repo secret: https://docs.github.com/en/rest/reference/actions#create-or-update-a-repository-secret
     
     if value('wants_to_set_org_secrets'):
       # No PyGithub secrets for org yet
-      # encryption by hand: https://github.com/PyGithub/PyGithub/blob/master/github/PublicKey.py#L39-L44
+      # by hand: https://github.com/PyGithub/PyGithub/blob/master/github/PublicKey.py#L39-L44
       # https://github.com/PyGithub/PyGithub/blob/master/github/Repository.py#L1420-L1438
       # https://pygithub.readthedocs.io/en/latest/github_objects/PublicKey.html
       headers1, data = self.org._requester.requestJsonAndCheck(
