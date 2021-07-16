@@ -39,8 +39,6 @@ code: |
   if len( installer.errors ) > 0:
     show_errors
   
-  installer.token = "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"
-  installer.owner_name = "alsjdflaskjdfiwfn"
   # Secrets
   if is_org_admin or is_repo_admin:
     wants_to_set_up_tests
@@ -633,4 +631,7 @@ code: |
 template: github_branch_name_error
 content: |
   It looks like all the allowed branch names are taken. To solve this, delete some of the branches that start with "${ installer.default_branch_name }".
+---
+include:
+  - temp.yml
 ---
