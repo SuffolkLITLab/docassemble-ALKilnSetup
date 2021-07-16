@@ -42,6 +42,10 @@ class TestInstaller(DAObject):
     # make sure they've given the correct information?
     return self
   
+
+  ##########################
+  # github: verify existance and auth, set values needed for future operations
+  ##########################
   def set_github_auth( self ):
     """Get and set all the information needed to authorize to
     GitHub and handle all possible errors."""
@@ -98,14 +102,6 @@ class TestInstaller(DAObject):
     
     return self
   
-  def update_github( self ):
-    """Update github with what it needs and make a PR."""
-    self.make_new_branch()
-    self.push_files()
-    self.make_pull_request()
-    self.create_secrets()
-    return self
-  
   def get_github_info_from_repo_url( self ):
     """Use repo address to parse out owner name and repo name. Needs self.repo_url"""
     # Match either the actual URL or the clone HTTP or SSH URL
@@ -160,12 +156,8 @@ class TestInstaller(DAObject):
     self.basic_auth = 'Basic ' + auth_bytes.decode().strip()
     # The base url string needed for making requests to the repo.
     self.github_repo_base = "https://api.github.com/repos/" + self.owner_name + "/" + self.repo_name
-    self.set_key_values()
-    
-    return self
-  
-  def set_key_values( self ):
-    """Gets and sets GitHub key id for the repo for secrets"""
+
+    # Get and set GitHub key id for the repo for secrets
     key_url = self.github_repo_base + "/actions/secrets/public-key"
     key_payload = ""
     key_headers = {
@@ -178,6 +170,19 @@ class TestInstaller(DAObject):
     self.key_id = key_json[ 'key_id' ]
     self.public_key = key_json[ 'key' ]
     
+    return self
+  
+
+  ###############################
+  # github: set secrets and create files
+  # All checks should have passed at this point
+  ###############################
+  def update_github( self ):
+    """Update github with what it needs and make a PR."""
+    self.make_new_branch()
+    self.push_files()
+    self.make_pull_request()
+    self.create_secrets()
     return self
   
   def make_new_branch( self ):
@@ -278,7 +283,7 @@ class TestInstaller(DAObject):
     return self
 
 
-# handle errors
+# Error helpers
 class ErrorLikeObject():
   """Create object to match PyGithub data structure for errors."""
   def __init__( self, status=0, message='', details='' ):
