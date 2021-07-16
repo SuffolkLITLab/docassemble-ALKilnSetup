@@ -314,6 +314,7 @@ auto terms:
   - the URL in the address bar: |
       The interview URL will give us the account's Playground ID and the address of the server that the account is on.
 ---
+# TODO: Can an org admin sometimes not have push access to an org repo?
 id: github auth
 question: |
   Authorizing for GitHub
@@ -321,7 +322,7 @@ subquestion: |
   You now need to create temporary authorization for GitHub using a [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token).
   
   1. Start making a [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token). You will be able to delete it after you are finished here.
-  % elif wants_to_set_org_secrets:
+  % if wants_to_set_org_secrets:
   1. Tap the checkbox for "admin:org" permissions.
   % elif wants_to_set_repo_secrets:
   1. Tap the checkbox for "workflow" permissions. That should also trigger "repo" permissions.
