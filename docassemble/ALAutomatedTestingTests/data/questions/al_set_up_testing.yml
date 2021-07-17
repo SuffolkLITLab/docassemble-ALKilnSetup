@@ -125,7 +125,7 @@ fields:
     show if:
       code: |
         is_org_admin
-  - I want to set or update the repository's secrets: wants_to_set_repo_secrets
+  - I want to set or update a repository's secrets: wants_to_set_repo_secrets
     datatype: yesnowide
     show if:
       code: |
@@ -272,7 +272,7 @@ fields:
     datatype: password
   - note: |
       Go to the Playground of the account and run any working YAML file. For example, **test.yml**. What is the URL in the address bar? Example:[BR]
-      `https://legal-dev.org/interview?i=docassemble.playground22%3Atest.yml`
+      **https://legal-dev.org/interview?i=docassemble.playground22%3Atest.yml**
   - Interview URL: installer.playground_url
     hint: https://legal-dev.org/interview?i=docassemble.playground22%3Atest.yml
 
@@ -286,17 +286,22 @@ id: github auth
 question: |
   Authorizing for GitHub
 subquestion: |
-  You now need to create temporary authorization for GitHub using a [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token).
+  This tool needs GitHub authorization - a [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token). You can delete it at the end.
   
+  The token will let this tool:
+  
+  % if wants_to_set_repo_secrets or wants_to_set_org_secrets:
+  ${ '1.' if wants_to_set_up_tests else '' } Create or update GitHub secrets.
+  % endif
   % if wants_to_set_up_tests:
-  That token will let this tool add these folders and files to the repository on a new branch:
+  ${ '1.' if wants_to_set_repo_secrets or wants_to_set_org_secrets else '' } Add these folders and files to the repository on a new branch:
   
   ${ files_list }
   
   Then this interview will make a pull request with that branch.
   % endif
   
-  1. Start making a [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token). You will be able to delete it after you are finished here.
+  1. Start making a [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token).
   % if wants_to_set_org_secrets:
   1. Tap the checkbox for "admin:org" permissions.
   % endif
@@ -312,7 +317,7 @@ fields:
       The token must have ${ token_permissions_scope } permissions.
   - note: |
       We also need the GitHub repository URL of the package. Example:[BR]
-      `https://github.com/TheLawFantastic/docassemble-GreatForm`
+      **https://github.com/TheLawFantastic/docassemble-GreatForm**
     show if:
       code: |
         wants_to_set_up_tests or wants_to_set_repo_secrets
@@ -324,7 +329,7 @@ fields:
         wants_to_set_up_tests or wants_to_set_repo_secrets
   - note: |
       We also need the name of the GitHub organization. Example:[BR]
-      `SuffolkLITLab`
+      **SuffolkLITLab**
     show if:
       code: |
         not wants_to_set_up_tests and wants_to_set_org_secrets
@@ -392,11 +397,9 @@ review:
       * **Personal access token**: \*\*\*${ installer.token[-4:] }
       
       % if not wants_to_set_up_tests and wants_to_set_org_secrets:
-      * **Owner of the repository**:[BR]
+      * **GitHub organization**:[BR]
       ${ installer.owner_name }
-      % endif
-      
-      % if wants_to_set_up_tests or wants_to_set_repo_secrets:
+      % else:
       * **Repository URL**:[BR]
       [https://github.com/${ installer.owner_name }/${ installer.repo_name }](https://github.com/${ installer.owner_name }/${ installer.repo_name })
       % endif
@@ -411,12 +414,15 @@ review:
       ${ installer.owner_name }
       % endif
       
+      % if wants_to_set_up_tests:
       * **Package name**:[BR]
       ${ installer.package_name }
       
       The new branch will be named **${ installer.branch_name }**.
-  - note: |
+      % endif
+      
       ---
+  - note: |
       There may be a few more steps after this to finish up. Continue when you are ready.
       
       You will not be able to come back to this page.
@@ -449,11 +455,11 @@ subquestion: |
   % endif
   
   % if wants_to_set_repo_secrets:
-  [Make sure the repository secrets got created](${ installer.repo.url }/settings/secrets/actions).
+  [Make sure the repository secrets got created](https://github.com/${ installer.owner_name }/${ installer.repo_name }/settings/secrets/actions).
   % endif
   
   % if wants_to_set_org_secrets:
-  1. [Make sure the organization secrets got created](${ installer.org.url }/settings/secrets/actions).
+  1. [Make sure the organization secrets got created]( https://github.com/organizations/${ installer.org.login }/settings/secrets/actions).
   1. Make sure the secrets have the [access settings](https://docs.github.com/en/actions/reference/encrypted-secrets#reviewing-access-to-organization-level-secrets) you need.
   % endif
   
@@ -468,7 +474,7 @@ subquestion: |
 
   ---
   
-  Write your first test:
+  You can write your first test now if you want:
   
   1. Pull the new code into a new Project.
   1. In the Playground, go to your Sources folder.
@@ -483,7 +489,7 @@ subquestion: |
           Given I start the interview at "\\_\\_\\_\\_"
         </pre>
 
-  5. Replace `____` with the name of the YAML file you're testing.
+  5. Replace \\_\\_\\_\\_ with the name of the YAML file you're testing.
   1. Save the file.
   1. On your Packages page Sources section, select the file.
   1. Save the package.
@@ -495,7 +501,7 @@ subquestion: |
   % endif
   
   % if wants_to_set_org_secrets:
-  Team members that are collaborators can now use this interview to set up tests for their repositories without the need for organization-level permissions.
+  Team members that are collaborators can now use this interview to set up tests for their repositories without needing to set secrets.
   % endif
   
   % if not wants_to_set_up_tests:
@@ -506,7 +512,7 @@ subquestion: |
   
   ---
   
-  If you have some feedback, we would love to hear from you. [Make an "issue" in our repository](https://github.com/plocket/docassemble-ALAutomatedTestingTests/issues/new) or let us know in chat!
+  If you have some feedback, we would love to hear from you! Let us know in chat or [make a public "issue" in our repository](https://github.com/plocket/docassemble-ALAutomatedTestingTests/issues/new).
 buttons:
   - Restart: restart
 comment: |
@@ -520,10 +526,13 @@ question: |
   Sorry, something went wrong
 subquestion: |
   % for error in installer.errors:
-  **Error: ${ error.status if error.status else '' } ${ error.data[ 'message' ] }**${ '[BR]' + error.data[ 'details' ] }
-  <hr/>
+  **Error: ${ error.status if error.status else '' } ${ error.data[ 'message' ] }**[BR]
+  ${ error.data[ 'details' ] }
   
+  ---
   % endfor
+  
+  If you cannot find a way to fix the problem, contact us in chat or [file a public issue](https://github.com/plocket/docassemble-ALAutomatedTestingTests).
 ---
 depends on: da_url_error
 code: |
@@ -532,8 +541,7 @@ code: |
 template: da_url_error
 content: |
   Cannot validate the interview URL **"${ installer.playground_url }"**. Example of a valid URL:[BR]
-  `https://dev.court-wizards.org/interview?i=docassemble.playground222ProjectName%3Asome_file.yml` [BR]
-  If you are sure you have the whole URL of a running interview, please [file an issue](https://github.com/plocket/docassemble-ALAutomatedTestingTests) and include your interview URL in the report.
+  **https://dev.court-wizards.org/interview?i=docassemble.playground222ProjectName%3Asome_file.yml** [BR]
 ---
 depends on: github_token_error
 code: |
@@ -560,8 +568,6 @@ content: |
   Cannot validate the GitHub URL **"${ installer.repo_url }"**. Example of a valid URL:
   
   **https://github.com/owner_name/repo_name**
-  
-  If you are sure you have the correct GitHub URL, please [file an issue](https://github.com/plocket/docassemble-ALAutomatedTestingTests) and include the GitHub URL.
 ---
 depends on: github_repo_not_found_error
 code: |
