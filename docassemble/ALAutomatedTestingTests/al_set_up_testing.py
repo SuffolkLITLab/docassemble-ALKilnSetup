@@ -75,8 +75,7 @@ class TestInstaller(DAObject):
         # TODO: Add branch name to confirmation page or final page?
         # TODO: Allow user to pick a custom branch name or to push to default branch?
         self.branch_name = self.get_free_branch_name()
-        if self.is_repo_collaborator() and value( 'wants_to_set_repo_secrets' ):
-          self.is_valid_repo_admin()
+        self.is_repo_collaborator()
     
     # Set org secrets
     if ( value( 'wants_to_set_org_secrets' )):
@@ -89,20 +88,19 @@ class TestInstaller(DAObject):
   def has_right_scopes( self, scopes ):
     """Make sure the developer gave the token the right scopes"""
     # TODO: discuss: Really if just setting repo secrets, only need repo permissions, but do we want to make it that complicated/inconsistent?
-    #if value('wants_to_set_org_secrets') and value('wants_to_set_up_tests'):
-    #  has_scopes = "admin:org" in scopes and "workflow" in scopes and "repo" in scopes
-    #elif value('wants_to_set_org_secrets') and not value('wants_to_set_up_tests'):
-    #  has_scopes = "admin:org" in scopes
-    #else:
-    #  has_scopes = "workflow" in scopes and "repo" in scopes
-    #  
-    #if not has_scopes:
-    #  error = ErrorLikeObject( message='Incorrect Personal Access Token scopes', details=self.github_pat_scopes_error )
-    #  self.errors.append( error )
-    #  log( error.__dict__, 'console' )
-    #  
-    #return has_scopes
-    return True
+    if value('wants_to_set_org_secrets') and value('wants_to_set_up_tests'):
+      has_scopes = "admin:org" in scopes and "workflow" in scopes and "repo" in scopes
+    elif value('wants_to_set_org_secrets') and not value('wants_to_set_up_tests'):
+      has_scopes = "admin:org" in scopes
+    else:
+      has_scopes = "workflow" in scopes and "repo" in scopes
+      
+    if not has_scopes:
+      error = ErrorLikeObject( message='Incorrect Personal Access Token scopes', details=self.github_pat_scopes_error )
+      self.errors.append( error )
+      log( error.__dict__, 'console' )
+      
+    return has_scopes
   
   def get_repo( self, repo_url ):
     """Get repo obj of given repo. Make sure repo exists."""
@@ -144,22 +142,12 @@ class TestInstaller(DAObject):
   def is_repo_collaborator( self ):
     """Return True if user has collaborator access to the repo, else False and add error (403)"""
     has_access = self.repo.has_in_collaborators( self.user_name )
+    # TODO: Check that the person as 'write' permissions? I think?
     if not has_access:
-      error4 = ErrorLikeObject( message='Must have push access', details=self.github_access_error )
+      error4 = ErrorLikeObject( message='Must have push access', details=self.not_collaborator_error )
       self.errors.append( error4 )
       log( error4.__dict__, 'console' )
     return has_access
-  
-  def is_valid_repo_admin( self ):
-    "Check that user is admin of repo."
-    #role = self.repo.get_collaborator_permission( self.user_name )
-    #if role != 'admin':
-    #  # Show error
-    #  error3 = ErrorLikeObject( message='Not an admin', details=self.not_repo_admin_error )
-    #  log( error3.__dict__, 'console' )
-    #  self.errors.append( error3 )
-    #return role != 'admin'
-    return True
   
   def get_org( self ):
     """Return org if it exists, otherwise None."""

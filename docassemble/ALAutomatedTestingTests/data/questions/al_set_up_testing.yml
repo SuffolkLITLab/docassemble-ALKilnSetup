@@ -6,6 +6,7 @@ metadata:
 ---
 features:
   question back button: True
+  question help button: True
   css:
     - styles.css
 ---
@@ -29,32 +30,22 @@ comment: |
 ---
 mandatory: True
 code: |
-  # for dev
-  #installer.repo_url = 'https://github.com/plocket/install'
-  installer.playground_url = 'https://apps-dev.suffolklitlab.org/interview?i=docassemble.playground12ALTestingGHSendFiles%3Aal_set_up_testing.yml#page4'
-  installer.email = 'a@example.com'
-  installer.password = 'asldkjflsdkjfldsjflsdjf'
+  ## for dev
+  ##installer.repo_url = 'https://github.com/plocket/install'
+  #installer.playground_url = 'https://apps-dev.suffolklitlab.org/interview?i=docassemble.playground12ALTestingGHSendFiles%3Aal_set_up_testing.yml#page4'
+  #installer.email = 'a@example.com'
+  #installer.password = 'asldkjflsdkjfldsjflsdjf'
   
   # show errors first thing on each loop
   if len( installer.errors ) > 0:
     show_errors
   
-  # Secrets
-  if is_org_admin or is_repo_admin:
-    wants_to_set_up_tests
-    if not defined('has_secrets'):
-      has_secrets = DADict('has_secrets', there_are_any=False)  # None are true
-  else:  # non-admins
-    wants_to_set_org_secrets = False
-    wants_to_set_repo_secrets = False
-    wants_to_set_up_tests = True
-    # DO NOT define has_secrets
+  # role and goal
+  is_org_admin
+  wants_to_set_up_tests
   
-  # Everyone has to set up secrets if they don't have them
-  if not has_secrets.any_true():
-    if not is_org_admin and not is_repo_admin:
-      needs_secrets_kickout
-    # Otherwise carry on
+  # Secrets
+  if wants_to_set_org_secrets or wants_to_set_repo_secrets:
     get_secrets_info
   
   # Get and test github PAT (token) and either repo url or org name
@@ -66,7 +57,6 @@ code: |
   # update github
   update_github
   
-  #instructions
   force_ask( 'next_steps' )
 ---
 code: |
@@ -121,38 +111,18 @@ subquestion: |
   :clock: This task can take up to 30 minutes.
   
   What you can do depends on your situation and what kind of GitHub permissions you have.
-  
-  Which descriptions fit you? Pick at least one.
 fields:
-  - I am an admin of the GitHub organization with access to security settings: is_org_admin
-    datatype: yesnowide
-    default: false
-  - I am a collaborator of the GitHub organization WITHOUT access to security settings: is_org_collaborator
-    datatype: yesnowide
-  - I am an admin of the package's GitHub repository with access to security settings: is_repo_admin
-    datatype: yesnowide
-  - I am a collaborator to the package's GitHub repository WITHOUT access to security settings: is_repo_collaborator
-    datatype: yesnowide
-validation code: |
-  if (not is_org_admin
-      and not is_org_collaborator
-      and not is_repo_admin
-      and not is_repo_collaborator):
-    validation_error("You cannot set up tests if you don't have at least one of these roles.")
+  - Are you the admin of the organization?: is_org_admin
+    datatype: yesnoradio
 ---
+# Note: any repo writer can set repo secrets
 id: admin goal
 question: |
   What do you want to do?
 subquestion: |
-  For tests to run, they need to be able to make a Project on your docassemble server and then run an interview from that Project. [GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets) store and encrypt the information the tests need in order to do that. This interview will help you set these secrets:
+  For tests to run, they need to be able to autmoatically make a Project on your docassemble server and then run an interview from that Project. To do that, the repository need access to organization or repository secrets and some extra files. Once an organization admin sets up organization secrets, repository secrets are unnecessary.
   
-  ${ secrets_list }
-  
-  Once an organization admin sets up secrets, repository secrets will be unnecessary and any developer that can push to a repository can set up automated tests for it with no other special permissions.
-  
-  ${ how_to_see_repo_secrets }
-  
-  ${ check_secrets_access }
+  This tool can help set up secrets, add testing files to a repository, or both. If you might need to add secrets, tap the "About Github secrets" help button at the bottom of the page to learn more.
   
   What do you want to do?
 fields:
@@ -171,8 +141,16 @@ fields:
         is_org_admin
     js enable if: |
       !val('wants_to_set_org_secrets')
+  # Not org admin
+  - I want to set or update the repository's secrets: wants_to_set_repo_secrets
+    datatype: yesnowide
+    show if:
+      code: |
+        not is_org_admin
+  # Always
   - I want to set up testing for a package: wants_to_set_up_tests
     datatype: yesnowide
+  # Is org admin
   - note: A package must have access to GitHub secrets in order to run tests.
     show if:
       code: |
@@ -184,19 +162,13 @@ fields:
     none of the above: False
     choices:
       - The package already has access to organization or repository secrets: yes
-    help: |
-      ${ how_to_see_repo_secrets } (see above for link)
+    help: Tap the "About Github secrets" help button for more info
     show if:
       code: |
         is_org_admin
     js show if: |
       val('wants_to_set_up_tests') && !val('wants_to_set_repo_secrets') && !val('wants_to_set_org_secrets')
   # Not org admin
-  - I want to set or update the repository's secrets: wants_to_set_repo_secrets
-    datatype: yesnowide
-    show if:
-      code: |
-        not is_org_admin
   - note: A package must have access to GitHub secrets in order to run tests.
     show if:
       code: |
@@ -208,8 +180,7 @@ fields:
     none of the above: False
     choices:
       - The package already has access to organization or repository secrets: yes
-    help: |
-      ${ how_to_see_repo_secrets } (see above for link)
+    help: Tap the "About Github secrets" help button for more info
     show if:
       code: |
         not is_org_admin
@@ -236,34 +207,24 @@ validation code: |
       and not wants_to_set_org_secrets
       and not wants_to_set_repo_secrets):
     validation_error("You must mark at least one choice.")
----
-id: which secrets exist non-admin
-question: |
-  GitHub secrets
-subquestion: |
-  For tests to run, a repository needs access to [GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets) set by the organization or repo admin. We need to know the status of the secrets.
-  
-  If they are not set yet, give the admin the link to this form. If you don't know, ask the admin of the organization or repository if these secrets are set:
+help:
+  label: |
+    About GitHub secrets
+  content: |
+    **About GitHub secrets:**
 
-  ${ secrets_list }
+    [GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets) store and encrypt the information the tests need in order to autmoatically make a Project on your docassemble server and then run an interview from that Project. This tool can help you set these secrets:
+
+    ${ secrets_list }
+    
+    If you're not sure what your organization secrets are, an org admin can [see them in the same place that they can create them](https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-an-organization).
+    
+    If you're not sure what your repository secrets are, a repository admin can [see them in the same place that they can create them](https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-a-repository).
+    
+    If you're not sure whether a repository has access to an organization's secrets, a repository admin can see those on the repository's secrets page too (described above).
+    
+    If the organization has these secrets, but those secrets are not showing up in the package's repository, the organization admin may need to [change the access settings for the secret](https://docs.github.com/en/actions/reference/encrypted-secrets#reviewing-access-to-organization-level-secrets).
   
-  ${ how_to_see_repo_secrets } ${ check_secrets_access }
-  
-  Does the package have access to those secrets?
-fields:
-  - no label: has_secrets
-    datatype: checkboxes
-    choices:
-      - The repository has access to organization secrets: org
-      - The repository has access to repository secrets: repo
----
-template: how_to_see_repo_secrets
-content: |
-  To see a repository's secrets, an admin can go to the same place as where they [set the repository's secrets](https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-a-repository).
----
-template: check_secrets_access
-content: |
-  If the organization has these secrets, but those secrets are not showing up in the package's repository, the admin may need to [change the access settings for the secret](https://docs.github.com/en/actions/reference/encrypted-secrets#reviewing-access-to-organization-level-secrets).
 ---
 id: no admin or secrets kickout
 event: needs_secrets_kickout
@@ -314,12 +275,12 @@ subquestion: |
   1. Make sure you are logged in there.
   1. Answer the questions below for that account. If you want to use your own account, put your own docassemble email and password below.
 fields:
-  - Email: installer.email
+  - Account email: installer.email
     datatype: email
-  - Password: installer.password
+  - Account password: installer.password
     datatype: password
   - note: |
-      Go to the Playground of the account and run any working YAML file. For example, test.yml. What is the URL in the address bar? Example:[BR]
+      Go to the Playground of the account and run any working YAML file. For example, **test.yml**. What is the URL in the address bar? Example:[BR]
       `https://legal-dev.org/interview?i=docassemble.playground22%3Atest.yml`
   - Interview URL: installer.playground_url
     hint: https://legal-dev.org/interview?i=docassemble.playground22%3Atest.yml
@@ -431,11 +392,11 @@ content: |
 ---
 template: files_list
 content: |
-  * tests/features/example_test.feature is a very simple example of a test.
-  * .github/workflows/run_interview_tests.yml tells GitHub when and how to run the tests and save the files created.
-  * package.json lets GitHub load other packages it needs to run the tests.
-  * .gitignore is for developers who want to work in their local environment.
-  * .env-example can help guide developers who want to work in their local environment to set up the environment variables.
+  * **tests/features/example_test.feature** is a very simple example of a test.
+  * **.github/workflows/run_interview_tests.yml** tells GitHub when and how to run the tests and save the files created.
+  * **package.json** lets GitHub load other packages it needs to run the tests.
+  * **.gitignore** is for developers who want to work in their local environment.
+  * **.env-example** can help guide developers who want to work in their local environment to set up the environment variables.
 ---
 template: secrets_list
 content: |
@@ -499,7 +460,7 @@ review:
       * **Package name**:[BR]
       ${ installer.package_name }
       
-      The new branch will be named ${ installer.branch_name }
+      The new branch will be named **${ installer.branch_name }**.
   - note: |
       ---
       There may be a few more steps after this to finish up. Continue when you are ready.
@@ -620,6 +581,14 @@ content: |
   `https://dev.court-wizards.org/interview?i=docassemble.playground222ProjectName%3Asome_file.yml` [BR]
   If you are sure you have the whole URL of a running interview, please [file an issue](https://github.com/plocket/docassemble-ALAutomatedTestingTests) and include your interview URL in the report.
 ---
+depends on: github_token_error
+code: |
+  installer.github_token_error = github_token_error.content
+---
+template: github_token_error
+content: |
+  GitHub cannot find that [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token). You can try copying and pasting it again or you can try [making a new one](https://github.com/settings/tokens).
+---
 depends on: github_pat_scopes_error
 code: |
   installer.github_pat_scopes_error = github_pat_scopes_error.content
@@ -627,14 +596,6 @@ code: |
 template: github_pat_scopes_error
 content: |
   What you are trying to do needs ${ token_permissions_scope } scope(s). The permission scope(s) of the [Github personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) ending in \*\*\*${ installer.token[-4:] } are **${ comma_and_list( installer.github.oauth_scopes ) }**. You can try copying and pasting the token again or you can try [making a new one](https://github.com/settings/tokens). (This disobeys plain language guidelines, sorry)
----
-depends on: github_token_error
-code: |
-  installer.github_token_error = github_token_error.content
----
-template: github_token_error
-content: |
-  The permission scope of that [Github personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) are not sufficient. Are you sure it has ${ token_permissions_scope } scope permissions? You can try copying and pasting it again or you can try [making a new one](https://github.com/settings/tokens).
 ---
 depends on: github_url_error
 code: |
@@ -647,6 +608,26 @@ content: |
   `https://github.com/owner_name/repo_name`
   
   If you are sure you have the correct GitHub URL, please [file an issue](https://github.com/plocket/docassemble-ALAutomatedTestingTests) and include the GitHub URL.
+---
+depends on: github_repo_not_found_error
+code: |
+  installer.github_repo_not_found_error = github_repo_not_found_error.content
+---
+template: github_repo_not_found_error
+content: |
+  GitHub cannot find the **${ installer.repo_name }** repository owned by the owner **${ installer.owner_name }**. Example of a valid URL:
+  
+  `https://github.com/owner_name/repo_name`
+  
+  You gave the repository address of **${ installer.repo_url }**. Are you sure that is correct?
+---
+depends on: not_collaborator_error
+code: |
+  installer.not_collaborator_error = not_collaborator_error.content
+---
+template: not_collaborator_error
+content: |
+  The user **${ installer.user_name }** does not have collaborator access to change the files in the **${ installer.repo_name }** repository owned by the owner **${ installer.owner_name }**. You can ask the admin to give correct access.
 ---
 depends on: org_does_not_exist_error
 code: |
@@ -662,35 +643,15 @@ code: |
 ---
 template: not_an_org_member_error
 content: |
-  **${ installer.user_name }** might not be a member of **${ installer.owner_name }**. Try double checking the names.
+  **${ installer.user_name }** might not be a **member** of **${ installer.owner_name }**. Try double checking the names.
 ---
-depends on: not_repo_admin_error
+depends on: not_org_admin_error
 code: |
-  installer.not_repo_admin_error = not_repo_admin_error.content
+  installer.not_org_admin_error = not_org_admin_error.content
 ---
-template: not_repo_admin_error
+template: not_org_admin_error
 content: |
-  **${ installer.user_name }** might not be an admin of **${ installer.repo_url }**. Try double checking the names.
----
-depends on: github_repo_not_found_error
-code: |
-  installer.github_repo_not_found_error = github_repo_not_found_error.content
----
-template: github_repo_not_found_error
-content: |
-  GitHub cannot find the **${ installer.repo_name }** repository owned by the owner **${ installer.owner_name }**. Example of a valid URL:
-  
-  `https://github.com/owner_name/repo_name`
-  
-  You gave the repository address of **${ installer.repo_url }**. Are you sure that is correct?
----
-depends on: github_access_error
-code: |
-  installer.github_access_error = github_access_error.content
----
-template: github_access_error
-content: |
-  The user **${ installer.user_name }** does not have collaborator access to change the files in the **${ installer.repo_name }** repository owned by the owner **${ installer.owner_name }**. You can ask the admin to give correct access.
+  **${ installer.user_name }** might not be an **admin** of the organization **${ installer.owner_name }**. Try double checking the names.
 ---
 depends on: github_branch_name_error
 code: |
@@ -699,7 +660,3 @@ code: |
 template: github_branch_name_error
 content: |
   It looks like all the allowed branch names are taken. To solve this, delete some of the branches that start with "${ installer.default_branch_name }".
----
-include:
-  - temp.yml
----
