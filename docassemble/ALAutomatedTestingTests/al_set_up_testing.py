@@ -77,7 +77,7 @@ class TestInstaller(DAObject):
         self.branch_name = self.get_free_branch_name()
         self.is_repo_collaborator()
     
-    # Set org secrets
+    # Auth for setting org secrets
     if ( value( 'wants_to_set_org_secrets' )):
       self.org = self.get_org()
       if self.org and user:

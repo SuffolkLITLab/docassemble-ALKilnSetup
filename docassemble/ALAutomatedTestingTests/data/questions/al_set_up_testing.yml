@@ -19,15 +19,6 @@ objects:
 include:
   - al_testing_files_to_push.yml
 ---
-comment: |
-  want to set org secrets
-    must be an org admin
-  want to set up tests for one package
-    have secrets
-      set up url
-    don't have secrets
-      need to be an admin and set up repo secrets
----
 mandatory: True
 code: |
   ## for dev
@@ -353,43 +344,6 @@ content: |
   "workflow" and "repo"
   % endif
 ---
-## TODO: Add link to docs where we explain how the library makes a project, etc.
-## TODO: Add links to the actual github repo and files and folders
-## TODO: only show 'other than you' if the person is logged in
-#id: intro personal repo
-#question: |
-#  Set up Document Assembly Line automated integrated testing
-#subquestion: |
-#  This interview will help you set up automated integrated GitHub testing for a docassemble package.
-#
-#  :clock: This could take about 40 minutes
-#  
-#  ---
-#  
-#  **Make sure:**
-#  
-#  * The package is in a GitHub repository.
-#  * You have admin permissions on the package's GitHub repository.
-#  * You are logged into the docassemble account where the tests will run.
-#  
-#  ---
-#
-#  **Sneak Peak**
-#
-#  This tool will add folders and files to the project:
-#
-#  ${ files_list }
-#  
-#  It will add 3 [GitHub "SECRETS"](https://docs.github.com/en/actions/reference/encrypted-secrets) to the repository to store encrypted information safely:
-#  
-#  ${ secrets_list }
-#  
-#  ---
-#  
-#  Your answers will be encrypted end-to-end and on the server. No one other than you will have access to them.
-#  
-#continue button field: repo_intro
----
 template: files_list
 content: |
   * **tests/features/example_test.feature** is a very simple example of a test.
@@ -605,7 +559,7 @@ template: github_url_error
 content: |
   Cannot validate the GitHub URL **"${ installer.repo_url }"**. Example of a valid URL:
   
-  `https://github.com/owner_name/repo_name`
+  **https://github.com/owner_name/repo_name**
   
   If you are sure you have the correct GitHub URL, please [file an issue](https://github.com/plocket/docassemble-ALAutomatedTestingTests) and include the GitHub URL.
 ---
@@ -617,7 +571,7 @@ template: github_repo_not_found_error
 content: |
   GitHub cannot find the **${ installer.repo_name }** repository owned by the owner **${ installer.owner_name }**. Example of a valid URL:
   
-  `https://github.com/owner_name/repo_name`
+  **https://github.com/owner_name/repo_name**
   
   You gave the repository address of **${ installer.repo_url }**. Are you sure that is correct?
 ---
