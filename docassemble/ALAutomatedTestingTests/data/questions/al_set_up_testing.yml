@@ -63,8 +63,6 @@ code: |
   installer.token
   set_github_auth
   
-  ## If setting up test files, get repo address
-  
   # TODO: next steps for secrets - ensure the secret has the access settings you want
   
   ##
@@ -103,9 +101,7 @@ code: |
   set_org_secrets = True
 ---
 code: |
-  if 'wants_to_set_org_secrets' or 'wants_to_set_repo_secrets':
-    installer.create_secrets()
-  if False:
+  if wants_to_set_up_tests:
     # These vars need to be defined before creating a branch.
     # Otherwise, because of da execution behavior, they cause
     # loops that end up creating 5 branches. It seemed to make
@@ -115,7 +111,8 @@ code: |
     installer.gitignore_str = installer.gitignore.content
     installer.package_json_str = installer.package_json.content
     installer.run_form_tests_str = installer.run_form_tests.content
-    installer.update_github()
+    
+  installer.update_github()
   update_github = True
 ---
 auto terms:
@@ -249,7 +246,7 @@ content: |
 ---
 template: check_secrets_access
 content: |
-  If the organization has these secrets, but those secrets are not showing up in the package's repository, the admin may need to [change the access levels for the secret](https://docs.github.com/en/actions/reference/encrypted-secrets#reviewing-access-to-organization-level-secrets).
+  If the organization has these secrets, but those secrets are not showing up in the package's repository, the admin may need to [change the access settings for the secret](https://docs.github.com/en/actions/reference/encrypted-secrets#reviewing-access-to-organization-level-secrets).
 ---
 id: no admin or secrets kickout
 event: needs_secrets_kickout
@@ -325,11 +322,9 @@ subquestion: |
   1. Start making a [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token). You will be able to delete it after you are finished here.
   % if wants_to_set_org_secrets:
   1. Tap the checkbox for "admin:org" permissions.
-  % elif wants_to_set_repo_secrets:
-  1. Tap the checkbox for "workflow" permissions. That should also trigger "repo" permissions.
   % endif
-  % if wants_to_set_up_tests and not wants_to_set_repo_secrets:
-  1. Tap the checkbox for "repo" permissions.
+  % if wants_to_set_up_tests or wants_to_set_repo_secrets:
+  1. Tap the checkbox for "workflow" permissions. That should also trigger "repo" permissions.
   % endif
   1. Finish creating the token.
   1. Copy the token and paste it below.
@@ -337,7 +332,7 @@ fields:
   - Personal access token: installer.token
     datatype: password
     help: |
-      The token must have ${ token_permissions_level } permissions.
+      The token must have ${ token_permissions_scope } permissions.
   - note: |
       We also need the GitHub repository URL of the package. Example:[BR]
       `https://github.com/TheLawFantastic/docassemble-GreatForm`
@@ -361,16 +356,15 @@ fields:
       code: |
         not wants_to_set_up_tests and wants_to_set_org_secrets
 ---
-template: token_permissions_level
+# TODO: discuss: Really if just setting repo secrets, only need repo permissions, but do we want to make it that complicated/inconsistent?
+template: token_permissions_scope
 content: |
-  % if wants_to_set_up_tests and wants_to_set_org_secrets:
-  "admin:org" and "repo"
-  % elif wants_to_set_org_secrets:
+  % if wants_to_set_org_secrets and wants_to_set_up_tests:
+  "admin:org", "workflow", and "repo"
+  % elif wants_to_set_org_secrets and not wants_to_set_up_tests:
   "admin:org"
-  % elif wants_to_set_repo_secrets:
-  "workflow"
   % else:
-  "repo"
+  "workflow" and "repo"
   % endif
 ---
 ## TODO: Add link to docs where we explain how the library makes a project, etc.
@@ -567,6 +561,22 @@ content: |
   `https://dev.court-wizards.org/interview?i=docassemble.playground222ProjectName%3Asome_file.yml` [BR]
   If you are sure you have the whole URL of a running interview, please [file an issue](https://github.com/plocket/docassemble-ALAutomatedTestingTests) and include your interview URL in the report.
 ---
+depends on: github_pat_scopes_error
+code: |
+  installer.github_pat_scopes_error = github_pat_scopes_error.content
+---
+template: github_pat_scopes_error
+content: |
+  The permission scope(s) of that [Github personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) are **${ comma_and_list( installer.github.oauth_scopes ) }**. What you are trying to do needs ${ token_permissions_scope } scope(s). You can try copying and pasting the token again or you can try [making a new one](https://github.com/settings/tokens). (This did not follow plain language guidelines, sorry)
+---
+depends on: github_token_error
+code: |
+  installer.github_token_error = github_token_error.content
+---
+template: github_token_error
+content: |
+  The permission scope of that [Github personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) are not sufficient. Are you sure it has ${ token_permissions_scope } scope permissions? You can try copying and pasting it again or you can try [making a new one](https://github.com/settings/tokens).
+---
 depends on: github_url_error
 code: |
   installer.github_url_error = github_url_error.content
@@ -578,14 +588,6 @@ content: |
   `https://github.com/owner_name/repo_name`
   
   If you are sure you have the correct GitHub URL, please [file an issue](https://github.com/plocket/docassemble-ALAutomatedTestingTests) and include the GitHub URL.
----
-depends on: github_token_error
-code: |
-  installer.github_token_error = github_token_error.content
----
-template: github_token_error
-content: |
-  The permission levels of that [Github personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) are not sufficient. Are you sure it has 'repo' and 'workflow' level permissions? You can try copying and pasting it again or you can try [making a new one](https://github.com/settings/tokens).
 ---
 depends on: org_does_not_exist_error
 code: |
