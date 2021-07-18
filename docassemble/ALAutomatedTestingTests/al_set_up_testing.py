@@ -75,7 +75,7 @@ class TestInstaller(DAObject):
         # TODO: Add branch name to confirmation page or final page?
         # TODO: Allow user to pick a custom branch name or to push to default branch?
         self.branch_name = self.get_free_branch_name()
-        self.is_repo_collaborator()
+        self.has_correct_permissions()
     
     # Auth for setting org secrets
     if ( value( 'wants_to_set_org_secrets' )):
@@ -139,15 +139,29 @@ class TestInstaller(DAObject):
       
     return [ owner_name, repo_name, package_name ]
 
-  def is_repo_collaborator( self ):
-    """Return True if user has collaborator access to the repo, else False and add error (403)"""
-    has_access = self.repo.has_in_collaborators( self.user_name )
-    # TODO: Check that the person as 'write' permissions? I think?
-    if not has_access:
-      error4 = ErrorLikeObject( message='Must have push access', details=self.not_collaborator_error )
-      self.errors.append( error4 )
-      log( error4.__dict__, 'console' )
-    return has_access
+  def has_correct_permissions( self ):
+    """Return True if user has at least write permissions to the repo, else False and add error."""
+    has_permissions = False
+    
+    # Are they even on the collaborator list
+    is_valid_collaborator = self.repo.has_in_collaborators( self.user_name )
+    if not is_valid_collaborator:
+      error1 = ErrorLikeObject( message='Must be a collaborator', details=self.not_collaborator_error )
+      log( error1.__dict__, 'console' )
+      self.errors.append( error1 )
+      
+    else:
+      # Do they have a permission level that allows writing (pushing, etc)
+      correct_permissions = [ 'admin', 'maintain', 'write' ]
+      self.permissions = self.repo.get_collaborator_permission( self.user_name )
+      
+      has_permissions = self.permissions in correct_permissions
+      if not has_permissions:
+        error2 = ErrorLikeObject( message='Must have "write" permissions', details=self.permissions_error )
+        log( error2.__dict__, 'console' )
+        self.errors.append( error2 )
+    
+    return is_valid_collaborator
   
   def get_org( self ):
     """Return org if it exists, otherwise None."""

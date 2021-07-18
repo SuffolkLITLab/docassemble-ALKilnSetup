@@ -587,7 +587,15 @@ code: |
 ---
 template: not_collaborator_error
 content: |
-  The user **${ installer.user_name }** does not have collaborator access to change the files in the **${ installer.repo_name }** repository owned by the owner **${ installer.owner_name }**. You can ask the admin to give correct access.
+  The user **${ installer.user_name }** is not a collaborator in the **${ installer.repo_name }** repository owned by the owner **${ installer.owner_name }**. You can ask the admin to give correct access.
+---
+depends on: permissions_error
+code: |
+  installer.permissions_error = permissions_error.content
+---
+template: permissions_error
+content: |
+  The user **${ installer.user_name }** has **${ installer.permissions }** permissions for the **${ installer.repo_name }** repository, but needs **write**, **maintain**, or **admin** permissions. You can ask the admin to give you correct access. **${ installer.owner_name }** is the owner.
 ---
 depends on: org_does_not_exist_error
 code: |
