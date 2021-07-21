@@ -37,6 +37,7 @@ subquestion: |
 fields:
   - Upload file field: upload_files_visible
     datatype: files
+    required: False
     maximum image size: 1024
     image upload type: jpeg        
     accept: |
@@ -46,6 +47,7 @@ fields:
   - Hidden upload field: upload_files_hidden
     show if: show_upload
     datatype: files
+    required: False
     maximum image size: 1024
     image upload type: jpeg        
     accept: |
