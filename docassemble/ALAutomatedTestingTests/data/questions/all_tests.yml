@@ -9,50 +9,10 @@ default screen parts:
   post: |
     <div data-variable="${ encode_name(str( user_info().variable )) }" id="trigger" aria-hidden="true" style="display: none;"></div>
 ---
-# Do not edit this block
-comment: |
-  # Fields to include
-  
-  ## Regular:
-  - [x] Radio (yes/no)
-  - [x] Radio (other)
-  - [x] Checkbox (none of)
-  - [x] Checkbox (yes/no)
-  - [x] Checkbox (other)
-  - [x] Buttons (yes/no)
-  - [x] Buttons (other)
-  - [x] Buttons (continue)
-  - [x] Dropdown
-  - [x] Text area
-  - [x] Text input (type text)
-  - [x] Text input (type date)
-  
-  ## Showif:
-  - [x] Radio (yes/no)
-  - [x] Radio (other)
-  - [x] Checkbox (none of)
-  - [x] Checkbox (yes/no)
-  - [x] Checkbox (other)
-  - [x] Dropdown
-  - [x] Text area
-  - [x] Text input (type text)
-  
-  # Other things to include:
-  - [x] Terms
-  - [x] Button that's a link
-  - [x] A link
-  - [x] Button that's not a continue button
-
-  # Situations to test:
-  - [ ] Continue button field is listed in the table before other unrequired fields on the page (for the story table)
-  - [ ] Test not filling in an unrequired field?
-  
-  # Questions
-  1. Should we test required fields? We do need unrequired ones for testing the story table
----
 mandatory: True
 id: interview order
 code: |
+  upload_files_visible
   double_quote_dict["double_quote_key"]
   direct_standard_fields
   direct_showifs
@@ -68,6 +28,28 @@ code: |
   
   button_event_action
   end
+---
+id: upload files
+question: |
+  Upload a file
+subquestion: |
+  [https://github.com/plocket/docassemble-ALAutomatedTestingTests/issues/151](https://github.com/plocket/docassemble-ALAutomatedTestingTests/issues/151)
+fields:
+  - Upload file field: upload_files_visible
+    datatype: files
+    maximum image size: 1024
+    image upload type: jpeg        
+    accept: |
+      "image/png, image/jpg, .doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf,.pdf"
+  - Show other file upload: show_upload
+    datatype: yesno
+  - Hidden upload field: upload_files_hidden
+    show if: show_upload
+    datatype: files
+    maximum image size: 1024
+    image upload type: jpeg        
+    accept: |
+      "image/png, image/jpg, .doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf,.pdf"
 ---
 id: group of complex fields
 question: |
