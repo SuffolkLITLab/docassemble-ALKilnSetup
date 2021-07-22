@@ -31,12 +31,11 @@ code: |
   if len( installer.errors ) > 0:
     show_errors
   
-  # role and goal
+  # Role
   is_org_admin
-  wants_to_set_up_tests
   
-  # Secrets
-  if wants_to_set_org_secrets or wants_to_set_repo_secrets:
+  # Needs
+  if secrets_need == 'org' or secrets_need == 'repo':
     get_secrets_info
   
   # Get and test github PAT (token) and either repo url or org name
@@ -61,16 +60,16 @@ code: |
   get_secrets_info = True
 ---
 code: |
+  installer.set_org_secrets()
+  set_org_secrets = True
+---
+code: |
   installer.set_da_info()
   set_da_info = True
 ---
 code: |
   installer.set_github_auth()
   set_github_auth = True
----
-code: |
-  installer.set_org_secrets()
-  set_org_secrets = True
 ---
 code: |
   if wants_to_set_up_tests:
@@ -88,10 +87,7 @@ code: |
   update_github = True
 ---
 auto terms:
-  - the docassemble account where the tests will run: Remember that **you can use your own account** and you can always change this later.
----
-comment: |
-  https://flowchart.fun/c#H4hQBsEME8HsFcAuAuUACNA7SBbApsmgCaQDmATnumuZJgNYAiAluYQDIBKoIwooAegBUAFQAWzAM5pIAB1loA7rHL1pAI2hpE0Wc0ylqASUxE8mRPtJoAxpUiI80yGnD7622NrF5b8cpQWrvpUGHRajgAeKGjqeABmKr4uNrDgsJi29o7OrpBx4NQYsIg+bGgAFDbwkoiwOGhGjACU1ADC2cnBDMSseDaI4Fo1Vt6+eJGQA3kF2hOIRcH0vqVShBXiUjLySipqsRG6Vq0YGADa1bX1jYwAumgqixiaMkREo3RoZ033dEQ0CTwgRso1KDiepzcy28a0qlzqDSazTQAgEaAAmghbJ9IOBJF4ar5JFZwHgALRuTC+VI4fAWSSgIQCQRCUCPHDwcCWSlUGl0xAM0AACUgADdfPF4JgAIRoQA8G4BI-cZzLZ5GskCIOH01BsdEIkjwiAearQBrshoZ50osi8knuusw+sNAJtpv6lAF1DOOQF9r1bqN8AUPrQ8WYpIZ1q8Gq1mB1-oqUdNJ2xjsqPskrRU1lSFnIzHUSEeGCqGUQ+fUrSTufLBaL5GopbzBdaFzLFfusJrFfr1GzaDEkGkZo9ltOFQzKaTg+H7otiwnTgFKcwtrnntOWC8GdAQA
+  the docassemble account where the tests will run: Remember that **you can use your own account** and you can always change this later.
 ---
 id: repo role
 question: |
@@ -101,128 +97,94 @@ subquestion: |
   
   :clock: This task can take up to 30 minutes.
   
-  What you can do depends on your situation and what kind of GitHub permissions you have.
+  What you can set up depends on your situation and what kind of GitHub permissions you have.
 fields:
   - Are you the admin of the organization?: is_org_admin
     datatype: yesnoradio
 ---
 # Note: any repo writer can set repo secrets
-id: admin goal
+id: needs
 question: |
-  What do you want to do?
+  What do you need to do?
 subquestion: |
-  For tests to run, they need to be able to autmoatically make a Project on your docassemble server and then run an interview from that Project. To do that, the repository need access to organization or repository secrets and some extra files. Once an organization admin sets up organization secrets, repository secrets are unnecessary.
+  % if is_org_admin:
+  You said you are the admin of an organization.
   
-  This tool can help set up secrets, add testing files to a repository, or both. If you might need to add secrets, tap the "About Github secrets" help button at the bottom of the page to learn more.
+  Using this form you can {set up GitHub secrets}, or set up the testing package files in a repository, or both. If you set up secrets, you can choose to create secrets for your organization or for a specific repository.
+  % else:
+  You said you are a developer on a repository and can change files in a repository.
   
-  What do you want to do?
+  Using this form you can {set up GitHub secrets} for a repository, or set up the testing package files in a repository, or both.
+  % endif
+  
+  Note that if an organization admin has already set up **organization** secrets, repositories of that organiation don't need their own secrets.
+  %if not is_org_admin:
+  If you want your organization admin to set up organization secrets, give them a link to this tool.
+  % endif
+  
+  What do you need?
 fields:
   # If is org admin
-  - I want to set or update the organization's secrets: wants_to_set_org_secrets
-    datatype: yesnowide
-    js enable if: |
-      !val('wants_to_set_repo_secrets')
+  - What kind of secrets do you need to set up?: secrets_need
+    datatype: radio
     show if:
       code: |
         is_org_admin
-  - I want to set or update a repository's secrets: wants_to_set_repo_secrets
-    datatype: yesnowide
-    show if:
-      code: |
-        is_org_admin
-    js enable if: |
-      !val('wants_to_set_org_secrets')
+    choices:
+      - My organization's secrets: org
+      - A repository's secrets: repo
+      - I already have the secrets I need: none
   # Not org admin
-  - I want to set or update the repository's secrets: wants_to_set_repo_secrets
-    datatype: yesnowide
+  - What do you need to do about secrets?: secrets_need
+    datatype: radio
     show if:
       code: |
         not is_org_admin
+    choices:
+      - I need to set up a repository's secrets: repo
+      - I already have the secrets I need: none
   # Always
-  - I want to set up testing for a package: wants_to_set_up_tests
-    datatype: yesnowide
-  # Is org admin
-  - note: A package must have access to GitHub secrets in order to run tests.
-    show if:
-      code: |
-        is_org_admin
-    js show if: |
-      val('wants_to_set_up_tests') && !val('wants_to_set_repo_secrets') && !val('wants_to_set_org_secrets')
-  - no label: has_secrets
-    datatype: checkboxes
-    none of the above: False
-    choices:
-      - The package already has access to organization or repository secrets: yes
-    help: Tap the "About Github secrets" help button for more info
-    show if:
-      code: |
-        is_org_admin
-    js show if: |
-      val('wants_to_set_up_tests') && !val('wants_to_set_repo_secrets') && !val('wants_to_set_org_secrets')
-  # Not org admin
-  - note: A package must have access to GitHub secrets in order to run tests.
-    show if:
-      code: |
-        not is_org_admin
-    js show if: |
-      val('wants_to_set_up_tests') && !val('wants_to_set_repo_secrets')
-  - no label: has_secrets
-    datatype: checkboxes
-    none of the above: False
-    choices:
-      - The package already has access to organization or repository secrets: yes
-    help: Tap the "About Github secrets" help button for more info
-    show if:
-      code: |
-        not is_org_admin
-    js show if: |
-      val('wants_to_set_up_tests') && !val('wants_to_set_repo_secrets')
+  - Do you need to set up testing for a package?: wants_to_set_up_tests
+    datatype: yesnoradio
 validation code: |
-  # Define undefined values
-  # Considered bad practice generally, but currently seems more maintainable
-  # If it becomes less maintainable, we can move this elsewhere
-  if not defined('wants_to_set_org_secrets'):
-    wants_to_set_org_secrets = False
-  if not defined('wants_to_set_repo_secrets'):
-    wants_to_set_repo_secrets = False
-  if not defined('has_secrets'):
-    has_secrets = DADict('has_secrets', there_are_any=False)  # None are true
-    
-  # Validate
-  if (wants_to_set_up_tests
-      and not wants_to_set_org_secrets
-      and not wants_to_set_repo_secrets
-      and not has_secrets.any_true()):
-    validation_error("If you want to set up tests and the package does not have access to secrets, you must choose a way to set secrets.")
-  if (not wants_to_set_up_tests
-      and not wants_to_set_org_secrets
-      and not wants_to_set_repo_secrets):
-    validation_error("You must mark at least one choice.")
+  if secrets_need == 'none' and not wants_to_set_up_tests:
+    validation_error("If you don't want to set secrets and don't want to set up tests, there is nothing to do here.")
+terms:
+  set up GitHub secrets: ${ secrets_popover }
 help:
-  label: |
-    About GitHub secrets
-  content: |
-    **About GitHub secrets:**
+  label: About GitHub secrets
+  content: ${ about_secrets }
+---
+template: secrets_popover
+content: |
+  Tap the "About GitHub Secrets" button at the bottom of the page to learn why the tests need GitHub secrets and how to see what secrets you already have.
+---
+template: about_secrets
+content: |
+    **About GitHub secrets**
 
-    [GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets) store and encrypt the information the tests need in order to autmoatically make a Project on your docassemble server and then run an interview from that Project. This tool can help you set these secrets:
+    [GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets) encrypt and store sensitive information that the automated tests need.
+
+    When you commit or push a file to GitHub, the automated tests will tell GitHub to:
+    
+    1. Log into a docassemble account on your server.
+    1. Make a new Project. The name will start with "testing".
+    1. Pull your package's GitHub code from the branch that they are testing.
+    1. Go through the interview as if the tests were a real person.
+
+    To do that first step, the automated tests need to know a user name and password to use to log into a developer account on your server.
+
+    If you choose to set up secrets, your answers will help this tool set these secrets:
 
     ${ secrets_list }
-    
-    If you're not sure what your organization secrets are, an org admin can [see them in the same place that they can create them](https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-an-organization).
-    
-    If you're not sure what your repository secrets are, a repository admin can [see them in the same place that they can create them](https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-a-repository).
-    
-    If you're not sure whether a repository has access to an organization's secrets, a repository admin can see those on the repository's secrets page too (described above).
-    
-    If the organization has these secrets, but those secrets are not showing up in the package's repository, the organization admin may need to [change the access settings for the secret](https://docs.github.com/en/actions/reference/encrypted-secrets#reviewing-access-to-organization-level-secrets).
-  
----
-id: no admin or secrets kickout
-event: needs_secrets_kickout
-question: |
-  The repository needs secrets
-subquestion: |
-  To get these tests to run, an admin needs to set up secrets. Contact your admin and give them a link to this interview. It will help them set up the right secrets.
+
+    If you're not sure what secrets your organization has set, an org admin can [see them in the same place that they can create them](https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-an-organization).
+
+    If you're not sure what secrets your repository has, a repository admin can [see them in the same place that they can create them](https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-a-repository).
+
+    If you're not sure whether a repository has access to its organization's secrets, a repository admin can see those on the repository's secrets page too, as described above.
+
+    If the organization has these secrets, but the secrets are not showing up in the package's repository, the organization admin may need to [change the access settings for the secret](https://docs.github.com/en/actions/reference/encrypted-secrets#reviewing-access-to-organization-level-secrets).
 ---
 id: on testing server
 question: |
@@ -235,20 +197,36 @@ id: logged_into_test_account_on_interview_server
 question: |
   What account are you logged in on?
 subquestion: |
+  You, your team, or your organiztion might {want to set up an account just for running tests}. The tests can also just run on your account.
+
   Are you logged into the docassemble account where the tests will run?
 yesno: logged_into_test_account_on_interview_server
+terms:
+  want to set up an account just for running tests: |
+    Tap the "Why have a testing account?" button below to learn why you might want to set up an account just for running tests.
+help:
+  label: Why have a testing account?
+  content: ${ why_special_account }
+---
+template: why_special_account
+content: |
+  **Why would you want to set up an account just for testing?**
+  
+  First, GitHub will use that account. It will put special Projects on it and put files in those project, then it will delete them. If a developer is using that docassemble account, they may find it confusing.
+  
+  Secondly, it may cause problems later on. Imagine that the tests are set up to run on a developer's account. Then the developer leaves the team and deletes their account. The tests will fail because the account is missing.
 ---
 id: log_into_test_account
 question: |
   Before you continue
 subquestion: |
-  You will probably need to log into the account where the tests will run. Since this form is on the same server and you are not logged into that account, you can do one of 3 things:
+  To help you answer the following questions, you may want to log into the account where the tests will run. Since this form is on the same server as this interview and you are not logged into that account, you can do one of 3 things:
   
-  * Open an incognito window and log into that account there.
-  * Go to a different browser to log into that account.
-  * Leave this interview, log into the account, and start this interview again.
+  * [Open an incognito window](https://techbrightsystems.com/incognito-mode/) and log into that account there.
+  * Log into that account on a different browser.
+  * Leave this interview, log into that account, and start this interview again.
 
-  Tap to continue when you have done one of those.
+  Tap to continue when you are ready.
 
 continue button field: log_into_test_account
 ---
@@ -256,7 +234,7 @@ id: da server info
 question: |
   GitHub secrets
 subquestion: |
-  As described, the tests need access to server login information. This tool will help you set up these encrypted [GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets):
+  As described, {the tests need some GitHub secrets}. This tool will help you set up these encrypted [GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets):
   
   ${ secrets_list }
 
@@ -271,14 +249,16 @@ fields:
   - Account password: installer.password
     datatype: password
   - note: |
-      Go to the Playground of the account and run any working YAML file. For example, **test.yml**. What is the URL in the address bar? Example:[BR]
+      Go to the Playground of the account and run any working YAML file. For example, **test.yml**. What is {the URL in the address bar}? Example:[BR]
       **https://legal-dev.org/interview?i=docassemble.playground22%3Atest.yml**
   - Interview URL: installer.playground_url
-    hint: https://legal-dev.org/interview?i=docassemble.playground22%3Atest.yml
-
-auto terms:
-  - the URL in the address bar: |
-      The interview URL will give us the account's Playground ID and the address of the server that the account is on.
+terms:
+  the URL in the address bar: |
+    The interview URL will give us the account's Playground ID and the address of the server that the account is on.
+  the tests need some GitHub secrets: ${ secrets_popover }
+help:
+  label: About GitHub secrets
+  content: ${ about_secrets }
 ---
 # TODO: Can an org admin sometimes not have push access to an org repo?
 # TODO: Will org admins try to also add tests to a non-org repo?
@@ -290,11 +270,11 @@ subquestion: |
   
   The token will let this tool:
   
-  % if wants_to_set_repo_secrets or wants_to_set_org_secrets:
+  % if secrets_need == 'repo' or secrets_need == 'org':
   ${ '1.' if wants_to_set_up_tests else '' } Create or update GitHub secrets.
   % endif
   % if wants_to_set_up_tests:
-  ${ '1.' if wants_to_set_repo_secrets or wants_to_set_org_secrets else '' } Add these folders and files to the repository on a new branch:
+  ${ '1.' if secrets_need == 'repo' or secrets_need == 'org' else '' } Add these folders and files to the repository on a new branch:
   
   ${ files_list }
   
@@ -302,10 +282,10 @@ subquestion: |
   % endif
   
   1. Start making a [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token).
-  % if wants_to_set_org_secrets:
+  % if secrets_need == 'org':
   1. Tap the checkbox for "admin:org" permissions.
   % endif
-  % if wants_to_set_up_tests or wants_to_set_repo_secrets:
+  % if wants_to_set_up_tests or secrets_need == 'repo':
   1. Tap the checkbox for "workflow" permissions. That should also trigger "repo" permissions.
   % endif
   1. Finish creating the token.
@@ -320,30 +300,30 @@ fields:
       **https://github.com/TheLawFantastic/docassemble-GreatForm**
     show if:
       code: |
-        wants_to_set_up_tests or wants_to_set_repo_secrets
+        wants_to_set_up_tests or secrets_need == 'repo'
   - Repo URL: installer.repo_url
     help: |
       The repository's URL will give us the name of the repo and its owner.
     show if:
       code: |
-        wants_to_set_up_tests or wants_to_set_repo_secrets
+        wants_to_set_up_tests or secrets_need == 'repo'
   - note: |
       We also need the name of the GitHub organization. Example:[BR]
       **SuffolkLITLab**
     show if:
       code: |
-        not wants_to_set_up_tests and wants_to_set_org_secrets
+        not wants_to_set_up_tests and secrets_need == 'org'
   - Organization name: installer.owner_name
     show if:
       code: |
-        not wants_to_set_up_tests and wants_to_set_org_secrets
+        not wants_to_set_up_tests and secrets_need == 'org'
 ---
 # TODO: discuss: Really if just setting repo secrets, only need repo permissions, but do we want to make it that complicated/inconsistent?
 template: token_permissions_scope
 content: |
-  % if wants_to_set_org_secrets and wants_to_set_up_tests:
+  % if secrets_need == 'org' and wants_to_set_up_tests:
   "admin:org", "workflow", and "repo"
-  % elif wants_to_set_org_secrets and not wants_to_set_up_tests:
+  % elif secrets_need == 'org' and not wants_to_set_up_tests:
   "admin:org"
   % else:
   "workflow" and "repo"
@@ -394,9 +374,9 @@ review:
     button: |
       #####GitHub repo and permission
       
-      * **Personal access token**: \*\*\*${ installer.token[-4:] }
+      * **Personal access token**: \*\*\*\*${ installer.token[-4:] }
       
-      % if not wants_to_set_up_tests and wants_to_set_org_secrets:
+      % if not wants_to_set_up_tests and secrets_need == 'org':
       * **GitHub organization**:[BR]
       ${ installer.owner_name }
       % else:
@@ -409,7 +389,7 @@ review:
       * **Your username**:[BR]
       ${ installer.user_name }
       
-      % if wants_to_set_up_tests or wants_to_set_repo_secrets:
+      % if wants_to_set_up_tests or secrets_need == 'repo':
       * **Owner of the repository**:[BR]
       ${ installer.owner_name }
       % endif
@@ -440,8 +420,8 @@ subquestion: |
   ${ files_list }
   % endif
   
-  % if wants_to_set_org_secrets or wants_to_set_repo_secrets:
-  3 [GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets) were set to store encrypted docassemble login information safely:
+  % if secrets_need == 'org' or secrets_need == 'repo':
+  3 [GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets) were set to store {encrypted docassemble login information} safely:
   
   ${ secrets_list }
   % endif
@@ -450,15 +430,15 @@ subquestion: |
   
   **Next**
   
-  % if wants_to_set_repo_secrets or wants_to_set_org_secrets:
+  % if secrets_need == 'repo' or secrets_need == 'org':
   Secrets:
   % endif
   
-  % if wants_to_set_repo_secrets:
+  % if secrets_need == 'repo':
   [Make sure the repository secrets got created](https://github.com/${ installer.owner_name }/${ installer.repo_name }/settings/secrets/actions).
   % endif
   
-  % if wants_to_set_org_secrets:
+  % if secrets_need == 'org':
   1. [Make sure the organization secrets got created]( https://github.com/organizations/${ installer.org.login }/settings/secrets/actions).
   1. Make sure the secrets have the [access settings](https://docs.github.com/en/actions/reference/encrypted-secrets#reviewing-access-to-organization-level-secrets) you need.
   % endif
@@ -500,7 +480,7 @@ subquestion: |
   ---
   % endif
   
-  % if wants_to_set_org_secrets:
+  % if secrets_need == 'org':
   Team members that are collaborators can now use this interview to set up tests for their repositories without needing to set secrets.
   % endif
   
@@ -515,6 +495,11 @@ subquestion: |
   If you have some feedback, we would love to hear from you! Let us know in chat or [make a public "issue" in our repository](https://github.com/plocket/docassemble-ALAutomatedTestingTests/issues/new).
 buttons:
   - Restart: restart
+terms:
+  encrypted docassemble login information: ${ secrets_popover }
+help:
+  label: About GitHub secrets
+  content: ${ about_secrets }
 comment: |
   TODO: Should we offer to delete their personal access token for them in the interview itself? Do we have enough permissions?
   TODO: Implement feedback form instead of linking issues. See AL core for that.
