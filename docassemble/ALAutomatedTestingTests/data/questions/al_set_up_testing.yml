@@ -44,7 +44,7 @@ code: |
   
   # confirm
   is_ready
-  # update github
+  # send the secrets and files to github
   update_github
   
   force_ask( 'next_steps' )
@@ -99,7 +99,7 @@ subquestion: |
   
   What you can set up depends on your situation and what kind of GitHub permissions you have.
 fields:
-  - Are you the admin of the organization?: is_org_admin
+  - Are you the admin of the GitHub "organization"?: is_org_admin
     datatype: yesnoradio
 ---
 # Note: any repo writer can set repo secrets
@@ -117,7 +117,8 @@ subquestion: |
   Using this form you can {set up GitHub secrets} for a repository, or set up the testing package files in a repository, or both.
   % endif
   
-  Note that if an organization admin has already set up **organization** secrets, repositories of that organiation don't need their own secrets.
+  Note that if a GitHub organization admin has already set up GitHub **organization** secrets, repositories that belong to the organization don't need their own secrets. Otherwise, a repository will need its own secrets.
+  
   %if not is_org_admin:
   If you want your organization admin to set up organization secrets, give them a link to this tool.
   % endif
@@ -133,7 +134,7 @@ fields:
     choices:
       - My organization's secrets: org
       - A repository's secrets: repo
-      - I already have the secrets I need: none
+      - Someone has set up the secrets already: none
   # Not org admin
   - What do you need to do about secrets?: secrets_need
     datatype: radio
@@ -142,7 +143,7 @@ fields:
         not is_org_admin
     choices:
       - I need to set up a repository's secrets: repo
-      - I already have the secrets I need: none
+      - Someone has set up the repository or organization secrets already: none
   # Always
   - Do you need to set up testing for a package?: wants_to_set_up_tests
     datatype: yesnoradio
@@ -161,9 +162,37 @@ content: |
 ---
 template: about_secrets
 content: |
-    **About GitHub secrets**
+    **What are GitHub secrets?**
 
-    [GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets) encrypt and store sensitive information that the automated tests need.
+    [GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets) encrypt and store sensitive information that the automated tests need. To read more about why, go to the last section on this page.
+    
+    ---
+    
+    **Who can set a GitHub secret?**
+    
+    An admin of a GitHub **organization** can set the secrets for that GitHub organization. They can do that through this tool or just on GitHub itself. They can also set the secrets in repositories that belong to that organization.
+    
+    An admin of a GitHub **repository** can set the secrets for that GitHub repository on the GitHub website itself.
+    
+    A collaborator of a GitHub **repository** can set the secrets for the GitHub repository through **this tool**. A non-admin is unable to set secrets on GitHub itself. Yes, it's confusing. We don't know GitHub works that way ¯\_(ツ)_/¯
+    
+    ---
+
+    **Does my repository or organization already have GitHub secrets?**
+    
+    A non-admin cannot see organization or repository secrets. They will have to ask an admin.
+    
+    If you're not sure what secrets your organization has set, ask an **org admin** to take a look. They can [see them in the same place that they can create them](https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-an-organization).
+
+    If you're not sure what secrets your repository has, ask a **repository admin** to take a look. They can [see them in the same place that they can create them](https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-a-repository).
+
+    If you're not sure whether a repository has access to its organization's secrets, ask a repository admin to take a look. They can see those on the repository's secrets page too, as described above.
+
+    If the organization has these secrets, but the secrets are not showing up in the package's repository, the organization admin may need to [change the access settings for the secret](https://docs.github.com/en/actions/reference/encrypted-secrets#reviewing-access-to-organization-level-secrets).
+    
+    ---
+
+    **Why do these tests need GitHub secrets?**
 
     When you commit or push a file to GitHub, the automated tests will tell GitHub to:
     
@@ -171,20 +200,13 @@ content: |
     1. Make a new Project. The name will start with "testing".
     1. Pull your package's GitHub code from the branch that they are testing.
     1. Go through the interview as if the tests were a real person.
+    1. Delete the Project it created.
 
-    To do that first step, the automated tests need to know a user name and password to use to log into a developer account on your server.
+    To do some of those steps, the automated tests need to know a user name and password to use to log into a developer account on your server.
 
     If you choose to set up secrets, your answers will help this tool set these secrets:
 
     ${ secrets_list }
-
-    If you're not sure what secrets your organization has set, an org admin can [see them in the same place that they can create them](https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-an-organization).
-
-    If you're not sure what secrets your repository has, a repository admin can [see them in the same place that they can create them](https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-a-repository).
-
-    If you're not sure whether a repository has access to its organization's secrets, a repository admin can see those on the repository's secrets page too, as described above.
-
-    If the organization has these secrets, but the secrets are not showing up in the package's repository, the organization admin may need to [change the access settings for the secret](https://docs.github.com/en/actions/reference/encrypted-secrets#reviewing-access-to-organization-level-secrets).
 ---
 id: on testing server
 question: |
@@ -212,7 +234,7 @@ template: why_special_account
 content: |
   **Why would you want to set up an account just for testing?**
   
-  First, GitHub will use that account. It will put special Projects on it and put files in those project, then it will delete them. If a developer is using that docassemble account, they may find it confusing.
+  First, GitHub will use that account. It will create Projects in there, put files in those Projects, then it will delete those Projects. If a developer is using that docassemble account, they may find it confusing.
   
   Secondly, it may cause problems later on. Imagine that the tests are set up to run on a developer's account. Then the developer leaves the team and deletes their account. The tests will fail because the account is missing.
 ---
