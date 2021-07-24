@@ -1,4 +1,5 @@
 from github import Github  # PyGithub
+from github import PublicKey
 import requests
 from nacl import encoding, public  # pynacl
 # TODO: Reduce to just one encryption library :/
@@ -6,7 +7,7 @@ import codecs
 from base64 import b64encode
 import re
 import json
-from docassemble.base.util import log
+from docassemble.base.util import log, value
 from docassemble.base.core import DAObject
 
 # reference:
@@ -55,7 +56,6 @@ class TestInstaller(DAObject):
     # Check token credentials
     self.github = Github( self.token )
     user = self.github.get_user()
-    
     try:
       self.user_name = user.login
     except Exception as error1:
@@ -64,63 +64,142 @@ class TestInstaller(DAObject):
       self.user_name = ''
       error1.data[ 'details' ] = self.github_token_error
       self.errors.append( error1 )
-      
-    # Check if repo exists
-    self.set_github_info_from_repo_url()
-    self.repo = self.get_repo()
     
-    if self.repo:
-      has_access = self.is_repo_collaborator()
-      # TODO: Allow user to pick a custom branch name or to push to default branch
-      self.branch_name = self.get_free_branch_name()
+    if self.user_name != '':
+      self.has_right_scopes( self.github.oauth_scopes )
     
-    # Give as many errors at once as is possible
-    if len( self.errors ) > 0:
-      return self
+    # If wants to do any repo stuff. Also defines self.owner_name if it's not defined already.
+    if value( 'secrets_need' ) == 'repo' or value( 'wants_to_set_up_tests' ):
+      self.repo = self.get_repo( self.repo_url )
+      if self.repo:
+        # TODO: Add branch name to confirmation page or final page?
+        # TODO: Allow user to pick a custom branch name or to push to default branch?
+        self.branch_name = self.get_free_branch_name()
+        self.has_correct_permissions()
     
-    self.set_auth_for_secrets()
+    # Auth for setting org secrets
+    if ( value('secrets_need') == 'org' ):
+      self.org = self.get_org()
+      if self.org and user:
+        self.is_valid_org_admin( user, self.org.login )
     
     return self
   
-  def set_github_info_from_repo_url( self ):
-    """Use repo address to parse out owner name and repo name. Needs self.repo_url"""
-    # Match either the actual URL or the clone HTTP or SSH URL
-    matches = re.match( r"^.*github.com(?:\/|:)([^\/]*)\/?([^\/.]*)?(?:\..{3})?", self.repo_url )
-    if matches:
-      self.owner_name = matches.group(1)
-      self.repo_name = matches.group(2)
-      self.package_name = re.sub( r'docassemble-', '', self.repo_name )
+  def has_right_scopes( self, scopes ):
+    """Make sure the developer gave the token the right scopes"""
+    # TODO: discuss: Really if just setting repo secrets, only need repo permissions, but do we want to make it that complicated/inconsistent?
+    if value('secrets_need') == 'org' and value('wants_to_set_up_tests'):
+      has_scopes = "admin:org" in scopes and "workflow" in scopes and "repo" in scopes
+    elif value('secrets_need') == 'org' and not value('wants_to_set_up_tests'):
+      has_scopes = "admin:org" in scopes
     else:
-      self.owner_name = ''
-      self.repo_name = ''
+      has_scopes = "workflow" in scopes and "repo" in scopes
+      
+    if not has_scopes:
+      error = ErrorLikeObject( message='Incorrect Personal Access Token scopes', details=self.github_pat_scopes_error )
+      self.errors.append( error )
+      log( error.__dict__, 'console' )
+      
+    return has_scopes
+  
+  def get_repo( self, repo_url ):
+    """Get repo obj of given repo. Make sure repo exists."""
+    self.owner_name, self.repo_name, self.package_name = self.get_github_info_from_repo_url( repo_url )
+    
+    repo = None
+    if self.repo_name:
+      # Check if repo exists
+      try:
+        repo = self.github.get_repo( self.owner_name + '/' + self.repo_name )
+      except Exception as error2:
+        # github.GithubException.UnknownObjectException (404)
+        log( error2.__dict__, 'console' )
+        repo = None
+        error2.data[ 'details' ] = self.github_repo_not_found_error
+        self.errors.append( error2 )
+        
+    return repo
+  
+  def get_github_info_from_repo_url( self, repo_url ):
+    """Use repo address to parse out owner name and repo name."""
+    # Match either the actual URL or the clone HTTP or SSH URL
+    matches = re.match( r"^.*github.com(?:\/|:)([^\/]*)\/?([^\/.]*)?(?:\..{3})?", repo_url )
+    if matches:
+      owner_name = matches.group(1)
+      repo_name = matches.group(2)
+      package_name = re.sub( r'docassemble-', '', repo_name )
+    else:
+      owner_name = ''
+      repo_name = ''
+      package_name = ''
       # Show error
       error = ErrorLikeObject( message='GitHub URL', details=self.github_url_error )
       self.errors.append( error )
       log( error.__dict__, 'console' )
       
-    return self
+    return [ owner_name, repo_name, package_name ]
 
-  def get_repo( self ):
-    """Return repo obj or None. Needs self.owner_name, self.repo_name."""
+  def has_correct_permissions( self ):
+    """Return True if user has at least write permissions to the repo, else False and add error."""
+    has_permissions = False
+    
+    # Are they even on the collaborator list
+    is_valid_collaborator = self.repo.has_in_collaborators( self.user_name )
+    if not is_valid_collaborator:
+      error1 = ErrorLikeObject( message='Must be a collaborator', details=self.not_collaborator_error )
+      log( error1.__dict__, 'console' )
+      self.errors.append( error1 )
+      
+    else:
+      # Do they have a permission level that allows writing (pushing, etc)
+      correct_permissions = [ 'admin', 'maintain', 'write' ]
+      self.permissions = self.repo.get_collaborator_permission( self.user_name )
+      
+      has_permissions = self.permissions in correct_permissions
+      if not has_permissions:
+        error2 = ErrorLikeObject( message='Must have "write" permissions', details=self.permissions_error )
+        log( error2.__dict__, 'console' )
+        self.errors.append( error2 )
+    
+    return is_valid_collaborator
+  
+  def get_org( self ):
+    """Return org if it exists, otherwise None."""
+    # Check if org exists
     try:
-      repo = self.github.get_repo( self.owner_name + '/' + self.repo_name )
+      # Trigger for authentication error or feedback for the user
+      org = self.github.get_organization( self.owner_name )
+    except Exception as error1:
+      # UnknownObjectException: 404 {"message": "Not Found", "documentation_url": "https://docs.github.com/rest/reference/orgs#get-an-organization"}
+      org = None
+      log( error1.__dict__, 'console' )
+      error1.data[ 'details' ] = self.org_does_not_exist_error
+      self.errors.append( error1 )
+    return org
+    
+  def is_valid_org_admin( self, user, org_name ):
+    """Make sure org auth information is valid."""
+    valid = True
+    # Check if user belongs to org
+    try:
+      membership = user.get_organization_membership( org_name )
+      role = membership.role
     except Exception as error2:
-      # github.GithubException.UnknownObjectException (404)
+      valid = False
+      role = None
       log( error2.__dict__, 'console' )
-      repo = None
-      error2.data[ 'details' ] = self.github_repo_not_found_error
+      error2.data[ 'details' ] = self.not_an_org_member_error
       self.errors.append( error2 )
 
-    return repo
-
-  def is_repo_collaborator( self ):
-    """Return True if user has collaborator access to the repo, else False and add error (403)"""
-    has_access = self.repo.has_in_collaborators( self.user_name )
-    if not has_access:
-      error4 = ErrorLikeObject( message='Must have push access', details=self.github_access_error )
-      self.errors.append( error4 )
-      log( error4.__dict__, 'console' )
-    return has_access
+    # Check if user is admin of org
+    if role != 'admin':
+      valid = False
+      # Show error
+      error3 = ErrorLikeObject( message='Not an admin', details=self.not_org_admin_error )
+      log( error3.__dict__, 'console' )
+      self.errors.append( error3 )
+    
+    return valid
   
   def get_free_branch_name( self ):
     """Return str of valid avialable branch name or None. Add appropriate errors."""
@@ -155,73 +234,86 @@ class TestInstaller(DAObject):
     
     return branch_name
   
-  def set_auth_for_secrets( self ):
-    """Separated to allow easier removal when library finally supports secrets"""
-    # The below is only needed because PyGithub does not handle secrets
-    # The value for the GitHub 'Authorization' key
-    auth_bytes = codecs.encode(bytes( self.owner_name + ':' + self.token, 'utf8'), 'base64')
-    self.basic_auth = 'Basic ' + auth_bytes.decode().strip()
-    # The base url string needed for making requests to the repo.
-    self.github_repo_base = "https://api.github.com/repos/" + self.owner_name + "/" + self.repo_name
-
-    # Get and set GitHub key id for the repo for secrets
-    key_url = self.github_repo_base + "/actions/secrets/public-key"
-    key_payload = ""
-    key_headers = {
-      'Accept': 'application/vnd.github.v3+json',
-      'Authorization': self.basic_auth,
-    }
-    
-    key_response = requests.request( 'GET', key_url, data=key_payload, headers=key_headers )
-    key_json = json.loads( key_response.text )
-    self.key_id = key_json[ 'key_id' ]
-    self.public_key = key_json[ 'key' ]
-    
-    return self
-  
 
   ###############################
   # github: set secrets and create files
   # All checks should have passed at this point
   ###############################
   def update_github( self ):
-    """Update github with what it needs and make a PR."""
-    self.make_new_branch()
-    self.push_files()
-    self.make_pull_request()
-    self.create_secrets()
+    """If desired, set repo or org secrets. If desired, add test files to repo."""
+    if value('secrets_need') == 'org' or value('secrets_need') == 'repo':
+      self.create_secrets()
+    if value( 'wants_to_set_up_tests' ):
+      self.make_new_branch()
+      self.push_files()
+      self.make_pull_request()
+    return self
+  
+  def create_secrets( self ):
+    """Set the GitHub repo secrets the tests need to log into the da server and
+    create projects to contain the interviews being tested. TODO: use PyGithub's secret handling ."""
+    self.put_secret( 'SERVER_URL', self.server_url )
+    self.put_secret( 'PLAYGROUND_EMAIL', self.email )
+    self.put_secret( 'PLAYGROUND_PASSWORD', self.password )
+    self.put_secret( 'PLAYGROUND_ID', self.playground_id )
+    return self
+  
+  def put_secret( self, secret_name, secret_value ):
+    """Add or update one secret to the GitHub repo. """
+    # Encryption by hand in case the lib gets discontinued: https://gist.github.com/plocket/af03ac9326b2ae6d36c937b125b2ea0a
+    
+    if value('secrets_need') == 'org':
+      # PyGithub org secrets still missing: https://github.com/PyGithub/PyGithub/issues/1373#issuecomment-856616652
+      headers1, data = self.org._requester.requestJsonAndCheck(
+        "GET", f"{ self.org.url }/actions/secrets/public-key"
+      )
+      public_key = PublicKey.PublicKey( self.org._requester, headers1, data, completed=True )
+      payload = public_key.encrypt( secret_value )
+      put_parameters = {
+        "key_id": public_key.key_id,
+        "encrypted_value": payload,
+        "visibility": "all",
+      }
+      status, headers, data = self.org._requester.requestJson(
+        "PUT", f"{ self.org.url }/actions/secrets/{ secret_name }", input=put_parameters
+      )
+      
+    elif value('secrets_need') == 'repo':
+      # https://pygithub.readthedocs.io/en/latest/github_objects/Repository.html?highlight=secret#github.Repository.Repository.create_secret
+      self.repo.create_secret( secret_name, secret_value )
+    
     return self
   
   def make_new_branch( self ):
     """Create new branch off the default branch."""
     # Get default branch
     repo = self.repo
-    default_branch_name = repo.default_branch
-    default_branch = repo.get_branch( default_branch_name )
     # Make new branch off of default branch
+    default_branch = repo.get_branch( repo.default_branch )
     ref_path = "refs/heads/" + self.branch_name
     response = repo.create_git_ref( ref_path, default_branch.commit.sha )
     
     return self
   
   def push_files( self ):
-    """Send files to folders in new branch in github.
-    https://pygithub.readthedocs.io/en/latest/examples/Repository.html#create-a-new-file-in-the-repository'''
-    # https://pygithub.readthedocs.io/en/latest/github_objects/Repository.html#github.Repository.Repository.create_file"""
+    """Send files to folders in new branch in github."""
     test_path = 'docassemble/' + self.package_name + '/data/sources/example_test.feature'
     test_commit_message = 'Add ' + test_path
+    self.send_file( '.github/workflows/run_form_tests.yml', 'Add .github/workflows/run_form_tests.yml', self.run_form_tests_str )  # 5
     self.send_file( test_path, test_commit_message, self.example_test_str )  # 2
     self.send_file( '.env_example', 'Add .env_example', self.env_example_str )  # 1
     self.send_file( '.gitignore', 'Add .gitignore', self.gitignore_str )  # 3
     self.send_file( 'package.json', 'Add package.json', self.package_json_str )  # 4
-    self.send_file( '.github/workflows/run_form_tests.yml', 'Add github/workflows/run_form_tests.yml', self.run_form_tests_str )  # 5
     return self
   
   def send_file( self, path, msg, contents ):
-    '''Either create a new file or update an existing file with the given data.
+    """Either create a new file or update an existing file with the given data.
        See https://stackoverflow.com/a/66673303/14144258.
        TODO: Discuss removing `self` to make it data-based.
-       TODO: Shall we include the committer's user name, etc?'''
+       TODO: Shall we include the committer's user name, etc?"""
+    
+    #https://pygithub.readthedocs.io/en/latest/examples/Repository.html#create-a-new-file-in-the-repository'''
+    # https://pygithub.readthedocs.io/en/latest/github_objects/Repository.html#github.Repository.Repository.create_file
     try:
       # Try to create the file
       self.repo.create_file( path, msg, contents, branch=self.branch_name )
@@ -231,11 +323,10 @@ class TestInstaller(DAObject):
         file = self.repo.get_contents( path )
         self.repo.update_file( path, msg, contents, file.sha, branch=self.branch_name )
       else:
-        # An undefined variable will make this error invisible as
-        # da has a special way of dealing with those.
+        # fyi, da will swallow an undefined variable name error
         raise error
     
-    return self;
+    return self
   
   def make_pull_request( self ):
     """Make a pull request with the new branch with changed files.
@@ -255,39 +346,6 @@ class TestInstaller(DAObject):
     self.pull_url = response.html_url
     
     return self
-  
-  def create_secrets( self ):
-    """Set the GitHub repo secrets the tests need to log into the da server and
-    create projects to contain the interviews being tested. TODO: use PyGithub's secret handling https://pygithub.readthedocs.io/en/latest/github_objects/Repository.html?highlight=secret#github.Repository.Repository.create_secret. Org scope still missing: https://github.com/PyGithub/PyGithub/issues/1373#issuecomment-856616652."""
-    self.put_secret( 'SERVER_URL', self.server_url )
-    self.put_secret( 'PLAYGROUND_EMAIL', self.email )
-    self.put_secret( 'PLAYGROUND_PASSWORD', self.password )
-    self.put_secret( 'PLAYGROUND_ID', self.playground_id )
-    return self
-  
-  def put_secret( self, name, value ):
-    """Add or update one secret to the GitHub repo."""
-    # Create repo secret: https://docs.github.com/en/rest/reference/actions#create-or-update-a-repository-secret
-    # Convert the message and key to Uint8Array's (Buffer implements that interface)
-    encrypted_key = public.PublicKey( self.public_key.encode("utf-8"), encoding.Base64Encoder() )
-    sealed_box = public.SealedBox( encrypted_key )  # ?
-    encrypted = sealed_box.encrypt( value.encode( "utf-8" ))  # LibSodium
-    base64_encrypted = b64encode( encrypted ).decode( "utf-8" )  # turns into string
-    
-    url = self.github_repo_base + "/actions/secrets/" + name
-    payload = '{"encrypted_value":"' + base64_encrypted + '", "key_id":"' + self.key_id + '"}'
-    headers = {
-      'Accept': "application/vnd.github.v3+json",
-      'Authorization': self.basic_auth,
-    }
-    
-    secret_put = requests.request( "PUT", url, data=payload, headers=headers )
-    # Cannot check the value, but can check it exists
-    secret_get = requests.request( "GET", url, data="", headers=headers )
-    #log( response.text, 'console' )
-    # TODO: create org secret: https://docs.github.com/en/rest/reference/actions#create-or-update-an-organization-secret
-    
-    return self
 
 
 # Error helpers
@@ -296,4 +354,3 @@ class ErrorLikeObject():
   def __init__( self, status=0, message='', details='' ):
     self.status = status
     self.data = { 'message': message, 'details': details }
-  
