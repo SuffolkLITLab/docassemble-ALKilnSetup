@@ -299,11 +299,11 @@ class TestInstaller(DAObject):
     """Send files to folders in new branch in github."""
     test_path = 'docassemble/' + self.package_name + '/data/sources/example_test.feature'
     test_commit_message = 'Add ' + test_path
-    self.send_file( '.github/workflows/run_form_tests.yml', 'Add .github/workflows/run_form_tests.yml', self.run_form_tests_str )  # 5
     self.send_file( test_path, test_commit_message, self.example_test_str )  # 2
     self.send_file( '.env_example', 'Add .env_example', self.env_example_str )  # 1
     self.send_file( '.gitignore', 'Add .gitignore', self.gitignore_str )  # 3
     self.send_file( 'package.json', 'Add package.json', self.package_json_str )  # 4
+    self.send_file( '.github/workflows/run_form_tests.yml', 'Add .github/workflows/run_form_tests.yml', self.run_form_tests_str )  # 5
     return self
   
   def send_file( self, path, msg, contents ):
