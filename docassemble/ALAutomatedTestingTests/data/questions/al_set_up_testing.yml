@@ -1,8 +1,7 @@
 metadata:
-  title: Set up AL automated testing
-  short title: Set up AL testing
-  description: Set up AssemblyLine automated testing for your docassemble package
-  comment: Test the automated integrated testing library for AssemblyLine
+  title: Set up GitHub automated interview testing
+  short title: Automate interview testing
+  description: Set up GitHub automated testing for docassemble interviews. This tool was created through the Document Assembly Line project.
 ---
 features:
   question back button: True
@@ -32,9 +31,13 @@ code: |
     show_errors
   
   # Role
-  is_org_admin
+  if not is_org:
+    is_org_admin = False
   
-  # Needs
+  # Secrets needs
+  if has_secrets == None:
+    how_to_check_secrets
+  
   if secrets_need == 'org' or secrets_need == 'repo':
     get_secrets_info
   
@@ -93,28 +96,85 @@ id: repo role
 question: |
   Document Assembly Line automated integrated testing
 subquestion: |
-  This tool helps developers or organizations set up automated integrated testing for docassemble packages that have a GitHub repository.
+  This tool helps developers or organizations set up automated integrated testing for docassemble interview packages that have a GitHub repository. GitHub will run the tests every time the code changes.
   
-  :clock: This task can take up to 30 minutes.
+  :clock: These tasks can take up to 40 minutes. It can take longer if you are unfamiliar with GitHub or need to contact an account administrator.
   
   What you can set up depends on your situation and what kind of GitHub permissions you have.
 fields:
-  - Are you the admin of the GitHub "organization"?: is_org_admin
+  - Is your team using a GitHub organization?: is_org
     datatype: yesnoradio
+  - Are you the admin of the GitHub organization?: is_org_admin
+    datatype: yesnoradio
+    enable if: is_org
 ---
-# Note: any repo writer can set repo secrets
+# Would love to ask them for their repo or org address so I can give them the link to see their own secrets, but for that I'd need to know if they're trying to affect a repo or an organization, which means explaining what secrets are and it all loops back around on itself.
+---
+id: has secrets
+question: |
+  Do you already have the GitHub secrets you need?
+subquestion: |
+  To run automatically, a test needs special information from you. Instead of having you manually enter that information every time, we will store that information in GitHub using things called GitHub secrets. If you want to learn more about secrets, GitHub has documentation about them.
+  
+  If you do not yet have these secrets, this tool can help you set them up. If you do have them, this tool can help you change them.
+  
+  You need to know if your organization or your repository has these secrets:
+  
+  ${ secrets_list }
+fields:
+  - Does your repository have these GitHub secrets set up already?: has_secrets
+    datatype: yesnomaybe
+    show if:
+      code: |
+        not is_org
+  - Does your organization have these GitHub secrets set up already?: has_secrets
+    datatype: yesnomaybe
+    show if:
+      code: |
+        is_org
+  - Do you need to change the secrets?: must_change_secrets
+    datatype: yesnoradio
+    show if: has_secrets
+# Actually, to ask that last one there are a bunch of permutations:
+# if it's an org and they're org admin, the can change secrets.
+# if it's an org and they're not an org admin, they can only change repo secrets, but do they want to change repo secrets or do they want to ask an admin to change repo secrets?
+# if it's not an org, they can just do repo secrets no problem.
+#  note: |
+#    If you don't know, you will have to ask an admin to look at the repository's secrets.
+#    % if is_org and not is_org_admin:
+#    If you don't know, ask your org admin to check if they exist. They can [see them in the same place that they can create them](https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-an-organization)
+#    % else if is_org and is_org_admin:
+#    
+#    % endif
+---
+id: doesn't know about secrets
+question: |
+  You need to find out if you have the GitHub secrets
+subquestion: |
+  A repository admin or an organization admin can 
+fields:
+  - Which secrets do you need to check
+---
+#  % if is_org_admin:
+#  If you don't know what that means, ask your admin.
+#  
+#  % else:
+#  
+#  % endif
+---
+# Note: any repo writer can set repo secrets through the API, even though they can't do that in GitHub itself.
 id: needs
 question: |
   What do you need to do?
 subquestion: |
   % if is_org_admin:
-  You said you are the admin of an organization.
+  You said you are an admin of your team's organization.
   
-  Using this form you can {set up GitHub secrets}, or set up the testing package files in a repository, or both. If you set up secrets, you can choose to create secrets for your organization or for a specific repository.
+  This tool can help you prepare for automated testing in a few different ways. It can help you set up GitHub secrets for an organization or a specific repository, set up necessary files for a specific repository, or both.
   % else:
-  You said you are a developer on a repository and can change files in a repository.
+  It sounds like you are a developer in the interview's repository and can change files in that repository. If that is untrue, this form is not for you.
   
-  Using this form you can {set up GitHub secrets} for a repository, or set up the testing package files in a repository, or both.
+  Using this form you can {set up GitHub secrets} for the repository, set up the necessary files in the repository, or both.
   % endif
   
   Note that if a GitHub organization admin has already set up GitHub **organization** secrets, repositories that belong to the organization don't need their own secrets. Otherwise, a repository will need its own secrets.
@@ -145,7 +205,7 @@ fields:
       - I need to set up a repository's secrets: repo
       - Someone has set up the repository or organization secrets already: none
   # Always
-  - Do you need to set up testing for a package?: wants_to_set_up_tests
+  - Do you need to set up testing for an interview?: wants_to_set_up_tests
     datatype: yesnoradio
 validation code: |
   if secrets_need == 'none' and not wants_to_set_up_tests:
@@ -158,7 +218,7 @@ help:
 ---
 template: secrets_popover
 content: |
-  Tap the "About GitHub Secrets" button at the bottom of the page to learn why the tests need GitHub secrets and how to see what secrets you already have.
+  Tap the "About GitHub Secrets" button at the bottom of this page to learn why the tests need GitHub secrets and how to see what secrets you already have.
 ---
 template: about_secrets
 content: |
@@ -188,7 +248,7 @@ content: |
 
     If you're not sure whether a repository has access to its organization's secrets, ask a repository admin to take a look. They can see those on the repository's secrets page too, as described above.
 
-    If the organization has these secrets, but the secrets are not showing up in the package's repository, the organization admin may need to [change the access settings for the secret](https://docs.github.com/en/actions/reference/encrypted-secrets#reviewing-access-to-organization-level-secrets).
+    If the organization has these secrets, but the secrets are not showing up in the interview's repository, the organization admin may need to [change the access settings for the secret](https://docs.github.com/en/actions/reference/encrypted-secrets#reviewing-access-to-organization-level-secrets).
     
     ---
 
@@ -198,7 +258,7 @@ content: |
     
     1. Log into a docassemble account on your server.
     1. Make a new Project. The name will start with "testing".
-    1. Pull your package's GitHub code from the branch that they are testing.
+    1. Pull your interview's GitHub code from the branch that they are testing.
     1. Go through the interview as if the tests were a real person.
     1. Delete the Project it created.
 
@@ -271,9 +331,9 @@ fields:
   - Account password: installer.password
     datatype: password
   - note: |
-      Go to the Playground of the account and run any working YAML file. For example, **test.yml**. What is {the URL in the address bar}? Example:[BR]
+      Go to the account where the tests will run. Go to the Playground of that account and run any working YAML file. For example, **test.yml**. What is {the URL in the address bar}? Example:[BR]
       **https://legal-dev.org/interview?i=docassemble.playground22%3Atest.yml**
-  - Interview URL: installer.playground_url
+  - Account Interview URL: installer.playground_url
 terms:
   the URL in the address bar: |
     The interview URL will give us the account's Playground ID and the address of the server that the account is on.
@@ -318,7 +378,7 @@ fields:
     help: |
       The token must have ${ token_permissions_scope } permissions.
   - note: |
-      We also need the GitHub repository URL of the package. Example:[BR]
+      We also need the URL for the interview's GitHub repository. Example:[BR]
       **https://github.com/TheLawFantastic/docassemble-GreatForm**
     show if:
       code: |
@@ -437,7 +497,7 @@ question: |
   Your GitHub settings should be updated!
 subquestion: |
   % if wants_to_set_up_tests:
-  This should have created a [Pull Request in the package's GitHub repository](${ installer.pull_url }). New folders and files should have been added to the package:
+  This should have created a [Pull Request in the interview's GitHub repository](${ installer.pull_url }). New folders and files should have been added to the repository:
   
   ${ files_list }
   % endif
@@ -494,7 +554,7 @@ subquestion: |
   5. Replace \\_\\_\\_\\_ with the name of the YAML file you're testing.
   1. Save the file.
   1. On your Packages page Sources section, select the file.
-  1. Save the package.
+  1. Tap 'Save' on that page.
   1. Commit the change to GitHub on a new branch.
   1. [Go to your actions page](https://github.com/${ installer.owner_name }/${ installer.repo_name }/actions) and explore.
   1. If it passes, make a pull request, request a review, and get the branch merged in.
@@ -516,7 +576,7 @@ subquestion: |
   
   If you have some feedback, we would love to hear from you! Let us know in chat or [make a public "issue" in our repository](https://github.com/plocket/docassemble-ALAutomatedTestingTests/issues/new).
 buttons:
-  - Restart: restart
+  - Start again: restart
 terms:
   encrypted docassemble login information: ${ secrets_popover }
 help:
