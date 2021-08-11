@@ -1,8 +1,7 @@
 metadata:
-  title: Set up AL automated testing
-  short title: Set up AL testing
-  description: Set up AssemblyLine automated testing for your docassemble package
-  comment: Test the automated integrated testing library for AssemblyLine
+  title: Set up GitHub automated interview testing
+  short title: Set up automated testing
+  description: Set up GitHub automated testing for docassemble interviews. This tool was created through the Document Assembly Line project.
 ---
 features:
   question back button: True
@@ -99,8 +98,10 @@ subquestion: |
   
   What you can set up depends on your situation and what kind of GitHub permissions you have.
 fields:
-  - Are you the admin of the GitHub "organization"?: is_org_admin
+  - Are you the admin of the {GitHub organization}?: is_org_admin
     datatype: yesnoradio
+terms:
+  - GitHub organization: If you don't know what a GitHub organization is, then you are not an admin of a GitHub organization.
 ---
 # Note: any repo writer can set repo secrets
 id: needs
@@ -112,18 +113,20 @@ subquestion: |
   
   Using this form you can {set up GitHub secrets}, or set up the testing package files in a repository, or both. If you set up secrets, you can choose to create secrets for your organization or for a specific repository.
   % else:
-  You said you are a developer on a repository and can change files in a repository.
+  From your answer, it sounds like you are a developer on the repository and can change files in the repository.
   
-  Using this form you can {set up GitHub secrets} for a repository, or set up the testing package files in a repository, or both.
+  Using this form you can set up GitHub secrets for the repository, set up the testing package files in the repository, or both.
   % endif
   
-  Note that if a GitHub organization admin has already set up GitHub **organization** secrets, repositories that belong to the organization don't need their own secrets. Otherwise, a repository will need its own secrets.
+  ---
+  
+  First, we'll ask about the GitHub secrets.
   
   %if not is_org_admin:
-  If you want your organization admin to set up organization secrets, give them a link to this tool.
-  % endif
+  **Pause here.** In order to answer the next question, you may have to contact an admin.
   
-  What do you need?
+  Ask your repository or GitHub organization admin whether the {right GitHub secrets} have been set up already for the repository or for the organization. You can tell them to look at the repository's GitHub secrets setting.
+  % endif
 fields:
   # If is org admin
   - What kind of secrets do you need to set up?: secrets_need
@@ -142,19 +145,29 @@ fields:
       code: |
         not is_org_admin
     choices:
-      - I need to set up a repository's secrets: repo
       - Someone has set up the repository or organization secrets already: none
+      - I need to set up the repository's secrets: repo
   # Always
-  - Do you need to set up testing for a package?: wants_to_set_up_tests
+  - note: |
+      You can read more about GitHub secrets using the 'About GitHub secrets button at the bottom of the page. It may just make things more confusing, though.
+      
+      ---
+      
+      Next, we'll ask about setting up testing for a specific package's repository.
+  - Do you need to set up testing for a specific package?: wants_to_set_up_tests
     datatype: yesnoradio
 validation code: |
   if secrets_need == 'none' and not wants_to_set_up_tests:
     validation_error("If you don't want to set secrets and don't want to set up tests, there is nothing to do here.")
 terms:
-  set up GitHub secrets: ${ secrets_popover }
+  right GitHub secrets: ${ secrets_list_one_line }
 help:
   label: About GitHub secrets
   content: ${ about_secrets }
+---
+template: secrets_list_one_line
+content: |
+  The secrets needed are PLAYGROUND_EMAIL, PLAYGROUND_PASSWORD, PLAYGROUND_ID, and SERVER_URL
 ---
 template: secrets_popover
 content: |
