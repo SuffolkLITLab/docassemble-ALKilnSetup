@@ -109,8 +109,13 @@ help:
   content: |
     To set up automated integrated testing, it will:
     
-    1. Help you set up GitHub secrets if needed.
-    1. Help you add files to a specific repository if needed. It will create a new branch on GitHub for those files and make a pull request with that branch.
+    * Help you set up these GitHub secrets if needed:
+    
+      ${ secrets_list }
+      
+    * Help you add files to a specific repository if needed. It will create a new branch on GitHub for those files and make a pull request with that branch. These files will be added:
+    
+    ${ files_list }
     
     If you are not an admin, you may need to speak to an admin to get different pieces of information.
 ---
@@ -308,33 +313,30 @@ help:
 ---
 # TODO: Can an org admin sometimes not have push access to an org repo?
 # TODO: Will org admins try to also add tests to a non-org repo?
+# [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token)
 id: github auth
 question: |
-  Authorizing for GitHub
+  GitHub
 subquestion: |
-  This tool needs GitHub authorization - a [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token). You can delete it at the end.
+  We need some authorization and some information to do operations in GitHub.
+
+  ---
+
+  GitHub needs you to authorize this tool to make changes on GitHub. You can do that by creating a personal access token (PAT).
   
-  The token will let this tool:
+  You will create a PAT in **your** GitHub account as you personally are the one giving this permission. You can delete the PAT at the end.
   
-  % if secrets_need == 'repo' or secrets_need == 'org':
-  ${ '1.' if wants_to_set_up_tests else '' } Create or update GitHub secrets.
-  % endif
-  % if wants_to_set_up_tests:
-  ${ '1.' if secrets_need == 'repo' or secrets_need == 'org' else '' } Add these folders and files to the repository on a new branch:
+  To answer the questions, do these steps:
   
-  ${ files_list }
-  
-  Then this interview will make a pull request with that branch.
-  % endif
-  
-  1. Start making a [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token).
+  1. [Log into your GitHub account](https://github.com).
+  1. Follow directions to start making your personal access token on GitHub. You can find the directions in a section at [this GitHub documentation page](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token).
   % if secrets_need == 'org':
   1. Tap the checkbox for "admin:org" permissions.
   % endif
   % if wants_to_set_up_tests or secrets_need == 'repo':
-  1. Tap the checkbox for "workflow" permissions. That should also trigger "repo" permissions.
+  1. Tap the checkbox for "workflow" permissions.
   % endif
-  1. Finish creating the token.
+  1. Finish creating the personal access token.
   1. Copy the token and paste it below.
 fields:
   - Personal access token: installer.token
@@ -342,19 +344,23 @@ fields:
     help: |
       The token must have ${ token_permissions_scope } permissions.
   - note: |
-      We also need the GitHub repository URL of the package. Example:[BR]
+      ---
+      
+      Next, we need the URL of the GitHub repository. Example:[BR]
       **https://github.com/TheLawFantastic/docassemble-GreatForm**
     show if:
       code: |
         wants_to_set_up_tests or secrets_need == 'repo'
   - Repo URL: installer.repo_url
     help: |
-      The repository's URL will give us the name of the repo and its owner.
+      This should be the repository that stores the code of the interviews that you want to test. The repository's URL will give us the name of the repo and its owner.
     show if:
       code: |
         wants_to_set_up_tests or secrets_need == 'repo'
   - note: |
-      We also need the name of the GitHub organization. Example:[BR]
+      ---
+      
+      Next, we need the name of the GitHub organization. Example:[BR]
       **SuffolkLITLab**
     show if:
       code: |
