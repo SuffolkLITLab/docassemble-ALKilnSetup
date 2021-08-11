@@ -160,7 +160,7 @@ fields:
       - I need to set up the repository's secrets: repo
   # Always
   - note: |
-      You can read more about GitHub secrets using the 'About GitHub secrets button at the bottom of the page. It may just make things more confusing, though.
+      You can read more about GitHub secrets using the 'About GitHub secrets button at the bottom of this page. It may just make things more confusing, though.
       
       ---
       
@@ -182,7 +182,7 @@ content: |
 ---
 template: secrets_popover
 content: |
-  Tap the "About GitHub Secrets" button at the bottom of the page to learn why the tests need GitHub secrets and how to see what secrets you already have.
+  Tap the "About GitHub Secrets" button at the bottom of this page to learn why the tests need GitHub secrets and how to see what secrets you already have.
 ---
 template: about_secrets
 content: |
