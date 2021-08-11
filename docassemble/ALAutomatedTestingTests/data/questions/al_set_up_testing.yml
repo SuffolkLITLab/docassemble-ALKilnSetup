@@ -466,21 +466,13 @@ prevent going back: True
 question: |
   Your GitHub settings should be updated!
 subquestion: |
-  % if wants_to_set_up_tests:
-  This should have created a [Pull Request in the package's GitHub repository](${ installer.pull_url }). New folders and files should have been added to the package:
-  
-  ${ files_list }
-  % endif
+  **Finish setting up**
   
   % if secrets_need == 'org' or secrets_need == 'repo':
   3 [GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets) were set to store {encrypted docassemble login information} safely:
   
   ${ secrets_list }
   % endif
-  
-  ---
-  
-  **Next**
   
   % if secrets_need == 'repo' or secrets_need == 'org':
   Secrets:
@@ -495,63 +487,43 @@ subquestion: |
   1. Make sure the secrets have the [access settings](https://docs.github.com/en/actions/reference/encrypted-secrets#reviewing-access-to-organization-level-secrets) you need.
   % endif
   
-  % if wants_to_set_up_tests:
-  New files:
-  
-  1. Make sure [the pull request](${ installer.pull_url }) got created.
-  1. [Go to your actions page](https://github.com/${ installer.owner_name }/${ installer.repo_name }/actions) to see the first test being run. It may take a minute, but if all the information was correct it should pass and get a green checkmark.
-  1. [Request a review](https://docs.github.com/en/github/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/requesting-a-pull-request-review) of that PR or just merge it.
-  1. If the test fails the first time and gets a red "x", [rerun the test (a.k.a. the job)](https://docs.github.com/en/actions/managing-workflow-runs/re-running-a-workflow). If it fails again, contact us.
-  1. Delete the [personal access token](https://github.com/settings/tokens) you created.
-
-  ---
-  
-  You can write your first test now if you want:
-  
-  1. Pull the new code into a new Project.
-  1. In the Playground, go to your Sources folder.
-  1. Add a new file called 'interview_loads.feature'.
-  1. Copy this code into the example file:
-  
-        <pre>
-      @load
-      Feature: Interviews load
-
-        Scenario: \\_\\_\\_\\_ loads with no error
-          Given I start the interview at "\\_\\_\\_\\_"
-        </pre>
-
-  5. Replace \\_\\_\\_\\_ with the name of the YAML file you're testing.
-  1. Save the file.
-  1. On your Packages page Sources section, select the file.
-  1. Save the package.
-  1. Commit the change to GitHub on a new branch.
-  1. [Go to your actions page](https://github.com/${ installer.owner_name }/${ installer.repo_name }/actions) and explore.
-  1. If it passes, make a pull request, request a review, and get the branch merged in.
-
-  ---
+  % if secrets_need == 'org':
+  Team members that are collaborators can now use this interview to set up tests for their repositories. When they ask you if organization secrets or repo secrets have been set up, you can answer 'yes'.
   % endif
   
-  % if secrets_need == 'org':
-  Team members that are collaborators can now use this interview to set up tests for their repositories without needing to set secrets.
+  % if wants_to_set_up_tests:
+  % endif
+  
+  % if wants_to_set_up_tests:
+  This tool should have created a new branch in the GitHub repository. On that branch, these new folders and files should have been added:
+  
+  ${ files_list }
+  
+  This tool should also have made a new pull request for you. To finish, follow these instructions regarding that pull request.
+  
+  1. [Follw this link to the pull request](${ installer.pull_url }) to make sure it got created.
+  1. [Follow this link to your actions page](https://github.com/${ installer.owner_name }/${ installer.repo_name }/actions) to see the first test being run on the new branch. It may take up to a few minutes to show up, but if all the information was correct it should pass and get a green checkmark. If the test fails the first time and gets a red "x", [rerun the test (a.k.a. the job)](https://docs.github.com/en/actions/managing-workflow-runs/re-running-a-workflow). If it fails again, contact us.
+  1. If you have a partner working on this with you, [follow the instructions at this link to request a review of that pull request](https://docs.github.com/en/github/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/requesting-a-pull-request-review) from the partner. You can also see [our documents about requesting a review](https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/github#request-others-test-your-code). If you are not working with a partner, you can just [follow these instructions to merge the pull request](https://docs.github.com/en/github/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/merging-a-pull-request).
+  1. [Follow this link to the personal access token](https://github.com/settings/tokens) you created and delete it.
+  
+  ---
   % endif
   
   % if not wants_to_set_up_tests:
-  Delete the [personal access token](https://github.com/settings/tokens) you created.
+  [Follow this link to the personal access token](https://github.com/settings/tokens) you created and delete it.
+  
+  ---
   % endif
   
-  You can read some rough docs at [https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/automated_integrated_testing](https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/automated_integrated_testing/).
+  If you want to go for a wild ride, you can read some rough docs at [https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/automated_integrated_testing](https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/automated_integrated_testing/).
   
   ---
   
   If you have some feedback, we would love to hear from you! Let us know in chat or [make a public "issue" in our repository](https://github.com/plocket/docassemble-ALAutomatedTestingTests/issues/new).
 buttons:
-  - Restart: restart
+  - Start again: restart
 terms:
   encrypted docassemble login information: ${ secrets_popover }
-help:
-  label: About GitHub secrets
-  content: ${ about_secrets }
 comment: |
   TODO: Should we offer to delete their personal access token for them in the interview itself? Do we have enough permissions?
   TODO: Implement feedback form instead of linking issues. See AL core for that.
