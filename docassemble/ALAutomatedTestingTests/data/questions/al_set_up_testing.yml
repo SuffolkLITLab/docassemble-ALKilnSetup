@@ -90,11 +90,13 @@ auto terms:
 ---
 id: repo role
 question: |
-  Document Assembly Line automated integrated testing
+  Automated integrated testing for docassemble packages
 subquestion: |
-  This tool helps developers or organizations set up automated integrated testing for docassemble packages that have a GitHub repository.
+  This tool was created through the Document Assembly Line project.
+
+  This tool helps developers or organizations set up automated integrated testing for docassemble interview packages that have a GitHub repository. GitHub will run the tests every time the code changes.
   
-  :clock: This task can take up to 30 minutes.
+  :clock: These tasks can take up to 40 minutes. It can take longer if you are unfamiliar with GitHub or need to contact an account administrator.
   
   What you can set up depends on your situation and what kind of GitHub permissions you have.
 fields:
@@ -102,6 +104,15 @@ fields:
     datatype: yesnoradio
 terms:
   - GitHub organization: If you don't know what a GitHub organization is, then you are not an admin of a GitHub organization.
+help:
+  label: What will this tool do?
+  content: |
+    To set up automated integrated testing, it will:
+    
+    1. Help you set up GitHub secrets if needed.
+    1. Help you add files to a specific repository if needed. It will create a new branch on GitHub for those files and make a pull request with that branch.
+    
+    If you are not an admin, you may need to speak to an admin to get different pieces of information.
 ---
 # Note: any repo writer can set repo secrets
 id: needs
