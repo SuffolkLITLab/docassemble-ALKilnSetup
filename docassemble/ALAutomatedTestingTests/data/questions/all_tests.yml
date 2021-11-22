@@ -60,6 +60,7 @@ fields:
   - Singly quoted key: single_quote_dict['single_quote_key']
     datatype: checkboxes
     required: False
+    none of the above: False
     choices:
       - 1: sq_one
       - 2: sq_two
@@ -67,6 +68,7 @@ fields:
   - Doubly quoted key: double_quote_dict["double_quote_key"]
     datatype: checkboxes
     required: False
+    none of the above: False
     choices:
       - 1: dq_one
       - 2: dq_two
