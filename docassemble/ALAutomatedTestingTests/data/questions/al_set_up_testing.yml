@@ -174,7 +174,7 @@ content: |
     
     An admin of a GitHub **repository** can set the secrets for that GitHub repository on the GitHub website itself.
     
-    A collaborator of a GitHub **repository** can set the secrets for the GitHub repository through **this tool**. A non-admin is unable to set secrets on GitHub itself. Yes, it's confusing. We don't know GitHub works that way ¯\_(ツ)_/¯
+    A collaborator of a GitHub **repository** can set the secrets for the GitHub repository through **this tool**. A non-admin is unable to set secrets on GitHub itself. Yes, it's confusing. We don't know why GitHub works that way ¯\_(ツ)_/¯
     
     ---
 
