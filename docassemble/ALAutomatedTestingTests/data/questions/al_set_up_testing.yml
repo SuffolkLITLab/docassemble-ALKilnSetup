@@ -408,7 +408,7 @@ review:
       
       ######**Your answers also gave us this information:**
       
-      * **Your username**:[BR]
+      * **Your GitHub username**:[BR]
       ${ installer.user_name }
       
       % if wants_to_set_up_tests or secrets_need == 'repo':
