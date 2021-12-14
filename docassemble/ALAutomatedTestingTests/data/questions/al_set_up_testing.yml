@@ -18,6 +18,28 @@ objects:
 include:
   - al_testing_files_to_push.yml
 ---
+comment: |
+  Totally just look through the user's eyes. What are their expectations and what questions are they asking.
+  Users:
+    org admins
+    admins (same, but can see secrets)
+    collaborators (same)
+  
+  Tasks:
+    set org secrets
+    set repo secrets
+    set up a repository
+  
+  Problem:
+    No one knows what secrets are
+    No one knows what info we need for secrets
+  
+  1. "What role?"
+  1. "Do you know what GitHub secrets are?"
+    1. If no, "What is your org/repository"
+      1. Do org admins only set org secrets? I don't think that's the case.
+  1. Just do what I tell you and don't ask why.
+---
 mandatory: True
 code: |
   ## for dev
@@ -110,17 +132,21 @@ fields:
 ---
 # Would love to ask them for their repo or org address so I can give them the link to see their own secrets, but for that I'd need to know if they're trying to affect a repo or an organization, which means explaining what secrets are and it all loops back around on itself.
 ---
+# Worried they'll look at the GitHub docs about setting secrets and then try to set the secrets themselves without guidance. On the other hand, I don't want to distract them from answering the current question.
+if: not is_org_admin
 id: has secrets
 question: |
   Do you already have the GitHub secrets you need?
 subquestion: |
   To run automatically, a test needs special information from you. Instead of having you manually enter that information every time, we will store that information in GitHub using things called GitHub secrets. If you want to learn more about secrets, GitHub has documentation about them.
   
-  If you do not yet have these secrets, this tool can help you set them up. If you do have them, this tool can help you change them.
+  Stick with me here and just answer the questions as they come. Don't try to do anything that this tool doesn't tell you to do.
   
-  You need to know if your organization or your repository has these secrets:
+  You need to find out if your organization or your repository has these secrets:
   
   ${ secrets_list }
+  
+  Just find that out. Do nothing else about it yet. There may be follow-up instructions for you{% " or your admin" if not is_org_admin %}.
 fields:
   - Does your repository have these GitHub secrets set up already?: has_secrets
     datatype: yesnomaybe
@@ -132,28 +158,27 @@ fields:
     show if:
       code: |
         is_org
-  - Do you need to change the secrets?: must_change_secrets
-    datatype: yesnoradio
-    show if: has_secrets
+  - note: |
+      If you don't know you, will have to ask an org or repo admin to check for you.
+
+      A repo or org admin can [check the secrets in the same place that they can create them](https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-an-organization). Avoid creating them right now.
+#  - Do you need to change the secrets?: must_change_secrets
+#    datatype: yesnoradio
+#    show if: has_secrets
 # Actually, to ask that last one there are a bunch of permutations:
 # if it's an org and they're org admin, the can change secrets.
 # if it's an org and they're not an org admin, they can only change repo secrets, but do they want to change repo secrets or do they want to ask an admin to change repo secrets?
 # if it's not an org, they can just do repo secrets no problem.
-#  note: |
-#    If you don't know, you will have to ask an admin to look at the repository's secrets.
-#    % if is_org and not is_org_admin:
-#    If you don't know, ask your org admin to check if they exist. They can [see them in the same place that they can create them](https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-an-organization)
-#    % else if is_org and is_org_admin:
-#    
-#    % endif
 ---
+# Get the repo or org address so they can check their secrets
 id: doesn't know about secrets
+event: how_to_check_secrets
 question: |
   You need to find out if you have the GitHub secrets
 subquestion: |
   A repository admin or an organization admin can 
-fields:
-  - Which secrets do you need to check
+#fields:
+#  - Which secrets do you need to check
 ---
 #  % if is_org_admin:
 #  If you don't know what that means, ask your admin.
