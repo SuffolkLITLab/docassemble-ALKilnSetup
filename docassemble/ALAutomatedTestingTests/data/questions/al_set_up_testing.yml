@@ -203,7 +203,7 @@ content: |
     
     An admin of a GitHub **repository** can set the secrets for that GitHub repository on the GitHub website itself.
     
-    A collaborator of a GitHub **repository** can set the secrets for the GitHub repository through **this tool**. A non-admin is unable to set secrets on GitHub itself. Yes, it's confusing. We don't know GitHub works that way ¯\_(ツ)_/¯
+    A collaborator of a GitHub **repository** can set the secrets for the GitHub repository through **this tool**. A non-admin is unable to set secrets on GitHub itself. Yes, it's confusing. We don't know why GitHub works that way ¯\_(ツ)_/¯
     
     ---
 
@@ -438,7 +438,7 @@ review:
       
       ######**Your answers also gave us this information:**
       
-      * **Your username**:[BR]
+      * **Your GitHub username**:[BR]
       ${ installer.user_name }
       
       % if wants_to_set_up_tests or secrets_need == 'repo':
