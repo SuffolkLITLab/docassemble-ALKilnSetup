@@ -139,9 +139,7 @@ subquestion: |
   First, we'll ask about the GitHub secrets.
   
   %if not is_org_admin:
-  **Pause here.** In order to answer the next question, you may have to contact an admin.
-  
-  Ask your repository or GitHub organization admin whether the {right GitHub secrets} have been set up already for the repository or for the organization. You can tell them to look at the repository's GitHub secrets setting.
+  **Pause here.** In order to answer the next question, you may have to contact an admin. Ask your repository or GitHub organization admin whether the {right GitHub secrets} have been set up already for the repository or for the organization. You can tell them to look at the repository's GitHub secrets setting.
   % endif
 fields:
   # If is org admin
@@ -468,6 +466,8 @@ question: |
 subquestion: |
   **Finish setting up**
   
+  ---
+  
   % if secrets_need == 'org' or secrets_need == 'repo':
   3 [GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets) were set to store {encrypted docassemble login information} safely:
   
@@ -492,18 +492,18 @@ subquestion: |
   % endif
   
   % if wants_to_set_up_tests:
-  % endif
-  
-  % if wants_to_set_up_tests:
-  This tool should have created a new branch in the GitHub repository. On that branch, these new folders and files should have been added:
+  This tool should have created a new branch in the GitHub repository named **${ installer.branch_name }**. On that branch, these new folders and files should have been added:
   
   ${ files_list }
+  
+  ---
   
   This tool should also have made a new pull request for you. To finish, follow these instructions regarding that pull request.
   
   1. [Follw this link to the pull request](${ installer.pull_url }) to make sure it got created.
-  1. [Follow this link to your actions page](https://github.com/${ installer.owner_name }/${ installer.repo_name }/actions) to see the first test being run on the new branch. It may take up to a few minutes to show up, but if all the information was correct it should pass and get a green checkmark. If the test fails the first time and gets a red "x", [rerun the test (a.k.a. the job)](https://docs.github.com/en/actions/managing-workflow-runs/re-running-a-workflow). If it fails again, contact us.
-  1. If you have a partner working on this with you, [follow the instructions at this link to request a review of that pull request](https://docs.github.com/en/github/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/requesting-a-pull-request-review) from the partner. You can also see [our documents about requesting a review](https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/github#request-others-test-your-code). If you are not working with a partner, you can just [follow these instructions to merge the pull request](https://docs.github.com/en/github/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/merging-a-pull-request).
+  1. [Follow this link to your actions page](https://github.com/${ installer.owner_name }/${ installer.repo_name }/actions) to see the first test being run on the new branch. It may take up to a few minutes to show up, but if all the information was correct it should pass and get a green checkmark.
+  1. If the test fails with a red "x": [Follow these instructions to rerun the test](https://docs.github.com/en/actions/managing-workflow-runs/re-running-a-workflow) (a.k.a. the job). If it fails again, contact us.
+  1. If the test passes with a green checkmark: If you have a partner working on this with you, [follow the instructions at this link to request a review of that pull request](https://docs.github.com/en/github/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/requesting-a-pull-request-review) from the partner. You can also see [our documents about requesting a review](https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/github#request-others-test-your-code). If you are not working with a partner, you can just [follow these instructions to merge the pull request](https://docs.github.com/en/github/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/merging-a-pull-request).
   1. [Follow this link to the personal access token](https://github.com/settings/tokens) you created and delete it.
   
   ---
