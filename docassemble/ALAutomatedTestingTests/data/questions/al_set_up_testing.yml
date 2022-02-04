@@ -88,36 +88,56 @@ code: |
 auto terms:
   the docassemble account where the tests will run: Remember that **you can use your own account** and you can always change this later.
 ---
+# GitHub will run the tests every time the code changes.
+# https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/automated_integrated_testing
 id: repo role
 question: |
   Automated integrated testing for docassemble packages
 subquestion: |
-  This tool was created through the Document Assembly Line project.
-
-  This tool helps developers or organizations set up automated integrated testing for docassemble interview packages that have a GitHub repository. GitHub will run the tests every time the code changes.
+  This tool can help you set up automated testing for docassemble interview packages that have a GitHub repository. You can read more details in [the documentation](https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/automated_integrated_testing).
   
-  :clock: These tasks can take up to 40 minutes. It can take longer if you are unfamiliar with GitHub or need to contact an account administrator.
+  :clock: Setup can take up to 40 minutes. It can take longer if you are unfamiliar with GitHub or need to contact an account administrator.
   
-  What you can set up depends on your situation and what kind of GitHub permissions you have.
+  To help you set up testing, we need to understand what you are trying to do and what kind of access you have to GitHub.
 fields:
-  - Are you the admin of the {GitHub organization}?: is_org_admin
+  - Are you setting this up for a GitHub organization?: is_part_of_org
     datatype: yesnoradio
-terms:
-  - GitHub organization: If you don't know what a GitHub organization is, then you are not an admin of a GitHub organization.
-help:
-  label: What will this tool do?
-  content: |
-    To set up automated integrated testing, it will:
-    
-    * Help you set up these GitHub secrets if needed:
-    
-      ${ secrets_list }
-      
-    * Help you add files to a specific repository if needed. It will create a new branch on GitHub for those files and make a pull request with that branch. These files will be added:
-    
-    ${ files_list }
-    
-    If you are not an admin, you may need to speak to an admin to get different pieces of information.
+  - What is your role in the GitHub organization?: org_role
+    datatype: radio
+    choices:
+      - I'm an admin: admin
+      - I'm a collaborator who can change files and commit to the repository: collaborator
+      - I'm part of the organization, but I can't change files on it or commit to it: no_permissions
+    show if: is_part_of_org
+  - note: It sounds like you're working on a single repository.
+    show if: not is_part_of_org
+  - Are you able to change files in the repository and commit to it?: org_role
+    show if: not is_part_of_org
+#      variable: is_part_of_org
+#      is: False
+#  - Are you the admin of the GitHub organization?: is_org_admin
+#    datatype: yesnoradio
+#    show if: is_part_of_org
+#terms:
+#  - GitHub organization: If you don't know what a GitHub organization is, then you are not an admin of a GitHub organization.
+#help:
+#  label: What will this tool do?
+#  content: |
+#    To set up automated integrated testing, it will:
+#    
+#    * Help you set up these GitHub secrets if needed:
+#    
+#      ${ secrets_list }
+#      
+#    * Help you add files to a specific repository if needed. It will create a new branch on GitHub for those files and make a pull request with that branch. These files will be added:
+#    
+#    ${ files_list }
+#    
+#    If you are not an admin, you may need to speak to an admin to get different pieces of information.
+---
+id: role
+code: |
+  is_org_admin = is_part_of_org and org_role == 'admin'
 ---
 # Note: any repo writer can set repo secrets
 id: needs
