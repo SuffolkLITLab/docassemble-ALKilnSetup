@@ -69,7 +69,7 @@ class TestInstaller(DAObject):
       self.has_right_scopes( self.github.oauth_scopes )
     
     # If wants to do any repo stuff. Also defines self.owner_name if it's not defined already.
-    if value( 'secrets_need' ) == 'repo' or value( 'wants_to_set_up_tests' ):
+    if value( 'secret_type_wanted' ) == 'repo' or value( 'wants_to_set_up_tests' ):
       self.repo = self.get_repo( self.repo_url )
       if self.repo:
         # TODO: Add branch name to confirmation page or final page?
@@ -78,7 +78,7 @@ class TestInstaller(DAObject):
         self.has_correct_permissions()
     
     # Auth for setting org secrets
-    if ( value('secrets_need') == 'org' ):
+    if ( value('secret_type_wanted') == 'org' ):
       self.org = self.get_org()
       if self.org and user:
         self.is_valid_org_admin( user, self.org.login )
@@ -88,9 +88,9 @@ class TestInstaller(DAObject):
   def has_right_scopes( self, scopes ):
     """Make sure the developer gave the token the right scopes"""
     # TODO: discuss: Really if just setting repo secrets, only need repo permissions, but do we want to make it that complicated/inconsistent?
-    if value('secrets_need') == 'org' and value('wants_to_set_up_tests'):
+    if value('secret_type_wanted') == 'org' and value('wants_to_set_up_tests'):
       has_scopes = "admin:org" in scopes and "workflow" in scopes and "repo" in scopes
-    elif value('secrets_need') == 'org' and not value('wants_to_set_up_tests'):
+    elif value('secret_type_wanted') == 'org' and not value('wants_to_set_up_tests'):
       has_scopes = "admin:org" in scopes
     else:
       has_scopes = "workflow" in scopes and "repo" in scopes
@@ -241,7 +241,7 @@ class TestInstaller(DAObject):
   ###############################
   def update_github( self ):
     """If desired, set repo or org secrets. If desired, add test files to repo."""
-    if value('secrets_need') == 'org' or value('secrets_need') == 'repo':
+    if value('secret_type_wanted') == 'org' or value('secret_type_wanted') == 'repo':
       self.create_secrets()
     if value( 'wants_to_set_up_tests' ):
       self.make_new_branch()
@@ -262,7 +262,7 @@ class TestInstaller(DAObject):
     """Add or update one secret to the GitHub repo. """
     # Encryption by hand in case the lib gets discontinued: https://gist.github.com/plocket/af03ac9326b2ae6d36c937b125b2ea0a
     
-    if value('secrets_need') == 'org':
+    if value('secret_type_wanted') == 'org':
       # PyGithub org secrets still missing: https://github.com/PyGithub/PyGithub/issues/1373#issuecomment-856616652
       headers1, data = self.org._requester.requestJsonAndCheck(
         "GET", f"{ self.org.url }/actions/secrets/public-key"
@@ -278,7 +278,7 @@ class TestInstaller(DAObject):
         "PUT", f"{ self.org.url }/actions/secrets/{ secret_name }", input=put_parameters
       )
       
-    elif value('secrets_need') == 'repo':
+    elif value('secret_type_wanted') == 'repo':
       # https://pygithub.readthedocs.io/en/latest/github_objects/Repository.html?highlight=secret#github.Repository.Repository.create_secret
       self.repo.create_secret( secret_name, secret_value )
     
