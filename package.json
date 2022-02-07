@@ -1,0 +1,30 @@
+{
+  "name": "docassemble-ALAutomatedTestingTests",
+  "version": "0.1.0",
+  "description": "",
+  "main": "",
+  "scripts": {
+    "test": "npm run langs_setup && npm run cucumber -- $@",
+    "cucumber_base": "./node_modules/.bin/cucumber-js --require ./node_modules/docassemble-cucumber/lib/index.js",
+    "cucumber": "run_cucumber(){ npm run cucumber_base -- \"$@\" docassemble/*/data/sources/*.feature; }; run_cucumber",
+    "langs": "npm run langs_setup && ./node_modules/.bin/cucumber-js --require ./node_modules/docassemble-cucumber/lib/index.js docassemble/*/data/sources/*_lang*.feature",
+    "langs_setup": "node_modules/.bin/da-langs 'docassemble/*/data/sources/*.feature'",
+    "setup": "node_modules/.bin/da-setup",
+    "takedown": "node_modules/.bin/da-takedown"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/plocket/docassemble-ALAutomatedTestingTests.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/plocket/docassemble-ALAutomatedTestingTests/issues"
+  },
+  "homepage": "https://github.com/plocket/docassemble-ALAutomatedTestingTests#readme",
+  "dependencies": {
+    "colors": "1.4.0",
+    "cucumber": "^6.0.5",
+    "docassemble-cucumber": "^3.0.0"
+  }
+}
