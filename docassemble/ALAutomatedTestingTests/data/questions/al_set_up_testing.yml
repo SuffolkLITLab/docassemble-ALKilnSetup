@@ -477,7 +477,9 @@ content: |
 template: files_list
 # TODO
 content: |
-  * **tests/features/.feature** is a very simple example of a test.
+  % if installer.test_files_wanted.any_true():
+  * **tests/features/interviews_run.feature** is a very simple example of a test.
+  % endif
   * **.github/workflows/run_interview_tests.yml** tells GitHub when and how to run the tests and save the files created.
   * **package.json** lets GitHub load other packages it needs to run the tests.
   * **.gitignore** is for developers who want to work in their local environment.
@@ -570,9 +572,19 @@ review:
       
       ---
   - note: |
+      % if wants_to_set_up_tests:
+      If you continue, this setup will make a new branch and create or overwrite these files:
+      
+      ${ files_list }
+      
+      You can edit them before merging the branch.
+      
+      ---
+      % endif
+      
       There may be a few more steps after this to finish up. Continue when you are ready.
       
-      You will not be able to come back to this page.
+      **You will not be able to come back to this page.**
 continue button field: is_ready
 continue button label: Send to GitHub
 ---
@@ -611,7 +623,7 @@ subquestion: |
   % else:
   ---
   
-  This tool should have created a new branch in the GitHub repository named **${ installer.branch_name }**. On that branch, these new folders and files should have been added:
+  This tool should have created a new branch in the GitHub repository named **${ installer.branch_name }**. On that branch, these new folders and files should have been generated:
   
   ${ files_list }
   

@@ -329,7 +329,8 @@ class TestInstaller(DAObject):
       test_path = 'docassemble/' + self.package_name + '/data/sources/interviews_run.feature'
       test_commit_message = 'Add ' + test_path + ' for ALKiln automated tests'
       self.send_file( test_path, test_commit_message, self.first_feature_file_str )  # 1
-    # Push the other files
+      
+    # Push the mandatory files
     self.send_file( '.env_example', 'Add .env_example for ALKiln automated tests', self.env_example_str )  # 2
     self.send_file( '.gitignore', 'Add .gitignore for ALKiln automated tests', self.gitignore_str )  # 3
     self.send_file( 'package.json', 'Add package.json for ALKiln automated tests', self.package_json_str )  # 4
