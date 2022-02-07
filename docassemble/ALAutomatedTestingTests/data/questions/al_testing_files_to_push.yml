@@ -108,7 +108,7 @@ content: |
 # It just seemed more consistent
 template: installer.run_form_tests
 content: |
-  name: Run ALKiln automated tests
+  name: Use ALKiln testing framework v3 to run tests
 
   on:
     push:
