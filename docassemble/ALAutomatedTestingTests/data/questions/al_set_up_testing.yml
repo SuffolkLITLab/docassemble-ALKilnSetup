@@ -21,10 +21,10 @@ include:
 mandatory: True
 code: |
   ## for dev
-  ##installer.repo_url = 'https://github.com/plocket/install'
-  #installer.playground_url = 'https://apps-dev.suffolklitlab.org/interview?i=docassemble.playground12ALTestingGHSendFiles%3Aal_set_up_testing.yml#page4'
-  #installer.email = 'a@example.com'
-  #installer.password = 'asldkjflsdkjfldsjflsdjf'
+  installer.repo_url = 'https://github.com/plocket/docassemble-ALAutomatedTestingTests'
+  installer.playground_url = 'https://apps-dev.suffolklitlab.org/interview?i=docassemble.playground12ProjectName%3Aal_set_up_testing.yml#page4'
+  installer.email = 'a@example.com'
+  installer.password = 'asldkjflsdkjfldsjflsdjf'
   
   # show errors first thing on each loop
   if len( installer.errors ) > 0:
@@ -46,7 +46,10 @@ code: |
   installer.token
   set_github_auth
   
-  # confirm
+  # Set them up with an example test file if they want
+  installer.test_files_wanted
+  
+  # review/confirm
   is_ready
   # send the secrets and files to github
   update_github
@@ -96,11 +99,11 @@ code: |
     # loops that end up creating 5 branches. It seemed to make
     # sense to put them in here.
     installer.env_example_str = installer.env_example.content
-    installer.example_test_str = installer.example_test.content
+    installer.first_feature_file_str = installer.first_feature_file.content
     installer.gitignore_str = installer.gitignore.content
     installer.package_json_str = installer.package_json.content
     installer.run_form_tests_str = installer.run_form_tests.content
-    
+  
   installer.update_github()
   update_github = True
 ---
@@ -202,7 +205,7 @@ fields:
     datatype: yesnoradio
   - Do you want to update or override those secrets?: wants_to_update_secrets
     datatype: yesnoradio
-    show if:
+    enable if:
       variable: already_has_secrets
       is: True
   # If is org admin
@@ -436,6 +439,8 @@ fields:
       
       Next, we need the URL of the GitHub repository. Example:[BR]
       **https://github.com/TheLawFantastic/docassemble-GreatForm**
+      
+      The package name in the repo url must be **exactly** as it appears in GitHub, including lowercase and uppercase letters.
     show if:
       code: |
         wants_to_set_up_tests or secret_type_wanted == 'repo'
@@ -470,8 +475,9 @@ content: |
   % endif
 ---
 template: files_list
+# TODO
 content: |
-  * **tests/features/example_test.feature** is a very simple example of a test.
+  * **tests/features/.feature** is a very simple example of a test.
   * **.github/workflows/run_interview_tests.yml** tells GitHub when and how to run the tests and save the files created.
   * **package.json** lets GitHub load other packages it needs to run the tests.
   * **.gitignore** is for developers who want to work in their local environment.
@@ -483,7 +489,20 @@ content: |
   * ${ secret_name }
   % endfor
 ---
-id: confirm info
+id: first test
+question: |
+  The first test
+subquestion: |
+  We can create your first tests for you if you want. The tests will go to the first page of each interview and check that it loads. You can always edit or delete them in your "Sources" folder later.
+  
+  If you want to make one later instead, save this link to [our documentation](https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/automated_integrated_testing).
+fields:
+  - Which interview files to you want the test to use?: installer.test_files_wanted
+    datatype: checkboxes
+    code: |
+      installer.get_question_file_names()
+---
+id: confirm info review
 question: |
   Is this information correct?
 subquestion: |
@@ -537,6 +556,15 @@ review:
       * **Package name**:[BR]
       ${ installer.package_name }
       
+      * **Test files**:[BR]\
+      % if installer.test_files_wanted.any_true():
+      % for test_file in installer.test_files_wanted.true_values():
+      ${ test_file }[BR]
+      % endfor
+      % else:
+      None
+      % endif
+      
       The new branch will be named **${ installer.branch_name }**.
       % endif
       
@@ -554,21 +582,17 @@ question: |
   Your GitHub settings should be updated!
 subquestion: |
   **Finish setting up**
-  
-  ---
-  
+    
   % if secret_type_wanted == 'org' or secret_type_wanted == 'repo':
-  ${ len( secrets_names ) } [GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets) were set to store {encrypted docassemble login information} safely:
+  ---
+
+  ${ len( secrets_names ) } [encrypted GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets) were created to store the testing account's login information:
   
   ${ secrets_list }
   % endif
   
-  % if secret_type_wanted == 'repo' or secret_type_wanted == 'org':
-  Secrets:
-  % endif
-  
   % if secret_type_wanted == 'repo':
-  [Make sure the repository secrets got created](https://github.com/${ installer.owner_name }/${ installer.repo_name }/settings/secrets/actions).
+  If you have enough permissions, [make sure the repository secrets got created](https://github.com/${ installer.owner_name }/${ installer.repo_name }/settings/secrets/actions).
   % endif
   
   % if secret_type_wanted == 'org':
@@ -577,42 +601,40 @@ subquestion: |
   % endif
   
   % if secret_type_wanted == 'org':
-  Team members that are collaborators can now use this interview to set up tests for their repositories. When they ask you if organization secrets or repo secrets have been set up, you can answer 'yes'.
+  Team members that are collaborators can now use this interview to set up tests for their repositories. When they ask you if organization secrets or repo secrets have been set up, you can answer "yes".
   % endif
   
-  % if wants_to_set_up_tests:
+  % if not wants_to_set_up_tests:
+  [Follow this link to delete the personal access token](https://github.com/settings/tokens) you created.
+  
+  ---
+  % else:
+  ---
+  
   This tool should have created a new branch in the GitHub repository named **${ installer.branch_name }**. On that branch, these new folders and files should have been added:
   
   ${ files_list }
   
-  ---
+  This tool should also have made a new pull request for you with those files. To finish, follow these instructions regarding that pull request.
   
-  This tool should also have made a new pull request for you. To finish, follow these instructions regarding that pull request.
-  
-  1. [Follw this link to the pull request](${ installer.pull_url }) to make sure it got created.
-  1. [Follow this link to your actions page](https://github.com/${ installer.owner_name }/${ installer.repo_name }/actions) to see the first test being run on the new branch. It may take up to a few minutes to show up, but if all the information was correct it should pass and get a green checkmark.
+  1. [Follow this link to the pull request](${ installer.pull_url }) to make sure it got created.
+  1. [Follow this link to your actions page](https://github.com/${ installer.owner_name }/${ installer.repo_name }/actions) to see the first test being run on the new branch. It may take a few minutes to show up, but if all the information was correct it should pass and get a green checkmark.
   1. If the test fails with a red "x": [Follow these instructions to rerun the test](https://docs.github.com/en/actions/managing-workflow-runs/re-running-a-workflow) (a.k.a. the job). If it fails again, contact us.
-  1. If the test passes with a green checkmark: If you have a partner working on this with you, [follow the instructions at this link to request a review of that pull request](https://docs.github.com/en/github/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/requesting-a-pull-request-review) from the partner. You can also see [our documents about requesting a review](https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/github#request-others-test-your-code). If you are not working with a partner, you can just [follow these instructions to merge the pull request](https://docs.github.com/en/github/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/merging-a-pull-request).
-  1. [Follow this link to the personal access token](https://github.com/settings/tokens) you created and delete it.
+  1. If the test passes with a green checkmark, get a partner to [review it](https://docs.github.com/en/github/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/requesting-a-pull-request-review) or [follow these instructions to merge the pull request](https://docs.github.com/en/github/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/merging-a-pull-request).
+  1. [Follow this link to delete the personal access token](https://github.com/settings/tokens) you created.
   
   ---
   % endif
   
-  % if not wants_to_set_up_tests:
-  [Follow this link to the personal access token](https://github.com/settings/tokens) you created and delete it.
-  
-  ---
-  % endif
-  
-  If you want to go for a wild ride, you can read some rough docs at [https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/automated_integrated_testing](https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/automated_integrated_testing/).
-  
-  ---
+  If you want to disable the tests or just learn more, see [Assembly Line Kiln's documentation](https://suffolklitlab.github.io/docassemble-AssemblyLine-documentation/docs/automated_integrated_testing).
   
   If you have some feedback, we would love to hear from you! Let us know in chat or [make a public "issue" in our repository](https://github.com/plocket/docassemble-ALAutomatedTestingTests/issues/new).
+  
+  ---
 buttons:
   - Start again: restart
-terms:
-  encrypted docassemble login information: ${ secrets_popover }
+#terms:
+#  encrypted docassemble login information: ${ secrets_popover }
 comment: |
   TODO: Should we offer to delete their personal access token for them in the interview itself? Do we have enough permissions?
   TODO: Implement feedback form instead of linking issues. See AL core for that.
