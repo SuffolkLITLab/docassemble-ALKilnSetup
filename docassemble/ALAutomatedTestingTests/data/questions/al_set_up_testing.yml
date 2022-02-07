@@ -21,10 +21,10 @@ include:
 mandatory: True
 code: |
   ## for dev
-  installer.repo_url = 'https://github.com/plocket/docassemble-ALAutomatedTestingTests'
-  installer.playground_url = 'https://apps-dev.suffolklitlab.org/interview?i=docassemble.playground12ProjectName%3Aal_set_up_testing.yml#page4'
-  installer.email = 'a@example.com'
-  installer.password = 'asldkjflsdkjfldsjflsdjf'
+  #installer.repo_url = 'https://github.com/plocket/docassemble-ALAutomatedTestingTests'
+  #installer.playground_url = 'https://apps-dev.suffolklitlab.org/interview?i=docassemble.playground12ProjectName%3Aal_set_up_testing.yml#page4'
+  #installer.email = 'a@example.com'
+  #installer.password = 'asldkjflsdkjfldsjflsdjf'
   
   # show errors first thing on each loop
   if len( installer.errors ) > 0:
@@ -558,7 +558,7 @@ review:
       * **Package name**:[BR]
       ${ installer.package_name }
       
-      * **Test files**:[BR]\
+      * **Files to test**:[BR]\
       % if installer.test_files_wanted.any_true():
       % for test_file in installer.test_files_wanted.true_values():
       ${ test_file }[BR]
