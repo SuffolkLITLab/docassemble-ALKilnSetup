@@ -5,6 +5,8 @@ comment: |
 ---
 template: installer.env_example
 content: |
+  # ALKiln .env file example
+
   # Username and password to log in to a docassemble playground to run tests
   PLAYGROUND_EMAIL=example@example.com
   PLAYGROUND_PASSWORD=12345
@@ -29,19 +31,31 @@ content: |
   # Change this to DEBUG=1 to run tests in a visible browser
   DEBUG=
 ---
-template: installer.example_test
+template: installer.first_feature_file
 content: |
-  @example_feature_tag
-  Feature: An example test
+  @interviews_start
+  Feature: The interviews run without erroring
 
   What specific behavior this file should test
-  [x] Make sure the Project runs on the server
-  [ ] Make sure the interview itself starts
-  [ ] Find the ultimate question to life, the universe, and everything.
+  [x] Each interview starts without an error
+  [x] Some example Steps are included that are commented out so they won't run
 
-  @example_scenario_tag
-  Scenario: Server finishes reloading
-    Given I start the interview at "test"
+  These tests are made to work with the ALKiln testing framework, an automated testing framework made under the Document Assembly Line Project.
+  
+  Want to disable the tests? See ALKiln's docs: https://suffolklitlab.github.io/docassemble-AssemblyLine-documentation/docs/automated_integrated_testing
+
+  % for file_name in installer.test_files_wanted.true_values():
+  @${ re.sub( r'[^A-Za-z09]+', '' , re.sub( r'\.yml', '', file_name )) }
+  Scenario: ${ file_name } runs
+    #Given I wait 20 seconds
+    Given I start the interview at "${ file_name }"
+    #And the maximum seconds for each Step in this scenario is 50
+    #And I get to the question id "downloads" with this data:
+    #  | var | value | trigger |
+    #  | users[0].name.first | Uli | users[0].name.first |
+    #  | users[0].name.last | User1 | users[0].name.first |
+    
+  % endfor
 ---
 template: installer.gitignore
 content: |
@@ -64,17 +78,12 @@ content: |
     "version": "0.1.0",
     "description": "",
     "main": "",
-    "directories": {
-      "test": "tests"
-    },
     "scripts": {
       "test": "npm run langs_setup && npm run cucumber -- $@",
       "cucumber_base": "./node_modules/.bin/cucumber-js --require ./node_modules/docassemble-cucumber/lib/index.js",
       "cucumber": "run_cucumber(){ npm run cucumber_base -- \"$@\" docassemble/*/data/sources/*.feature; }; run_cucumber",
       "langs": "npm run langs_setup && ./node_modules/.bin/cucumber-js --require ./node_modules/docassemble-cucumber/lib/index.js docassemble/*/data/sources/*_lang*.feature",
       "langs_setup": "node_modules/.bin/da-langs 'docassemble/*/data/sources/*.feature'",
-      "langs_local": "npm run langs_setup && npm run local",
-      "local": "npm run setup && npm run cucumber; npm run takedown",
       "setup": "node_modules/.bin/da-setup",
       "takedown": "node_modules/.bin/da-takedown"
     },
@@ -89,14 +98,9 @@ content: |
     },
     "homepage": "https://github.com/${ installer.owner_name }/${ installer.repo_name }#readme",
     "dependencies": {
-      "bufferutil": "^4.0.1",
-      "chai": "^4.2.0",
+      "colors": "1.4.0",
       "cucumber": "^6.0.5",
-      "docassemble-cucumber": "^3.0.0",
-      "dotenv": "^8.2.0",
-      "mocha": "^7.2.0",
-      "puppeteer": "^3.1.0",
-      "utf-8-validate": "^5.0.2"
+      "docassemble-cucumber": "^3.0.0"
     }
   }
 ---
@@ -104,7 +108,7 @@ content: |
 # It just seemed more consistent
 template: installer.run_form_tests
 content: |
-  name: Test the interview
+  name: Run ALKiln automated tests
 
   on:
     push:
