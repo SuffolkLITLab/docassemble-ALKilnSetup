@@ -54,7 +54,13 @@ code: |
   # send the secrets and files to github
   update_github
   
+  #end
   force_ask( 'next_steps' )
+---
+event: end
+question: For ALKiln development
+subquestion: |
+  To allow easier and faster iteration when developing ALKiln
 ---
 code: |
   if already_has_secrets:
@@ -98,10 +104,7 @@ code: |
     # Otherwise, because of da execution behavior, they cause
     # loops that end up creating 5 branches. It seemed to make
     # sense to put them in here.
-    installer.env_example_str = installer.env_example.content
     installer.first_feature_file_str = installer.first_feature_file.content
-    installer.gitignore_str = installer.gitignore.content
-    installer.package_json_str = installer.package_json.content
     installer.run_form_tests_str = installer.run_form_tests.content
   
   installer.update_github()
@@ -475,15 +478,11 @@ content: |
   % endif
 ---
 template: files_list
-# TODO
 content: |
   % if installer.test_files_wanted.any_true():
   * **tests/features/interviews_run.feature** is a very simple example of a test.
   % endif
   * **.github/workflows/run_interview_tests.yml** tells GitHub when and how to run the tests and save the files created.
-  * **package.json** lets GitHub load other packages it needs to run the tests.
-  * **.gitignore** is for developers who want to work in their local environment.
-  * **.env-example** can help guide developers who want to work in their local environment to set up the environment variables.
 ---
 template: secrets_list
 content: |
@@ -566,25 +565,26 @@ review:
       % else:
       None
       % endif
-      
-      The new branch will be named **${ installer.branch_name }**.
       % endif
       
       ---
   - note: |
-      % if wants_to_set_up_tests:
-      If you continue, this setup will make a new branch and create or overwrite these files:
+      If you continue, this setup tool will make a branch called **${ installer.branch_name }** and create or overwrite this file or files:
       
-      ${ files_list }
+      % if installer.test_files_wanted.any_true():
+      1. interviews_run.feature - test file in the "sources" folder.
+      % endif
+      1. .github/workflows/run_form_tests.yml - runs the tests on GitHub.
       
-      You can edit them before merging the branch.
+      You can edit those files before merging the branch.
       
       ---
-      % endif
+    show if: wants_to_set_up_tests
       
+  - note: |
       There may be a few more steps after this to finish up. Continue when you are ready.
       
-      **You will not be able to come back to this page.**
+      :exclamation-triangle: **You will not be able to come back to this page.**
 continue button field: is_ready
 continue button label: Send to GitHub
 ---

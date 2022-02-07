@@ -7,7 +7,7 @@ import codecs
 from base64 import b64encode
 import re
 import json
-from docassemble.base.util import log, value, defined
+from docassemble.base.util import log, value
 from docassemble.base.core import DAObject
 
 # reference:
@@ -331,9 +331,9 @@ class TestInstaller(DAObject):
       self.send_file( test_path, test_commit_message, self.first_feature_file_str )  # 1
       
     # Push the mandatory files
-    self.send_file( '.env_example', 'Add .env_example for ALKiln automated tests', self.env_example_str )  # 2
-    self.send_file( '.gitignore', 'Add .gitignore for ALKiln automated tests', self.gitignore_str )  # 3
-    self.send_file( 'package.json', 'Add package.json for ALKiln automated tests', self.package_json_str )  # 4
+    #self.send_file( '.env_example', 'Add .env_example for ALKiln automated tests', self.env_example_str )  # 2
+    #self.send_file( '.gitignore', 'Add .gitignore for ALKiln automated tests', self.gitignore_str )  # 3
+    #self.send_file( 'package.json', 'Add package.json for ALKiln automated tests', self.package_json_str )  # 4
     self.send_file( '.github/workflows/run_form_tests.yml', 'Add .github/workflows/run_form_tests.yml for ALKiln automated tests', self.run_form_tests_str )  # 5
     
     return self

@@ -3,53 +3,26 @@ comment: |
   Templates use Mako to fill in the needed custom details.
   Templates are used as strings with PyGithub.
 ---
-template: installer.env_example
-content: |
-  # ALKiln .env file example
-
-  # Username and password to log in to a docassemble playground to run tests
-  PLAYGROUND_EMAIL=example@example.com
-  PLAYGROUND_PASSWORD=12345
-  
-  # Your PLAYGROUND_ID can be found in the url of an interview launched from that playground.
-  # It should look something like this:
-  # https://www.docassemble-server-url.com/interview?i=docassemble.playground[PLAYGROUND_ID]%3Ainterview.yml#page1
-  # Example: https://www.docassemble-server-url.com/interview?i=docassemble.playground34%3Ainterview.yml#page1. 34 is the id.
-  PLAYGROUND_ID=11111
-
-  BASE_URL=https://www.docassemble-server-url.com
-  REPO_URL=https://github.com/owner_name/repo_name
-
-  # Name of the branch on the Github repo to be tested.
-  BRANCH_PATH=main
-
-  # Tests will be generated for the buttons with the text
-  # below (intended for testing different language translations)
-  # Examples: Español, Tiếng Việt, Português, 中文, Kreyòl
-  EXTRA_LANGUAGES=
-
-  # Change this to DEBUG=1 to run tests in a visible browser
-  DEBUG=
----
 template: installer.first_feature_file
+# Make a Scenario for each file the developer wants to test.
+# Adds file names as tags on the Scenarios by making the name safe.
 content: |
   @interviews_start
   Feature: The interviews run without erroring
 
-  What specific behavior this file should test
-  [x] Each interview starts without an error
-  [x] Some example Steps are included that are commented out so they won't run
+  This file:
+  [x] Test that each interview starts without an error.
+  [x] Contains some additional example Steps. They use fake values and are commented out with a "#" so they won't run.
 
   These tests are made to work with the ALKiln testing framework, an automated testing framework made under the Document Assembly Line Project.
   
-  Want to disable the tests? See ALKiln's docs: https://suffolklitlab.github.io/docassemble-AssemblyLine-documentation/docs/automated_integrated_testing
+  Want to disable the tests? Want to learn more? See ALKiln's docs: https://suffolklitlab.github.io/docassemble-AssemblyLine-documentation/docs/automated_integrated_testing
 
   % for file_name in installer.test_files_wanted.true_values():
   @${ re.sub( r'[^A-Za-z09]+', '' , re.sub( r'\.yml', '', file_name )) }
   Scenario: ${ file_name } runs
-    #Given I wait 20 seconds
     Given I start the interview at "${ file_name }"
-    #And the maximum seconds for each Step in this scenario is 50
+    #And the maximum seconds for each Step in this Scenario is 50
     #And I get to the question id "downloads" with this data:
     #  | var | value | trigger |
     #  | users[0].name.first | Uli | users[0].name.first |
@@ -57,131 +30,56 @@ content: |
     
   % endfor
 ---
-template: installer.gitignore
-content: |
-  tests/chromedriver
-  *DS_Store*
-  node_modules*
-  .env
-  npm-debug.log
-  error*.jpg
-  screenshot_*.jpg
-  downloads_*
-  *_lang_*.feature
-  *_report_*
-  _al_test_project_name*
----
-template: installer.package_json
-content: |
-  {
-    "name": "${ installer.repo_name }",
-    "version": "0.1.0",
-    "description": "",
-    "main": "",
-    "scripts": {
-      "test": "npm run langs_setup && npm run cucumber -- $@",
-      "cucumber_base": "./node_modules/.bin/cucumber-js --require ./node_modules/docassemble-cucumber/lib/index.js",
-      "cucumber": "run_cucumber(){ npm run cucumber_base -- \"$@\" docassemble/*/data/sources/*.feature; }; run_cucumber",
-      "langs": "npm run langs_setup && ./node_modules/.bin/cucumber-js --require ./node_modules/docassemble-cucumber/lib/index.js docassemble/*/data/sources/*_lang*.feature",
-      "langs_setup": "node_modules/.bin/da-langs 'docassemble/*/data/sources/*.feature'",
-      "setup": "node_modules/.bin/da-setup",
-      "takedown": "node_modules/.bin/da-takedown"
-    },
-    "repository": {
-      "type": "git",
-      "url": "git+https://github.com/${ installer.owner_name }/${ installer.repo_name }.git"
-    },
-    "author": "",
-    "license": "ISC",
-    "bugs": {
-      "url": "https://github.com/${ installer.owner_name }/${ installer.repo_name }/issues"
-    },
-    "homepage": "https://github.com/${ installer.owner_name }/${ installer.repo_name }#readme",
-    "dependencies": {
-      "colors": "1.4.0",
-      "cucumber": "^6.0.5",
-      "docassemble-cucumber": "^3.0.0"
-    }
-  }
----
 # The closing '}}' doesn't really need to be contained.
 # It just seemed more consistent
 template: installer.run_form_tests
 content: |
   name: Use ALKiln testing framework v3 to run tests
-
+  
   on:
     push:
     workflow_dispatch:
       inputs:
         extra_languages:
-          description: 'Optional. A list of comma separated language names visible on buttons or links that change the language of the interview. Overrides the EXTRA_LANGUAGES repo secret.'
+          description: 'Optional. A list of comma separated language names visible on buttons or links in the interview that change the language of the interview. Overrides the EXTRA_LANGUAGES GitHub secret.'
           default: ''
         tags:
-          description: 'Optional. Use a "tag expression" specify which tagged tests to run (https://cucumber.io/docs/cucumber/api/#tag-expressions)'
+          description: 'Optional. Use a "tag expression" specify which tagged tests to run. See https://cucumber.io/docs/cucumber/api/#tag-expressions for syntax.'
           default: ''
+    # To run your tests on a schedule, delete the first "#" symbol at the beginning of each line below.
+    ## Also see https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#schedule
+    ## Also see https://crontab.guru/examples.html
+    #schedule:
+    #  - cron: '0 1 * * TUE'
 
   jobs:
 
-    puppeteer-tests:
+    interview-testing:
       runs-on: ubuntu-latest
-
-      strategy:
-        matrix:
-          node-version: [12.x]
-
-      env:
-        BASE_URL: ${ '${{' } secrets.SERVER_URL ${ '}}' }
-        PLAYGROUND_EMAIL: ${ '${{' } secrets.PLAYGROUND_EMAIL ${ '}}' }
-        PLAYGROUND_PASSWORD: ${ '${{' } secrets.PLAYGROUND_PASSWORD ${ '}}' }
-        PLAYGROUND_ID: ${ '${{' } secrets.PLAYGROUND_ID ${ '}}' }
-        BRANCH_PATH: ${ '${{' } github.ref ${ '}}' }
-        EXTRA_LANGUAGES: ${ '${{' } secrets.EXTRA_LANGUAGES ${ '}}' }
-
-      name: Run Puppeteer tests
+      name: Run interview tests
       steps:
-        - name: Set languages
-          run: echo "EXTRA_LANGUAGES=${ '${{' } github.event.inputs.extra_languages ${ '}}' }" >> $GITHUB_ENV
-          if: ${ '${{' } github.event.inputs.extra_languages != '' ${ '}}' }
-        - run: echo "REPO_URL=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" >> $GITHUB_ENV
-        - run: echo "Repo address is $REPO_URL"
-        - name: Checkout
-          uses: actions/checkout@v2
-        - name: Setup environment
-          uses: actions/setup-node@v1
+        - uses: actions/checkout@v2
+        - name: Use ALKiln to run tests
+          uses: suffolkLITLab/ALKiln@releases/v3
           with:
-            node-version: ${ '${{' } matrix.node-version ${ '}}' }
-        - run: npm install
-        - run: npm run setup
-        - run: npm run test -- ${ '${{' } github.event.inputs.tags && format('"--tags" "{0}"', github.event.inputs.tags) ${ '}}' }
-        - name: upload error artifacts
-          uses: actions/upload-artifact@v2
-          if: ${ '${{' } failure() ${ '}}' }
-          with:
-            name: errors
-            path: ./**/error*.jpg
-        - name: upload screenshot steps
-          uses: actions/upload-artifact@v2
-          # They will upload even if a previosu step has failed
-          if: ${ '${{' } always() ${ '}}' }
-          with:
-            name: screenshots
-            path: ./**/screenshot*.jpg
-        - name: upload downloads
-          uses: actions/upload-artifact@v2
-          # They will upload even if a previous step has failed
-          if: ${ '${{' } always() ${ '}}' }
-          with:
-            name: downloads
-            path: ./**/downloads_*
-        - name: upload report
-          uses: actions/upload-artifact@v2
-          # They will upload even if a previous step has failed
-          if: ${ '${{' } always() ${ '}}' }
-          with:
-            name: report
-            path: ./**/*_report_*
-        - name: Cleanup
-          if: ${ '${{' } always() ${ '}}' }
-          run: npm run takedown
+            SERVER_URL: "${ '${{' } secrets.SERVER_URL ${ '}}' }"
+            PLAYGROUND_EMAIL: "${ '${{' } secrets.PLAYGROUND_EMAIL ${ '}}' }"
+            PLAYGROUND_PASSWORD: "${ '${{' } secrets.PLAYGROUND_PASSWORD ${ '}}' }"
+            PLAYGROUND_ID: "${ '${{' } secrets.PLAYGROUND_ID ${ '}}' }"
+            EXTRA_LANGUAGES: "${ '${{' } secrets.EXTRA_LANGUAGES ${ '}}' }"
+        - run: echo "Finished running ALKiln tests"
+        
+        ## To make a new issue in your repository when a test fails,
+        ## simply delete the first "#" symbol in each line below
+        #- name: If any tests failed create an issue
+        #  if: ${ '${{' } failure() }}
+        #  uses: actions-ecosystem/action-create-issue@v1
+        #  with:
+        #    github_token: "${ '${{' } secrets.github_token ${ '}}' }"
+        #    title: ALKiln tests failed
+        #    body: |
+        #      An ALKiln test failed. See the action at ${ '${{' } github.server_url ${ '}}' }/${ '${{' } github.repository ${ '}}' }/actions/runs/${ '${{' } github.run_id ${ '}}' }.
+        #    labels: |
+        #      bug
+        
 ---
