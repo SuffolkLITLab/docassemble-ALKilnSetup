@@ -1,24 +1,15 @@
-# docassemble.ALAutomatedTestingTests
+# ALKiln support package
 
-A docassemble extension for testing the AssemblyLine automated integrated testing framework.
+Assembly Line Kiln (ALKiln) is a framework for automatically testing **any** [docassemble](https://docassemble.org/) package using GitHub. ALKiln is being developed as part of the SuffolkLITLab Document Assembly Line project. See [documentation for kiln](https://suffolklitlab.github.io/docassemble-AssemblyLine-documentation/docs/automated_integrated_testing).
 
-# Functionality contained in this repo
+This package supports ALKiln in different ways.
 
-## Help set up automated integrated testing
+## Tool to set up testing
 
-In an online form, a developer can give permissions and info that will set up testing for a docassemble package. It requires a GitHub token with repo and workflow permissions. It will add necessary GitHub secrets, make a new branch, push files to the `sources` directory, and make a PR with that branch.
+[Tap here to set up automated integrated testing for your docassemble interview](https://apps-dev.suffolklitlab.org/start/test-setup/).
 
-### TODO
-1. Install interview on server and add link here.
-1. Improve error messages.
-1. Clarify instructions.
+This repo contains a step-by-step form that a developer can use to set up automated integrated testing for **any** docassemble package. It requires, among other things, a docassemble account and a temporary GitHub personal access token with correct permissions. It will add necessary GitHub secrets, make a new branch, push necessary files to that branch, and make a PR with that branch.
 
-## Test the testing framework
+## Test ALKiln itself
 
-Provide an interview with combinations of fields that will allow the testing framework to test its own functionality.
-
-### TODO
-1. See issues
-
-## TODO
-1. Add test generator to this repo.
+This package provides files that the ALKiln testing framework can use to test its own functionality. That includes tests for setting different types of fields, for observing the state of the page, and for getting error messages.
