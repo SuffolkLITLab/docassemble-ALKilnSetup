@@ -34,15 +34,12 @@ content: |
 # It just seemed more consistent
 template: installer.run_form_tests
 content: |
-  name: Use ALKiln testing framework v3 to run tests
+  name: Use ALKiln testing framework v4 to run tests
   
   on:
     push:
     workflow_dispatch:
       inputs:
-        extra_languages:
-          description: 'Optional. A list of comma separated language names visible on buttons or links in the interview that change the language of the interview. Overrides the EXTRA_LANGUAGES GitHub secret.'
-          default: ''
         tags:
           description: 'Optional. Use a "tag expression" specify which tagged tests to run. See https://cucumber.io/docs/cucumber/api/#tag-expressions for syntax.'
           default: ''
@@ -60,13 +57,10 @@ content: |
       steps:
         - uses: actions/checkout@v2
         - name: Use ALKiln to run tests
-          uses: suffolkLITLab/ALKiln@releases/v3
+          uses: SuffolkLITLab/ALKiln@releases/v4
           with:
             SERVER_URL: "${ '${{' } secrets.SERVER_URL ${ '}}' }"
-            PLAYGROUND_EMAIL: "${ '${{' } secrets.PLAYGROUND_EMAIL ${ '}}' }"
-            PLAYGROUND_PASSWORD: "${ '${{' } secrets.PLAYGROUND_PASSWORD ${ '}}' }"
-            PLAYGROUND_ID: "${ '${{' } secrets.PLAYGROUND_ID ${ '}}' }"
-            EXTRA_LANGUAGES: "${ '${{' } secrets.EXTRA_LANGUAGES ${ '}}' }"
+            DOCASSEMBLE_DEVELOPER_API_KEY: "${ '${{' } secrets.DOCASSEMBLE_DEVELOPER_API_KEY ${ '}}' }"
         - run: echo "Finished running ALKiln tests"
         
         ## To make a new issue in your repository when a test fails,
