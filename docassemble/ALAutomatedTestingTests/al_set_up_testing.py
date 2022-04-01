@@ -24,23 +24,31 @@ class TestInstaller(DAObject):
     """Use the interview url to get the user's Playground id."""
     # Start clean (idempotent for da's loops).
     self.errors = []
-    # Can we get granular with error messages?
-    server_match = re.match( r"^(http.+)\/interview\?i=docassemble\.playground(\d+).*$", self.playground_url )
-    if server_match:
-      # TODO: More fine-grained validation of this information?
-      # What if one group matches and the other doesn't
-      self.server_url = server_match.group(1)
-      self.playground_id = server_match.group(2)
-    else:
-      self.server_url = ''
-      self.playground_id = ''
-      # Show error
-      error = ErrorLikeObject( message='Interview URL', details=self.da_url_error )
-      self.errors.append( error )
-      log( error.__dict__, 'console' )
+    self.server_url = self.server_url_input.rstrip('/')
     
-    # TODO: Is it possible to try to log into their server to
-    # make sure they've given the correct information?
+    try:
+      # https://docassemble.org/docs/api.html#user
+      response = requests.get(self.server_url + '/api/user', params={ 'key': self.da_api_key })
+      status = response.status_code
+      if status == 403:
+        # 403 “Access Denied”
+        error = ErrorLikeObject( message='Server API Key', details=self.da_access_denied_error )
+        self.errors.append( error )
+      elif status == 400:
+        # 400 “Error obtaining user information”
+        error = ErrorLikeObject( message='Docassemble user info', details=self.da_user_info_error )
+        self.errors.append( error )
+      else:
+        self.da_email = response.json()['email']
+    except requests.exceptions.ConnectionError as err:
+      # https://docs.python-requests.org/en/latest/user/quickstart/#errors-and-exceptions
+      error = ErrorLikeObject( message='Server URL', details=self.da_server_url_error )
+      self.errors.append( error )
+    except requests.exceptions.Timeout as err:
+      # https://docs.python-requests.org/en/latest/user/quickstart/#errors-and-exceptions
+      error = ErrorLikeObject( message='Server took too long', details=self.da_server_timeout_error )
+      self.errors.append( error )
+    
     return self
   
 
@@ -98,7 +106,6 @@ class TestInstaller(DAObject):
     if not has_scopes:
       error = ErrorLikeObject( message='Incorrect Personal Access Token scopes', details=self.github_pat_scopes_error )
       self.errors.append( error )
-      log( error.__dict__, 'console' )
       
     return has_scopes
   
@@ -135,7 +142,6 @@ class TestInstaller(DAObject):
       # Show error
       error = ErrorLikeObject( message='GitHub URL', details=self.github_url_error )
       self.errors.append( error )
-      log( error.__dict__, 'console' )
       
     return [ owner_name, repo_name, package_name ]
 
@@ -147,7 +153,6 @@ class TestInstaller(DAObject):
     is_valid_collaborator = self.repo.has_in_collaborators( self.user_name )
     if not is_valid_collaborator:
       error1 = ErrorLikeObject( message='Must be a collaborator', details=self.not_collaborator_error )
-      log( error1.__dict__, 'console' )
       self.errors.append( error1 )
       
     else:
@@ -158,7 +163,6 @@ class TestInstaller(DAObject):
       has_permissions = self.permissions in correct_permissions
       if not has_permissions:
         error2 = ErrorLikeObject( message='Must have "write" permissions', details=self.permissions_error )
-        log( error2.__dict__, 'console' )
         self.errors.append( error2 )
     
     return is_valid_collaborator
@@ -196,7 +200,6 @@ class TestInstaller(DAObject):
       valid = False
       # Show error
       error3 = ErrorLikeObject( message='Not an admin', details=self.not_org_admin_error )
-      log( error3.__dict__, 'console' )
       self.errors.append( error3 )
     
     return valid
@@ -228,7 +231,6 @@ class TestInstaller(DAObject):
 
     if not found_free_name:
       error3 = ErrorLikeObject( message='Branch already exists', details=self.github_branch_name_error )
-      log( error3.__dict__, 'console' )
       branch_name = None
       self.errors.append( error3 )
     
@@ -253,9 +255,7 @@ class TestInstaller(DAObject):
     """Set the GitHub repo secrets the tests need to log into the da server and
     create projects to contain the interviews being tested. TODO: use PyGithub's secret handling ."""
     self.put_secret( 'SERVER_URL', self.server_url )
-    self.put_secret( 'PLAYGROUND_EMAIL', self.email )
-    self.put_secret( 'PLAYGROUND_PASSWORD', self.password )
-    self.put_secret( 'PLAYGROUND_ID', self.playground_id )
+    self.put_secret( 'DOCASSEMBLE_DEVELOPER_API_KEY', self.da_api_key )
     return self
   
   def put_secret( self, secret_name, secret_value ):
@@ -324,7 +324,7 @@ class TestInstaller(DAObject):
   
   def push_files( self ):
     """Push each file to the new branch in github in the correct directory."""
-    # Only push test if they wanted it
+    # Only push test file if they wanted it
     if self.test_files_wanted.any_true():
       test_path = 'docassemble/' + self.package_name + '/data/sources/interviews_run.feature'
       test_commit_message = 'Add ' + test_path + ' for ALKiln automated tests'
@@ -386,3 +386,4 @@ class ErrorLikeObject():
   def __init__( self, status=0, message='', details='' ):
     self.status = status
     self.data = { 'message': message, 'details': details }
+    log( self.__dict__, 'console' )

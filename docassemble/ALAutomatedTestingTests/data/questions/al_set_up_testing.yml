@@ -22,9 +22,8 @@ mandatory: True
 code: |
   ## for dev
   #installer.repo_url = 'https://github.com/plocket/docassemble-ALAutomatedTestingTests'
-  #installer.playground_url = 'https://apps-dev.suffolklitlab.org/interview?i=docassemble.playground12ProjectName%3Aal_set_up_testing.yml#page4'
-  #installer.email = 'a@example.com'
-  #installer.password = 'asldkjflsdkjfldsjflsdjf'
+  #installer.server_url_input = 'https://apps-dev.suffolklitlab.org'
+  #installer.da_api_key = 'asldkjflsdkjfldsjflsdjf'
   
   # show errors first thing on each loop
   if len( installer.errors ) > 0:
@@ -80,8 +79,8 @@ code: |
   if will_test_on_this_server:
     if not logged_into_test_account_on_interview_server:
       log_into_test_account
-      
-  installer.password
+  
+  installer.da_api_key
   set_da_info
       
   get_secrets_info = True
@@ -122,6 +121,8 @@ subquestion: |
   This tool can help you set up automated testing for docassemble interview packages that have a GitHub repository. You can read more details in [the documentation](https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/automated_integrated_testing).
   
   :clock: Setup can take up to 40 minutes. It can take longer if you are unfamiliar with GitHub or need to contact an account administrator.
+  
+  We recommend that people using this tool are administrators for the docassemble server and for the necessary GitHub organization or repository.
   
   To help you set up testing, we need to understand what you are trying to do and what kind of access you have to GitHub.
 fields:
@@ -208,7 +209,7 @@ fields:
     datatype: yesnoradio
   - Do you want to update or override those secrets?: wants_to_update_secrets
     datatype: yesnoradio
-    enable if:
+    show if:
       variable: already_has_secrets
       is: True
   # If is org admin
@@ -263,9 +264,7 @@ content: |
 ---
 code: |
   secrets_names = [
-    'PLAYGROUND_EMAIL',
-    'PLAYGROUND_PASSWORD',
-    'PLAYGROUND_ID',
+    'DOCASSEMBLE_DEVELOPER_API_KEY',
     'SERVER_URL',
   ]
 ---
@@ -316,13 +315,12 @@ content: |
 
     When you commit or push a file to GitHub, the automated tests will tell GitHub to:
     
-    1. Log into a docassemble account on your server.
-    1. Make a new Project. The name will start with "testing".
-    1. Pull your package's GitHub code from the branch that they are testing.
+    1. Use an API key from the testing account to make a new Project. The name will start with "testing".
+    1. Use the API key to pull your package's GitHub code from the branch that it is testing.
     1. Go through the interview as if the tests were a real person.
-    1. Delete the Project it created.
+    1. Use the API key to delete the Project it created.
 
-    To do some of those steps, the automated tests need to know a user name and password to use to log into a developer account on your server.
+    To do some of those steps, the automated tests need an API key for the developer account on your server that will contain the Projects.
 
     If you choose to set up secrets, your answers will help this tool set these secrets:
 
@@ -334,6 +332,12 @@ question: |
 subquestion: |
   Look at the url of this page. Is this the server where the tests will run?
 yesno: will_test_on_this_server
+---
+template: default_server_url
+content: |
+  % if will_test_on_this_server:
+  ${ url_of('root', _external=True) }
+  % endif
 ---
 id: logged_into_test_account_on_interview_server
 question: |
@@ -376,30 +380,26 @@ id: da server info
 question: |
   GitHub secrets
 subquestion: |
-  As described, {the tests need some GitHub secrets}. This tool will help you set up these [encrypted GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets):
+  As we described, {the tests need some GitHub secrets}. This tool will help you set up these [encrypted GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets):
   
   ${ secrets_list }
 
-  If you have not already done so:
+  First, decide on the docassemble account on your server that the tests will use or make a new account specifically for this. The account can be your own account.
   
-  1. Decide on the docassemble account where the tests will uploaded.
-  1. Make sure you are logged into that testing account.
-  1. Answer the questions below for that testing account. If you want to use your own account, put your own docassemble email and password below.
+  If you have access to that account, log in and [get an API key](https://docassemble.org/docs/api.html#manage_api). Otherwise, ask someone who can get an API key for you.
+  
+  Note that you will only be able to see the API key once. Once you navigate away from the page, you will not be able to see it again.
 fields:
-  - Account email: installer.email
-    datatype: email
-  - Account password: installer.password
+  - The API key of the docassemble account: installer.da_api_key
     datatype: password
-  - note: |
-      Go to the Playground of the testing account and run the YAML file of the interview you want to test. For example, **test.yml**. What is {the URL in the address bar} on that page? Example:[BR]
-      **https://legal-dev.org/interview?i=docassemble.playground22%3Atest.yml**
-  - Interview URL: installer.playground_url
-# TODO: For v4, we could possibly have a default of the current server url
-# Of course, it might be good to still get the file name of the interview
-# this way. Just in case: `get_config('url root')`
+  - Docassemble server URL: installer.server_url_input
+    default: ${ default_server_url }
+    help: |
+      Go to the server of the testing account. What is the URL in the address bar on that page? Example:[BR]
+      **https://legal-dev.org**
+      
+      The tests must know the server that the API key belongs to.
 terms:
-  the URL in the address bar: |
-    The interview URL will give us the testing account's Playground ID and the address of the server that the testing account is on.
   the tests need some GitHub secrets: ${ secrets_popover }
 help:
   label: About GitHub secrets
@@ -503,30 +503,28 @@ fields:
     code: |
       installer.get_question_file_names()
 ---
+comment: |
+  delete this
+---
 id: confirm info review
 question: |
   Is this information correct?
 subquestion: |
   You will not be able to come back here after continuing.
 review:
-  - Edit: installer.playground_url
+  - Edit: installer.server_url
     button: |
       #####Docassemble account and server:
       
-      * **Account email**:[BR]
-      ${ installer.email }
-      
-      * **Account password**: Not shown
-      
-      * **URL for running testable interview**:[BR]
-      [${ installer.playground_url }](${ installer.playground_url })
-      
-      ######**Your answers also gave us this information:**
-      
-      * **Account Playground ID**: ${ installer.playground_id }
+      * **Test account API key**:  \*\*\*\*${ installer.da_api_key[-4:] }
       
       * **Server to test on**:[BR]
       ${ installer.server_url }
+      
+      ######**Your answers also gave us this information:**
+      
+      * **Test account email:**[BR]
+      ${ installer.da_email }
       
       ---
   - Edit: installer.token
@@ -640,7 +638,7 @@ subquestion: |
   
   If you want to disable the tests or just learn more, see [Assembly Line Kiln's documentation](https://suffolklitlab.github.io/docassemble-AssemblyLine-documentation/docs/automated_integrated_testing).
   
-  If you have some feedback, we would love to hear from you! Let us know in chat or [make a public "issue" in our repository](https://github.com/plocket/docassemble-ALAutomatedTestingTests/issues/new).
+  If you have some feedback, we would love to hear from you! Let the team know or [make a public "issue" in our repository](https://github.com/plocket/docassemble-ALAutomatedTestingTests/issues/new).
   
   ---
 buttons:
@@ -666,14 +664,37 @@ subquestion: |
   
   If you cannot find a way to fix the problem, contact us in chat or [file a public issue](https://github.com/plocket/docassemble-ALAutomatedTestingTests).
 ---
-depends on: da_url_error
+depends on: da_server_url_error
 code: |
-  installer.da_url_error = da_url_error.content
+  installer.da_server_url_error = da_server_url_error.content
 ---
-template: da_url_error
+template: da_server_url_error
 content: |
-  Cannot validate the interview URL **"${ installer.playground_url }"**. Example of a valid URL:[BR]
-  **https://dev.court-wizards.org/interview?i=docassemble.playground222ProjectName%3Asome_file.yml** [BR]
+  **${ installer.server_url }** returned a network error. Does the url have a typo? Is the server having trouble?
+---
+depends on: da_server_timeout_error
+code: |
+  installer.da_server_timeout_error = da_server_timeout_error.content
+---
+template: da_server_timeout_error
+content: |
+  It took to long to connect to **${ installer.server_url }**. Is the server having trouble?
+---
+depends on: da_access_denied_error
+code: |
+  installer.da_access_denied_error = da_access_denied_error.content
+---
+template: da_access_denied_error
+content: |
+  The server **${ installer.server_url }** did not accept the API key **\*\*\*\*${ installer.da_api_key[-4:] }**. Double check that it is the right API key for the right server.
+---
+depends on: da_user_info_error
+code: |
+  installer.da_user_info_error = da_user_info_error.content
+---
+template: da_user_info_error
+content: |
+  There was a problem obtaining information about the user with the API key **${ installer.da_api_key }** at **${ installer.server_url }**. That is all docassemble will say. Try logging into the account to make sure everything is ok.
 ---
 depends on: github_token_error
 code: |
