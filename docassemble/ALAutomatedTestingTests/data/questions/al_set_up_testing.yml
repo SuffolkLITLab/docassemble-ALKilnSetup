@@ -523,7 +523,7 @@ review:
       
       ######**Your answers also gave us this information:**
       
-      * **Test account username:**[BR]
+      * **Test account email:**[BR]
       ${ installer.da_email }
       
       ---

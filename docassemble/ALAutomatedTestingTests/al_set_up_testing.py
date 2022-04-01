@@ -22,9 +22,6 @@ class TestInstaller(DAObject):
   
   def set_da_info( self ):
     """Use the interview url to get the user's Playground id."""
-    # TODO: Use the server API key along with the server address to check
-    # the validity of that info.
-    
     # Start clean (idempotent for da's loops).
     self.errors = []
     self.server_url = self.server_url_input.rstrip('/')
