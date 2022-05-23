@@ -29,7 +29,7 @@ template: template_c
 subject: |
   third template
 content: |
-  This third, additional template has the unique word mueseum that should be found.
+  This third, additional template has the unique word museum that should be found.
 
   It also has a button that brings us to an event.
 
