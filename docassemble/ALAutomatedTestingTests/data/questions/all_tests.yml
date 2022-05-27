@@ -16,7 +16,7 @@ code: |
   double_quote_dict["double_quote_key"]
   direct_standard_fields
   direct_showifs
-  #object_checkboxes_test
+  object_checkboxes_test
   buttons_yesnomaybe
   buttons_other
   button_continue
@@ -197,7 +197,6 @@ fields:
       - obj_chkbx_opt_2
       - obj_chkbx_opt_3
   - Object dropdown: object_dropdown
-    required: False
     datatype: object
     choices:
       - obj_opt_1
