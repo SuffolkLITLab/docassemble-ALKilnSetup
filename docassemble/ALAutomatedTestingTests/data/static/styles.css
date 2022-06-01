@@ -35,6 +35,8 @@ ul {
 .daterm, .daterm:hover {
   text-decoration: underline dashed;
   text-underline-offset: 2px;
+  /* Increases the contrast so it doesn't fail. */
+  color: #3b842c;
 }
 
 .da-review ul {
