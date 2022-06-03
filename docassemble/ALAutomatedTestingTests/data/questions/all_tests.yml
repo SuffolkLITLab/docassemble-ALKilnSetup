@@ -3,6 +3,10 @@ metadata:
   short title: Test ALKiln
   comment: Test the automated integrated testing library for AssemblyLine
 ---
+features:
+  css:
+    - styles.css
+---
 # Necessary to tell us what the sought var is on each page
 # Every interview that wants testing will need to have an element like this
 default screen parts:
