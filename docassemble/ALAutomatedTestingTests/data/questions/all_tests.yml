@@ -20,7 +20,7 @@ code: |
   double_quote_dict["double_quote_key"]
   direct_standard_fields
   direct_showifs
-  #object_checkboxes_test
+  object_checkboxes_test
   buttons_yesnomaybe
   buttons_other
   button_continue
@@ -178,24 +178,34 @@ objects:
   - obj_chkbx_opt_1: DAObject
   - obj_chkbx_opt_2: DAObject
   - obj_chkbx_opt_3: DAObject
+  - obj_opt_1: DAObject
+  - obj_opt_2: DAObject
+  - obj_opt_3: DAObject
 ---
 code: |
   obj_chkbx_opt_1.name = 'obj_chkbx_opt_1'
   obj_chkbx_opt_2.name = 'obj_chkbx_opt_2'
   obj_chkbx_opt_3.name = 'obj_chkbx_opt_3'
+  obj_opt_1.name = 'obj_opt_1'
+  obj_opt_2.name = 'obj_opt_2'
+  obj_opt_3.name = 'obj_opt_3'
 ---
 id: object checkboxes
 question: |
-  Object checkboxes
-subquestion: |
-  Made of list of objects. TODO: Add `object` choices dropdown.
+  Objects
 fields:
-  - no label: object_checkboxes_test
+  - Object checkboxes: object_checkboxes_test
     datatype: object_checkboxes
     choices:
       - obj_chkbx_opt_1
       - obj_chkbx_opt_2
       - obj_chkbx_opt_3
+  - Object dropdown: object_dropdown
+    datatype: object
+    choices:
+      - obj_opt_1
+      - obj_opt_2
+      - obj_opt_3
 ---
 id: buttons yesnomaybe
 question: |
