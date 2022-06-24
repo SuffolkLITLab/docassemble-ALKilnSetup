@@ -31,6 +31,7 @@ code: |
   see_simple_doc
   
   button_event_action
+  single_dropdown_field
   end
 ---
 id: upload files
@@ -277,6 +278,15 @@ action buttons:
   - label: Do not pass go
     action: end
     icon: laugh-wink
+---
+id: Single dropdown field
+question: Single dropdown field
+field: single_dropdown_field
+dropdown:
+  - Efile and serve: efile_and_serve
+  - Email: email
+  - Mail: mail
+  - Hand delivery: hand_delivery
 ---
 id: simple doc
 question: |
