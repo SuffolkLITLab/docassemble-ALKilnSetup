@@ -293,7 +293,7 @@ content: |
     
     An admin of a GitHub **repository** can set the secrets for that GitHub repository on the GitHub website itself.
     
-    A collaborator of a GitHub **repository** can set the secrets for the GitHub repository through **this tool**. A non-admin is unable to set secrets on GitHub itself. Yes, it's confusing. We don't know why GitHub works that way ¯\_(ツ)_/¯
+    A collaborator of a GitHub **repository** can set the secrets for the GitHub repository through **this tool**. A non-admin is unable to set secrets on GitHub itself. Yes, it's confusing. We don't know why GitHub works that way ¯\\\\_(ツ)\_/¯
     
     ---
 
@@ -399,6 +399,8 @@ fields:
       **https://legal-dev.org**
       
       The tests must know the server that the API key belongs to.
+    validate: |
+      lambda y: True if y.startswith('http://') or y.startswith('https://') else validation_error("The URL should start with http!")
 terms:
   the tests need some GitHub secrets: ${ secrets_popover }
 help:
@@ -662,7 +664,7 @@ subquestion: |
   ---
   % endfor
   
-  If you cannot find a way to fix the problem, contact us in chat or [file a public issue](https://github.com/plocket/docassemble-ALAutomatedTestingTests).
+  If you cannot find a way to fix the problem, contact us in chat or [file a public issue](https://github.com/plocket/docassemble-ALAutomatedTestingTests/issues/new).
 ---
 depends on: da_server_url_error
 code: |
