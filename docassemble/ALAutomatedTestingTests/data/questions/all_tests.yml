@@ -31,7 +31,7 @@ code: |
   see_simple_doc
   
   button_event_action
-  simple_dropdown_field
+  single_dropdown_field
   end
 ---
 id: upload files
@@ -279,9 +279,9 @@ action buttons:
     action: end
     icon: laugh-wink
 ---
-id: Simple dropdown field
-question: Simple dropdown field
-field: simple_dropdown_field
+id: Single dropdown field
+question: Single dropdown field
+field: single_dropdown_field
 dropdown:
   - Efile and serve: efile_and_serve
   - Email: email
