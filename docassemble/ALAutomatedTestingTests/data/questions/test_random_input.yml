@@ -13,7 +13,8 @@ default screen parts:
 mandatory: True
 code: |
   #textarea
-  select
+  #select
+  signature
   end
 ---
 id: textarea
@@ -30,6 +31,10 @@ fields:
       - Choice 1
       - Choice 2
       - Choice 3
+---
+id: signature
+question: Signature
+signature: signature
 ---
 id: end
 event: end
