@@ -1,4 +1,14 @@
 ---
+metadata:
+  title: Test random input
+  comment: Test trying to get through an interview by giving randomly generated answers
+---
+# Necessary to tell us what the sought var is on each page
+# Every interview that wants testing will need to have an element like this
+default screen parts:
+  post: |
+    <div data-variable="${ encode_name(str( user_info().variable )) }" id="trigger" aria-hidden="true" style="display: none;"></div>
+---
 ############# Interview order #############
 mandatory: True
 code: |
