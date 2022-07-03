@@ -1,0 +1,17 @@
+---
+############# Interview order #############
+mandatory: True
+code: |
+  textarea
+  end
+---
+id: textarea
+question: textarea test
+fields:
+  - Random paragraph: textarea
+    input type: area
+---
+id: end
+event: end
+question: The end
+---
