@@ -12,8 +12,8 @@ default screen parts:
 ############# Interview order #############
 mandatory: True
 code: |
-  #text
-  choices
+  text
+  #choices
   #signature
   end
 ---
@@ -23,6 +23,12 @@ fields:
   - Random paragraph: textarea
     input type: area
   - Random text: text
+  - Random number: number
+    datatype: number
+  - Random date: date
+    datatype: date
+  - Random currency: currency
+    datatype: currency
 ---
 id: Choices
 question: Choices test
