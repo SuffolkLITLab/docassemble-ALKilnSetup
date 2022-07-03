@@ -29,6 +29,10 @@ fields:
     datatype: date
   - Random currency: currency
     datatype: currency
+  - Random email: email
+    datatype: email
+  - Random password: password
+    datatype: password
 ---
 id: Choices
 question: Choices test
