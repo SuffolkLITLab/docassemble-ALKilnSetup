@@ -13,7 +13,7 @@ default screen parts:
 mandatory: True
 code: |
   #textarea
-  #select
+  select
   signature
   end
 ---
