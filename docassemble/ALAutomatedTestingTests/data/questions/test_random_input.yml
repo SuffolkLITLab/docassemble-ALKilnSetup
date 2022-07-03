@@ -12,7 +12,8 @@ default screen parts:
 ############# Interview order #############
 mandatory: True
 code: |
-  textarea
+  #textarea
+  select
   end
 ---
 id: textarea
@@ -20,6 +21,15 @@ question: textarea test
 fields:
   - Random paragraph: textarea
     input type: area
+---
+id: select
+question: select test
+fields:
+  - Random paragraph: select
+    choices:
+      - Choice 1
+      - Choice 2
+      - Choice 3
 ---
 id: end
 event: end
