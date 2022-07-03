@@ -12,25 +12,39 @@ default screen parts:
 ############# Interview order #############
 mandatory: True
 code: |
-  #textarea
-  select
-  signature
+  #text
+  choices
+  #signature
   end
 ---
-id: textarea
-question: textarea test
+id: text
+question: Text test
 fields:
   - Random paragraph: textarea
     input type: area
+  - Random text: text
 ---
-id: select
-question: select test
+id: Choices
+question: Choices test
 fields:
-  - Random paragraph: select
+  - Dropdown choices: select
     choices:
-      - Choice 1
-      - Choice 2
-      - Choice 3
+      - Dropdown 1
+      - Dropdown 2
+      - Dropdown 3
+  - Checkbox choices: checkbox
+    datatype: checkboxes
+    choices:
+      - Checkbox 1
+      - Checkbox 2
+      - Checkbox 3
+  - Radio button: radio
+    datatype: radio
+    choices:
+      - Radio 1
+      - Radio 2
+      - Radio 3
+continue button field: choices
 ---
 id: signature
 question: Signature
