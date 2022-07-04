@@ -15,10 +15,10 @@ default screen parts:
 ############# Interview order #############
 mandatory: True
 code: |
-  text
+  #text
   #choices
   #signature
-  #custom_data_types
+  custom_data_types
   end
 ---
 id: text
