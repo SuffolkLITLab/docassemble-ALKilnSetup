@@ -32,6 +32,7 @@ code: |
   
   button_event_action
   single_dropdown_field
+  object_radio_field
   end
 ---
 id: upload files
@@ -44,7 +45,7 @@ fields:
     datatype: files
     required: False
     maximum image size: 1024
-    image upload type: jpeg        
+    image upload type: jpeg
     accept: |
       "image/png, image/jpg, .doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf,.pdf"
   - Show other file upload: show_upload
@@ -54,7 +55,7 @@ fields:
     datatype: files
     required: False
     maximum image size: 1024
-    image upload type: jpeg        
+    image upload type: jpeg
     accept: |
       "image/png, image/jpg, .doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf,.pdf"
 ---
@@ -288,6 +289,25 @@ dropdown:
   - Mail: mail
   - Hand delivery: hand_delivery
 ---
+objects:
+  object_radio_choice_one: Individual
+  object_radio_choice_two: Individual
+---
+code: |
+  object_radio_choice_one.name.first = 'Bob'
+  object_radio_choice_one.name.last = 'FirstChoice'
+  object_radio_choice_two.name.first = 'Joe'
+  object_radio_choice_two.name.last = 'SecondChoice'
+---
+id: object-radio-field
+question: Object radio field
+fields:
+  - object radio field: object_radio_field
+    datatype: object_radio
+    choices:
+      - object_radio_choice_one
+      - object_radio_choice_two
+---
 id: simple doc
 question: |
   Document
@@ -302,7 +322,7 @@ attachment:
     filename: simple-doc
     skip undefined: True
     editable: False
-    fields: 
+    fields:
       - "proxy1_name_first": ${ proxy_list[0].name.first }
       - "proxy1_signature": ${ proxy_list[0].signature }
 ---
