@@ -1,0 +1,5 @@
+---
+mandatory: True
+code: |
+  missing_var
+---
