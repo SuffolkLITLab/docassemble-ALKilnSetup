@@ -21,6 +21,8 @@ code: |
   direct_standard_fields
   direct_showifs
   object_checkboxes_test
+  object_multiselect_test
+  multiselect_test
   buttons_yesnomaybe
   buttons_other
   button_continue
@@ -208,6 +210,29 @@ fields:
       - obj_opt_1
       - obj_opt_2
       - obj_opt_3
+---
+id: object multiselect
+question: |
+  Object Multiselect
+fields:
+  - Object multiselect: object_multiselect_test
+    datatype: object_multiselect
+    choices:
+      - obj_opt_1
+      - obj_opt_2
+      - obj_opt_3
+---
+id: multiselect
+question: |
+  Multiselect
+fields:
+  - Multiselect: multiselect_test
+    datatype: multiselect
+    choices:
+      - "hi"
+      - "there"
+      - "dear"
+      - "reader"
 ---
 id: buttons yesnomaybe
 question: |
