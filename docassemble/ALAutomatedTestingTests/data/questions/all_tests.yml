@@ -21,8 +21,6 @@ code: |
   direct_standard_fields
   direct_showifs
   object_checkboxes_test
-  object_multiselect_test
-  multiselect_test
   buttons_yesnomaybe
   buttons_other
   button_continue
@@ -34,7 +32,6 @@ code: |
   
   button_event_action
   single_dropdown_field
-  object_radio_field
   end
 ---
 id: upload files
@@ -211,29 +208,6 @@ fields:
       - obj_opt_2
       - obj_opt_3
 ---
-id: object multiselect
-question: |
-  Object Multiselect
-fields:
-  - Object multiselect: object_multiselect_test
-    datatype: object_multiselect
-    choices:
-      - obj_opt_1
-      - obj_opt_2
-      - obj_opt_3
----
-id: multiselect
-question: |
-  Multiselect
-fields:
-  - Multiselect: multiselect_test
-    datatype: multiselect
-    choices:
-      - "hi"
-      - "there"
-      - "dear"
-      - "reader"
----
 id: buttons yesnomaybe
 question: |
   Button (yes/no/maybe)
@@ -313,25 +287,6 @@ dropdown:
   - Email: email
   - Mail: mail
   - Hand delivery: hand_delivery
----
-objects:
-  object_radio_choice_one: Individual
-  object_radio_choice_two: Individual
----
-code: |
-  object_radio_choice_one.name.first = 'Bob'
-  object_radio_choice_one.name.last = 'FirstChoice'
-  object_radio_choice_two.name.first = 'Joe'
-  object_radio_choice_two.name.last = 'SecondChoice'
----
-id: object-radio-field
-question: Object radio field
-fields:
-  - object radio field: object_radio_field
-    datatype: object_radio
-    choices:
-      - object_radio_choice_one
-      - object_radio_choice_two
 ---
 id: simple doc
 question: |
