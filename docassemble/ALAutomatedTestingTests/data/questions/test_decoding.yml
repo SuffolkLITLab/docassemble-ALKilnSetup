@@ -5,6 +5,9 @@ code: |
   object_multiselect_test
   multiselect_test
   object_radio_field
+  object_checkboxes_test
+  checkbox_dict['single_quote_key']
+  end_screen
 ---
 id: object multiselect
 question: |
@@ -61,12 +64,15 @@ question: |
 fields:
   - Singly quoted key: checkbox_dict['single_quote_key']
     datatype: checkboxes
-    required: False
     none of the above: False
     choices:
       - 1: sq_one
       - 2: sq_two
-      - 'weird unicode': "v�)v�'��m�"
+      - 'weird unicode': "🁳🧴🯍🥫🅍🗎🹇🗷🌲🯵"
+---
+id: end screen
+event: end_screen
+question: All done!
 ---
 objects:
   - checkbox_dict: DADict
