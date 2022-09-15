@@ -2,11 +2,11 @@
 mandatory: True
 id: interview order
 code: |
-  object_multiselect_test
-  multiselect_test
+  #object_multiselect_test
+  #multiselect_test
   object_radio_field
-  object_checkboxes_test
-  checkbox_dict['single_quote_key']
+  #object_checkboxes_test
+  #checkbox_dict['single_quote_key']
   end_screen
 ---
 id: object multiselect
