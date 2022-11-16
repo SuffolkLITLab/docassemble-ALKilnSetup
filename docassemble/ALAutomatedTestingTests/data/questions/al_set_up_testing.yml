@@ -436,7 +436,7 @@ subquestion: |
   To answer the questions, do these steps:
   
   1. [Log into your GitHub account](https://github.com).
-  1. Follow directions to start making your personal access token on GitHub. You can find the directions in a section at [this GitHub documentation page](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token).
+  1. Follow directions to start making your "classic" personal access token on GitHub. You can find the directions in a section at [this GitHub documentation page](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token).
   % if secret_type_wanted == 'org':
   1. Tap the checkbox for "admin:org" permissions.
   % endif
