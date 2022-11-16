@@ -46,7 +46,8 @@ code: |
   set_github_auth
   
   # Set them up with an example test file if they want
-  installer.test_files_wanted
+  if wants_to_set_up_tests:
+    installer.test_files_wanted
   
   # review/confirm
   is_ready
@@ -189,9 +190,9 @@ question: |
   What do you need to do?
 subquestion: |
   % if is_org_admin:
-  Using this form you can {set up GitHub secrets} or set up the testing package files in a repository or both. If you set up secrets, you can choose to create secrets for your organization or for a specific repository.
+  Using this form you can {set up GitHub secrets}, or set up the testing package files in a repository, or both. If you set up secrets, you can choose to create secrets for your organization or for a specific repository.
   % else:
-  Using this form you can set up GitHub secrets for the repository or set up the testing package files in the repository or both.
+  Since you are NOT an admin, you can only use this form to do the set up for an individual **repository**. You can use it to set up GitHub secrets for that repository, or set up the testing package files in the repository, or both.
   % endif
   
   ---
@@ -204,9 +205,19 @@ subquestion: |
   **Pause here.** Ask your admin whether your organization or repository already has the {right GitHub secrets}.
   % endif
 fields:
-  # Always
+  # If is org admin
   - Has someone already set up the repository or organization secrets?: already_has_secrets
+    show if:
+      code: |
+        is_org_admin
     datatype: yesnoradio
+  # If NOT org admin
+  - Has someone already set up the repository's secrets?: already_has_secrets
+    show if:
+      code: |
+        is_org_admin is False
+    datatype: yesnoradio
+  # Always
   - Do you want to update or override those secrets?: wants_to_update_secrets
     datatype: yesnoradio
     show if:
@@ -435,7 +446,7 @@ subquestion: |
   1. Finish creating the personal access token.
   1. Copy the token and paste it below.
 fields:
-  - Personal access token: installer.token
+  - GitHub personal access token: installer.token
     datatype: password
     help: |
       The token must have ${ token_permissions_scope } permissions.
@@ -463,7 +474,7 @@ fields:
     show if:
       code: |
         not wants_to_set_up_tests and secret_type_wanted == 'org'
-  - Organization name: installer.owner_name
+  - GitHub organization name: installer.owner_name
     show if:
       code: |
         not wants_to_set_up_tests and secret_type_wanted == 'org'

@@ -6,6 +6,7 @@ from distutils.util import convert_path
 
 standard_exclude = ('*.pyc', '*~', '.*', '*.bak', '*.swp*')
 standard_exclude_directories = ('.*', 'CVS', '_darcs', './build', './dist', 'EGG-INFO', '*.egg-info')
+
 def find_package_data(where='.', package='', exclude=standard_exclude, exclude_directories=standard_exclude_directories):
     out = {}
     stack = [(convert_path(where), '', package)]
@@ -53,7 +54,7 @@ setup(name='docassemble.ALAutomatedTestingTests',
       url='https://docassemble.org',
       packages=find_packages(),
       namespace_packages=['docassemble'],
-      install_requires=['PyGithub>=1.55', 'PyNaCl>=1.5.0', 'docassemble.ALToolbox>=0.5.1', 'requests>=2.27.1'],
+      install_requires=['PyGithub>=1.55', 'PyNaCl>=1.5.0', 'docassemble.ALToolbox>=0.6.2', 'requests>=2.27.1'],
       zip_safe=False,
       package_data=find_package_data(where='docassemble/ALAutomatedTestingTests/', package='docassemble.ALAutomatedTestingTests'),
      )
