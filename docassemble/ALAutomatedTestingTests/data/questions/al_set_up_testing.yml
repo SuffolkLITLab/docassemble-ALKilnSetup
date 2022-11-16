@@ -511,7 +511,7 @@ subquestion: |
   
   If you want to make one later instead, save this link to [our documentation](https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/automated_integrated_testing).
 fields:
-  - Which interview files to you want the test to use?: installer.test_files_wanted
+  - Which interview files do you want the test to use?: installer.test_files_wanted
     datatype: checkboxes
     code: |
       installer.get_question_file_names()
@@ -620,7 +620,7 @@ subquestion: |
   
   % if secret_type_wanted == 'org':
   1. [Make sure the organization secrets got created]( https://github.com/organizations/${ installer.org.login }/settings/secrets/actions).
-  1. Make sure the secrets have the [access settings](https://docs.github.com/en/actions/reference/encrypted-secrets#reviewing-access-to-organization-level-secrets) you need.
+  1. Make sure the secrets have the [access settings](https://docs.github.com/en/actions/reference/encrypted-secrets#reviewing-access-to-organization-level-secrets) you need. The defaults should be fine in most cases.
   % endif
   
   % if secret_type_wanted == 'org':
