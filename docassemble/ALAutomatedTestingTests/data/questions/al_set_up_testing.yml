@@ -619,8 +619,7 @@ subquestion: |
   % endif
   
   % if secret_type_wanted == 'org':
-  1. [Make sure the organization secrets got created]( https://github.com/organizations/${ installer.org.login }/settings/secrets/actions).
-  1. Make sure the secrets have the [access settings](https://docs.github.com/en/actions/reference/encrypted-secrets#reviewing-access-to-organization-level-secrets) you need. The defaults should be fine in most cases.
+  [Make sure the organization secrets got created]( https://github.com/organizations/${ installer.org.login }/settings/secrets/actions).
   % endif
   
   % if secret_type_wanted == 'org':
