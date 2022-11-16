@@ -493,7 +493,7 @@ content: |
 template: files_list
 content: |
   % if installer.test_files_wanted.any_true():
-  * **tests/features/interviews_run.feature** is a very simple example of a test.
+  * **docassemble/${ installer.package_name }/data/sources/interviews_run.feature** is a very simple example of a test.
   % endif
   * **.github/workflows/run_interview_tests.yml** tells GitHub when and how to run the tests and save the files created.
 ---
