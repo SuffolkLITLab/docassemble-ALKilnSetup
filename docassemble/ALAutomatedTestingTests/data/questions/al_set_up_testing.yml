@@ -192,7 +192,7 @@ subquestion: |
   % if is_org_admin:
   Using this form you can {set up GitHub secrets}, or set up the testing package files in a repository, or both. If you set up secrets, you can choose to create secrets for your organization or for a specific repository.
   % else:
-  Since you are NOT an admin, you can only use this form to do the set up for an individual **repository**. You can use it to set up GitHub secrets for that repository, or set up the testing package files in the repository, or both.
+  Since you are **not** an admin, you can only use this form to set up an individual **repository**. You can use it to set up GitHub secrets for that repository, or set up the testing package files in the repository, or both.
   % endif
   
   ---
