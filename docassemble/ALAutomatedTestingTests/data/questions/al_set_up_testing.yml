@@ -46,7 +46,8 @@ code: |
   set_github_auth
   
   # Set them up with an example test file if they want
-  installer.test_files_wanted
+  if wants_to_set_up_tests:
+    installer.test_files_wanted
   
   # review/confirm
   is_ready
@@ -189,9 +190,9 @@ question: |
   What do you need to do?
 subquestion: |
   % if is_org_admin:
-  Using this form you can {set up GitHub secrets} or set up the testing package files in a repository or both. If you set up secrets, you can choose to create secrets for your organization or for a specific repository.
+  Using this form you can {set up GitHub secrets}, or set up the testing package files in a repository, or both. If you set up secrets, you can choose to create secrets for your organization or for a specific repository.
   % else:
-  Using this form you can set up GitHub secrets for the repository or set up the testing package files in the repository or both.
+  Since you are **not** an admin, you can only use this form to set up an individual **repository**. You can use it to set up GitHub secrets for that repository, or set up the testing package files in the repository, or both.
   % endif
   
   ---
@@ -204,9 +205,19 @@ subquestion: |
   **Pause here.** Ask your admin whether your organization or repository already has the {right GitHub secrets}.
   % endif
 fields:
-  # Always
+  # If is org admin
   - Has someone already set up the repository or organization secrets?: already_has_secrets
+    show if:
+      code: |
+        is_org_admin
     datatype: yesnoradio
+  # If NOT org admin
+  - Has someone already set up the repository's secrets?: already_has_secrets
+    show if:
+      code: |
+        is_org_admin is False
+    datatype: yesnoradio
+  # Always
   - Do you want to update or override those secrets?: wants_to_update_secrets
     datatype: yesnoradio
     show if:
@@ -425,7 +436,7 @@ subquestion: |
   To answer the questions, do these steps:
   
   1. [Log into your GitHub account](https://github.com).
-  1. Follow directions to start making your personal access token on GitHub. You can find the directions in a section at [this GitHub documentation page](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token).
+  1. Follow directions to start making your "classic" personal access token on GitHub. You can find the directions in a section at [this GitHub documentation page](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token).
   % if secret_type_wanted == 'org':
   1. Tap the checkbox for "admin:org" permissions.
   % endif
@@ -435,7 +446,7 @@ subquestion: |
   1. Finish creating the personal access token.
   1. Copy the token and paste it below.
 fields:
-  - Personal access token: installer.token
+  - GitHub personal access token: installer.token
     datatype: password
     help: |
       The token must have ${ token_permissions_scope } permissions.
@@ -463,7 +474,7 @@ fields:
     show if:
       code: |
         not wants_to_set_up_tests and secret_type_wanted == 'org'
-  - Organization name: installer.owner_name
+  - GitHub organization name: installer.owner_name
     show if:
       code: |
         not wants_to_set_up_tests and secret_type_wanted == 'org'
@@ -482,7 +493,7 @@ content: |
 template: files_list
 content: |
   % if installer.test_files_wanted.any_true():
-  * **tests/features/interviews_run.feature** is a very simple example of a test.
+  * **docassemble/${ installer.package_name }/data/sources/interviews_run.feature** is a very simple example of a test.
   % endif
   * **.github/workflows/run_interview_tests.yml** tells GitHub when and how to run the tests and save the files created.
 ---
@@ -500,7 +511,7 @@ subquestion: |
   
   If you want to make one later instead, save this link to [our documentation](https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/automated_integrated_testing).
 fields:
-  - Which interview files to you want the test to use?: installer.test_files_wanted
+  - Which interview files do you want the test to use?: installer.test_files_wanted
     datatype: checkboxes
     code: |
       installer.get_question_file_names()
@@ -608,8 +619,7 @@ subquestion: |
   % endif
   
   % if secret_type_wanted == 'org':
-  1. [Make sure the organization secrets got created]( https://github.com/organizations/${ installer.org.login }/settings/secrets/actions).
-  1. Make sure the secrets have the [access settings](https://docs.github.com/en/actions/reference/encrypted-secrets#reviewing-access-to-organization-level-secrets) you need.
+  [Make sure the organization secrets got created]( https://github.com/organizations/${ installer.org.login }/settings/secrets/actions).
   % endif
   
   % if secret_type_wanted == 'org':
