@@ -530,13 +530,14 @@ fields:
     datatype: checkboxes
     code: |
       installer.get_question_file_names()
+    none of the above: Skip this
     show if: more_than_one_file
   - Which interview file do you want to run in this test?: single_file
     input type: radio
     # A field can only have one type, so the answers all have to be strings
     # Hense 'None' as a value instead of `None`
     code: |
-      installer.get_question_file_names() + [[ 'None', 'None' ]]
+      installer.get_question_file_names() + [[ 'None', "Skip this" ]]
     show if:
       variable: more_than_one_file
       is: False
