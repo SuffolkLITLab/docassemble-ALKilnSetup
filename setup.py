@@ -54,7 +54,7 @@ setup(name='docassemble.ALAutomatedTestingTests',
       url='https://docassemble.org',
       packages=find_packages(),
       namespace_packages=['docassemble'],
-      install_requires=['PyGithub>=1.55', 'PyNaCl>=1.5.0', 'docassemble.ALToolbox>=0.6.2', 'requests>=2.27.1'],
+      install_requires=['PyGithub>=1.55', 'PyNaCl>=1.5.0', 'docassemble.ALToolbox>=0.7.1', 'requests>=2.28.2'],
       zip_safe=False,
       package_data=find_package_data(where='docassemble/ALAutomatedTestingTests/', package='docassemble.ALAutomatedTestingTests'),
      )

@@ -47,7 +47,9 @@ code: |
   
   # Set them up with an example test file if they want
   if wants_to_set_up_tests:
+    more_than_one_file
     installer.test_files_wanted
+    
   
   # review/confirm
   is_ready
@@ -56,6 +58,17 @@ code: |
   
   #end
   force_ask( 'next_steps' )
+---
+depends on:
+  - more_than_one_file
+code: |
+  if more_than_one_file:
+    installer.test_files_wanted = multiple_files.true_values()
+  else:
+    if single_file == 'None' or single_file is None:
+      installer.test_files_wanted = []
+    else:
+      installer.test_files_wanted = [ single_file ]
 ---
 event: end
 question: For ALKiln development
@@ -492,7 +505,7 @@ content: |
 ---
 template: files_list
 content: |
-  % if installer.test_files_wanted.any_true():
+  % if len(installer.test_files_wanted) > 0:
   * **docassemble/${ installer.package_name }/data/sources/interviews_run.feature** is a very simple example of a test.
   % endif
   * **.github/workflows/run_interview_tests.yml** tells GitHub when and how to run the tests and save the files created.
@@ -511,10 +524,23 @@ subquestion: |
   
   If you want to make one later instead, save this link to [our documentation](https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/automated_integrated_testing).
 fields:
-  - Which interview files do you want the test to use?: installer.test_files_wanted
+  - Do you have more than one YAML file that starts an interview?: more_than_one_file
+    datatype: yesnoradio
+  - Which of those interview files do you want to run in these tests?: multiple_files
     datatype: checkboxes
     code: |
       installer.get_question_file_names()
+    none of the above: Skip this
+    show if: more_than_one_file
+  - Which interview file do you want to run in this test?: single_file
+    input type: radio
+    # A field can only have one type, so the answers all have to be strings
+    # Hense 'None' as a value instead of `None`
+    code: |
+      installer.get_question_file_names() + [[ 'None', "Skip this" ]]
+    show if:
+      variable: more_than_one_file
+      is: False
 ---
 comment: |
   delete this
@@ -569,12 +595,12 @@ review:
       ${ installer.package_name }
       
       * **Files to test**:[BR]\
-      % if installer.test_files_wanted.any_true():
-      % for test_file in installer.test_files_wanted.true_values():
+      % if len(installer.test_files_wanted) > 0:
+      % for test_file in installer.test_files_wanted:
       ${ test_file }[BR]
       % endfor
       % else:
-      None
+      No files
       % endif
       % endif
       
@@ -582,7 +608,7 @@ review:
   - note: |
       If you continue, this setup tool will make a branch called **${ installer.branch_name }** and create or overwrite this file or files:
       
-      % if installer.test_files_wanted.any_true():
+      % if len(installer.test_files_wanted) > 0:
       1. interviews_run.feature - test file in the "sources" folder.
       % endif
       1. .github/workflows/run_form_tests.yml - runs the tests on GitHub.
