@@ -299,11 +299,6 @@ class TestInstaller(DAObject):
     """Get the names of the files in the `questions` folder.
     See https://pygithub.readthedocs.io/en/latest/examples/Repository.html#get-all-of-the-contents-of-the-repository-recursively
     """
-    ## Don't know how to implement this so it'll recalculate when needed
-    ## Maybe `depends on: installer.github_url`?
-    #if self.hasattr( 'question_file_names' ):
-    #  return self.question_file_names
-    #else:
     
     # Get the path to the "questions" folder
     package_path = ""
@@ -317,15 +312,15 @@ class TestInstaller(DAObject):
     question_files = self.repo.get_contents( package_path )
     names = []
     for file in question_files:
-      names.append( file.name )
+      names.append([ file.name, file.name ])
     
-    #self.question_file_names = names
     return names
   
   def push_files( self ):
     """Push each file to the new branch in github in the correct directory."""
     # Only push test file if they wanted it
-    if self.test_files_wanted.any_true():
+    
+    if len(self.test_files_wanted) > 0:
       test_path = 'docassemble/' + self.package_name + '/data/sources/interviews_run.feature'
       test_commit_message = 'Add ' + test_path + ' for ALKiln automated tests'
       self.send_file( test_path, test_commit_message, self.first_feature_file_str )
