@@ -606,7 +606,7 @@ review:
       
       ---
   - note: |
-      If you continue, this setup tool will make a **new** branch called **${ installer.branch_name }**. You will be able to edit any changes in that branch before merging it with the rest of your code. On the new branch, this setup tool will create or edit this file or these files:
+      If you continue, this setup tool will make a **new** branch called **${ installer.branch_name }**. You will be able to edit any changes in that branch before merging it with the rest of your code. On the new branch, this setup tool will create or edit ${ 'these files' if len(installer.test_files_wanted) > 0 else 'this file' }:
       
       % if len(installer.test_files_wanted) > 0:
       1. interviews_run.feature - test file in the "sources" folder.
