@@ -606,14 +606,16 @@ review:
       
       ---
   - note: |
-      If you continue, this setup tool will make a branch called **${ installer.branch_name }** and create or overwrite this file or files:
+      If you continue, this setup tool will make a **new** branch called **${ installer.branch_name }**. You will be able to edit any changes in that branch before merging it with the rest of your code. On the new branch, this setup tool will create or edit this file or these files:
       
       % if len(installer.test_files_wanted) > 0:
       1. interviews_run.feature - test file in the "sources" folder.
-      % endif
       1. .github/workflows/run_form_tests.yml - runs the tests on GitHub.
+      % else:
+      .github/workflows/run_form_tests.yml - runs the tests on GitHub.
+      % endif
       
-      You can edit those files before merging the branch.
+      You can edit the changes before merging the branch.
       
       ---
     show if: wants_to_set_up_tests
