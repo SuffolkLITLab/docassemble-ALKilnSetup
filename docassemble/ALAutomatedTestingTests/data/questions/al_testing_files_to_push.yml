@@ -30,8 +30,10 @@ content: |
     
   % endfor
 ---
-# The closing '}}' doesn't really need to be contained.
-# It just seemed more consistent
+comment: |
+  The setup interview adds this file to the repo during GitHub test setup.
+  It is the workflow file that will trigger GitHub ALKiln tests for the repo.
+  It can be called something like "run_form_tests.yml".
 template: installer.run_form_tests
 content: |
   name: Use ALKiln testing framework v4 to run tests

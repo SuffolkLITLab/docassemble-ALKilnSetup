@@ -253,9 +253,13 @@ class TestInstaller(DAObject):
   
   def create_secrets( self ):
     """Set the GitHub repo secrets the tests need to log into the da server and
-    create projects to contain the interviews being tested. TODO: use PyGithub's secret handling ."""
+    create projects to contain the interviews being tested."""
+
+    # The URL of the server where the tests will be run.
     self.put_secret( 'SERVER_URL', self.server_url )
+    # The docassemble API key of the account that runs the tests.
     self.put_secret( 'DOCASSEMBLE_DEVELOPER_API_KEY', self.da_api_key )
+
     return self
   
   def put_secret( self, secret_name, secret_value ):
