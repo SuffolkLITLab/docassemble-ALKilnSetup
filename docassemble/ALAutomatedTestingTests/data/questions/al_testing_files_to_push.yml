@@ -31,7 +31,7 @@ content: |
   % endfor
 ---
 comment: |
-  The setup interview adds this file to the repo during GitHub test setup.
+  The setup interview adds this file (run through mako) to the repo during GitHub test setup. If you're creating this file manually, make sure to adjust the contents to so that it's no longer using Mako.
   It is the workflow file that will trigger GitHub ALKiln tests for the repo.
   It can be called something like "run_form_tests.yml".
 template: installer.run_form_tests
