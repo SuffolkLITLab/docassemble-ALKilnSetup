@@ -31,12 +31,14 @@ content: |
   % endfor
 ---
 comment: |
-  The setup interview adds this file (run through mako) to the repo during GitHub test setup. If you're creating this file manually, make sure to adjust the contents to so that it's no longer using Mako.
-  It is the workflow file that will trigger GitHub ALKiln tests for the repo.
+  The setup interview adds this file (run through mako) to the repo during GitHub test setup.
+  This is the workflow file that will trigger GitHub ALKiln tests for the repo.
   It can be called something like "run_form_tests.yml".
+  If you're creating this file manually, make sure to adjust the contents to so that it's no longer using Mako.
+  That is, replace things like `"${ '${{' } secrets.SERVER_URL ${ '}}' }"` with `"${{ secrets.SERVER_URL }}"`.
 template: installer.run_form_tests
 content: |
-  name: Use ALKiln testing framework v4 to run tests
+  name: ALKiln v5 tests
   
   on:
     push:
@@ -59,7 +61,7 @@ content: |
       steps:
         - uses: actions/checkout@v3
         - name: Use ALKiln to run tests
-          uses: SuffolkLITLab/ALKiln@releases/v4
+          uses: SuffolkLITLab/ALKiln@v5
           with:
             SERVER_URL: "${ '${{' } secrets.SERVER_URL ${ '}}' }"
             DOCASSEMBLE_DEVELOPER_API_KEY: "${ '${{' } secrets.DOCASSEMBLE_DEVELOPER_API_KEY ${ '}}' }"
