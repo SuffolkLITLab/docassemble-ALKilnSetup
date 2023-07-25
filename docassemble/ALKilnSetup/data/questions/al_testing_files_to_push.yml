@@ -18,7 +18,7 @@ content: |
   
   Want to disable the tests? Want to learn more? See ALKiln's docs: https://suffolklitlab.github.io/docassemble-AssemblyLine-documentation/docs/automated_integrated_testing
 
-  % for file_name in installer.test_files_wanted.true_values():
+  % for file_name in installer.test_files_wanted:
   @${ re.sub( r'[^A-Za-z09]+', '' , re.sub( r'\.yml', '', file_name )) }
   Scenario: ${ file_name } runs
     Given I start the interview at "${ file_name }"

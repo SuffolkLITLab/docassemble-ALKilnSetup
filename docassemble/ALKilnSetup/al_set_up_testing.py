@@ -365,7 +365,7 @@ class TestInstaller(DAObject):
     head_name = self.branch_name
     title = 'Add ALKiln automated tests'  # TODO: Add issue # if desired
     description = '''Added these files:'''
-    if self.test_files_wanted.any_true():
+    if len(self.test_files_wanted) > 0:
       description += '''
 - tests/features/interviews_run.feature'''
     description += '''

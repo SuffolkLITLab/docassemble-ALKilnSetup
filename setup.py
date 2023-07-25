@@ -54,7 +54,7 @@ setup(name='docassemble.ALKilnSetup',
       url='https://docassemble.org',
       packages=find_packages(),
       namespace_packages=['docassemble'],
-      install_requires=['PyGithub>=1.59.0', 'PyNaCl>=1.5.0', 'docassemble.ALToolbox>=0.8.1', 'requests>=2.31.0'],
+      install_requires=['PyGithub>=1.59.0', 'PyNaCl>=1.5.0', 'docassemble.ALToolbox>=0.8.2', 'requests>=2.31.0'],
       zip_safe=False,
       package_data=find_package_data(where='docassemble/ALKilnSetup/', package='docassemble.ALKilnSetup'),
      )
