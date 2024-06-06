@@ -253,7 +253,7 @@ fields:
   - Do you need to set up test files for a specific package?: wants_to_set_up_tests
     datatype: yesnoradio
 terms:
-  right GitHub secrets: ${ secrets_list_one_line }
+  set up GitHub secrets: ${ secrets_list_one_line }
 #help:
 #  label: About GitHub secrets
 #  content: ${ about_secrets }
