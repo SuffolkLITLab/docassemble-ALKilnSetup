@@ -1,6 +1,6 @@
 import os
 import sys
-from setuptools import setup, find_packages
+from setuptools import setup, find_namespace_packages
 from fnmatch import fnmatchcase
 from distutils.util import convert_path
 
@@ -52,8 +52,7 @@ setup(name='docassemble.ALKilnSetup',
       author_email='example@example.com',
       license='The MIT License (MIT)',
       url='https://docassemble.org',
-      packages=find_packages(),
-      namespace_packages=['docassemble'],
+      packages=find_namespace_packages(),
       install_requires=['PyGithub>=1.59.0', 'PyNaCl>=1.5.0', 'docassemble.ALToolbox>=0.8.2', 'requests>=2.31.0'],
       zip_safe=False,
       package_data=find_package_data(where='docassemble/ALKilnSetup/', package='docassemble.ALKilnSetup'),
