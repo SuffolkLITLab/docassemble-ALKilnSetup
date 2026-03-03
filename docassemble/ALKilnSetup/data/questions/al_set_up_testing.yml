@@ -387,9 +387,9 @@ question: |
 subquestion: |
   To help you answer the following questions, you may want to log into the account where the tests will run. Since this form is on the same server as this interview and you are not logged into that account, you can do one of 3 things:
   
-  * [Open an incognito window](https://techbrightsystems.com/incognito-mode/) and log into that account there.
   * Log into that account on a different browser.
   * Leave this interview, log into that account, and start this interview again.
+  * Technically advanced: in the current browser, open an "incognito" window and log into the correct account there. Here are instructions to use "incognito mode" in [Chrome desktop](https://support.google.com/chrome/answer/95464?hl=en&co=GENIE.Platform%3DDesktop) and [Firefox](https://www.firefox.com/en-US/features/private-browsing/).
 
   Tap to continue when you are ready.
 
