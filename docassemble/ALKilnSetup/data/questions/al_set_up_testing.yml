@@ -415,7 +415,7 @@ fields:
     default: ${ default_server_url }
     help: |
       Go to the server of the testing account. What is the URL in the address bar on that page? Example:[BR]
-      **https://legal-dev.example.org**
+      **[https://legal-dev.example.org](https://legal-dev.example.org)**
       
       The tests must know the server that the API key belongs to.
     validate: |
@@ -462,7 +462,7 @@ fields:
       ---
       
       Next, we need the URL of the GitHub repository. Example:[BR]
-      **https://github.com/TheLawFantastic/docassemble-GreatForm**
+      **[https://github.com/TheLawFantastic/docassemble-GreatForm](https://github.com/TheLawFantastic/docassemble-GreatForm)**
       
       The package name in the repo url must be **exactly** as it appears in GitHub, including lowercase and uppercase letters.
     show if:
@@ -755,7 +755,7 @@ template: github_url_error
 content: |
   Cannot validate the GitHub URL **"${ installer.repo_url }"**. Example of a valid URL:
   
-  **https://github.com/owner_name/repo_name**
+  **[https://github.com/owner_name/repo_name](https://github.com/owner_name/repo_name)**
 ---
 depends on: github_repo_not_found_error
 code: |
@@ -765,7 +765,7 @@ template: github_repo_not_found_error
 content: |
   GitHub cannot find the **${ installer.repo_name }** repository owned by the owner **${ installer.owner_name }**. Example of a valid URL:
   
-  **https://github.com/owner_name/repo_name**
+  **[https://github.com/owner_name/repo_name](https://github.com/owner_name/repo_name)**
   
   You gave the repository address of **${ installer.repo_url }**. Are you sure that is correct?
 ---
