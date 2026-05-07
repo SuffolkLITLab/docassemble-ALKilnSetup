@@ -12,6 +12,8 @@ jobs:
       - uses: SuffolkLITLab/ALActions/da_build@main
         with:
           ignore-urls: |
-            https://github.com/$
+            https://github.com/${
+            https://github.com/organizations/${
             https://github.com/TheLawFantastic/docassemble-GreatForm
             https://github.com/owner_name/repo_name
+            https://legal-dev.example.org

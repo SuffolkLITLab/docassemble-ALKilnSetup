@@ -671,9 +671,9 @@ subquestion: |
   ---
   % endif
   
-  If you want to disable the tests or just learn more, see [Assembly Line Kiln's documentation](https://suffolklitlab.github.io/docassemble-AssemblyLine-documentation/docs/automated_integrated_testing).
+  If you want to disable the tests or just learn more, see [Assembly Line Kiln's documentation](https://assemblyline.suffolklitlab.org/docs/components/ALKiln/alkiln/).
   
-  If you have some feedback, we would love to hear from you! Let the team know or [make a public "issue" in our repository](https://github.com/plocket/docassemble-ALKilnSetup/issues/new).
+  If you have some feedback, we would love to hear from you! Let the team know or [make a public "issue" in our repository](https://github.com/SuffolkLITLab/docassemble-ALKilnSetup/issues/new).
   
   ---
 buttons:
@@ -697,7 +697,7 @@ subquestion: |
   ---
   % endfor
   
-  If you cannot find a way to fix the problem, contact us in chat or [file a public issue](https://github.com/plocket/docassemble-ALKilnSetup/issues/new).
+  If you cannot find a way to fix the problem, contact us in chat or [file a public issue](https://github.com/SuffolkLITLab/docassemble-ALKilnSetup/issues/new).
 ---
 depends on: da_server_url_error
 code: |
