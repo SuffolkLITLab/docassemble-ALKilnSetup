@@ -415,7 +415,7 @@ fields:
     default: ${ default_server_url }
     help: |
       Go to the server of the testing account. What is the URL in the address bar on that page? Example:[BR]
-      **https://legal-dev.org**
+      **https://legal-dev.example**
       
       The tests must know the server that the API key belongs to.
     validate: |
