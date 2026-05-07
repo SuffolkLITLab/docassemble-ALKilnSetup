@@ -16,7 +16,7 @@ content: |
 
   These tests are made to work with the ALKiln testing framework, an automated testing framework made under the Document Assembly Line Project.
   
-  Want to disable the tests? Want to learn more? See ALKiln's docs: https://suffolklitlab.github.io/docassemble-AssemblyLine-documentation/docs/automated_integrated_testing
+  Want to disable the tests? Want to learn more? See ALKiln's docs: https://assemblyline.suffolklitlab.org/docs/components/ALKiln/alkiln
 
   % for file_name in installer.test_files_wanted:
   @${ re.sub( r'[^A-Za-z09]+', '' , re.sub( r'\.yml', '', file_name )) }
