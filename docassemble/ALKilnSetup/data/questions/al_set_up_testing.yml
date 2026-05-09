@@ -462,7 +462,7 @@ fields:
       ---
       
       Next, we need the URL of the GitHub repository. Example:[BR]
-      **[https://github.com/TheLawFantastic/docassemble-GreatForm](https://github.com/TheLawFantastic/docassemble-GreatForm)**
+      **`https://github.example.com/TheLawFantastic/docassemble-GreatForm`** (replace "github.example.com" with "github.com" and TheLawFantastic/docassemble-GreatForm with the actual owner and repo names)
       
       The package name in the repo url must be **exactly** as it appears in GitHub, including lowercase and uppercase letters.
     show if:
@@ -755,7 +755,7 @@ template: github_url_error
 content: |
   Cannot validate the GitHub URL **"${ installer.repo_url }"**. Example of a valid URL:
   
-  **[https://github.com/owner_name/repo_name](https://github.com/owner_name/repo_name)**
+  `https://github.example.com/example_owner_name/example_repo_name` (replace "github.example.com" with "github.com" and owner_name and repo_name with the actual owner and repo names)
 ---
 depends on: github_repo_not_found_error
 code: |
@@ -765,7 +765,7 @@ template: github_repo_not_found_error
 content: |
   GitHub cannot find the **${ installer.repo_name }** repository owned by the owner **${ installer.owner_name }**. Example of a valid URL:
   
-  **[https://github.com/owner_name/repo_name](https://github.com/owner_name/repo_name)**
+  `https://github.example.com/example_owner_name/example_repo_name` (replace "github.example.com" with "github.com" and owner_name and repo_name with the actual owner and repo names)
   
   You gave the repository address of **${ installer.repo_url }**. Are you sure that is correct?
 ---
