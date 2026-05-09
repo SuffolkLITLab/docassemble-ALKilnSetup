@@ -13,3 +13,4 @@ jobs:
         with:
           ignore-urls: |
             https://github.com/organizations/
+            https://github.com/$
