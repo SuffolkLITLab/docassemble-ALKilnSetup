@@ -415,7 +415,7 @@ fields:
     default: ${ default_server_url }
     help: |
       Go to the server of the testing account. What is the URL in the address bar on that page? Example:[BR]
-      **https://legal-dev-example.org**
+      **https://legal-dev.example.org**
       
       The tests must know the server that the API key belongs to.
     validate: |
@@ -462,7 +462,7 @@ fields:
       ---
       
       Next, we need the URL of the GitHub repository. Example:[BR]
-      **https://github.com/TheLawFantastic/docassemble-GreatForm**
+      **`https://github.com/EXAMPLE-DA-ORG/DOCASSEMBLE-EXAMPLEPACKAGE`** (replace "EXAMPLE-DA-ORG/DOCASSEMBLE-EXAMPLEPACKAGE" with the actual owner and repo names)
       
       The package name in the repo url must be **exactly** as it appears in GitHub, including lowercase and uppercase letters.
     show if:
@@ -671,9 +671,9 @@ subquestion: |
   ---
   % endif
   
-  If you want to disable the tests or just learn more, see [Assembly Line Kiln's documentation](https://suffolklitlab.github.io/docassemble-AssemblyLine-documentation/docs/automated_integrated_testing).
+  If you want to disable the tests or just learn more, see [Assembly Line Kiln's documentation](https://assemblyline.suffolklitlab.org/docs/components/ALKiln/alkiln/).
   
-  If you have some feedback, we would love to hear from you! Let the team know or [make a public "issue" in our repository](https://github.com/plocket/docassemble-ALKilnSetup/issues/new).
+  If you have some feedback, we would love to hear from you! Let the team know or [make a public "issue" in our repository](https://github.com/SuffolkLITLab/docassemble-ALKilnSetup/issues/new).
   
   ---
 buttons:
@@ -697,7 +697,7 @@ subquestion: |
   ---
   % endfor
   
-  If you cannot find a way to fix the problem, contact us in chat or [file a public issue](https://github.com/plocket/docassemble-ALKilnSetup/issues/new).
+  If you cannot find a way to fix the problem, contact us in chat or [file a public issue](https://github.com/SuffolkLITLab/docassemble-ALKilnSetup/issues/new).
 ---
 depends on: da_server_url_error
 code: |
@@ -755,7 +755,7 @@ template: github_url_error
 content: |
   Cannot validate the GitHub URL **"${ installer.repo_url }"**. Example of a valid URL:
   
-  **https://github.com/owner_name/repo_name**
+  **`https://github.com/EXAMPLE-DA-ORG/DOCASSEMBLE-EXAMPLEPACKAGE`** (replace "EXAMPLE-DA-ORG/DOCASSEMBLE-EXAMPLEPACKAGE" with the actual owner and repo names)
 ---
 depends on: github_repo_not_found_error
 code: |
@@ -765,7 +765,7 @@ template: github_repo_not_found_error
 content: |
   GitHub cannot find the **${ installer.repo_name }** repository owned by the owner **${ installer.owner_name }**. Example of a valid URL:
   
-  **https://github.com/owner_name/repo_name**
+  **`https://github.com/EXAMPLE-DA-ORG/DOCASSEMBLE-EXAMPLEPACKAGE`** (replace "EXAMPLE-DA-ORG/DOCASSEMBLE-EXAMPLEPACKAGE" with the actual owner and repo names)
   
   You gave the repository address of **${ installer.repo_url }**. Are you sure that is correct?
 ---
@@ -816,14 +816,3 @@ code: |
 template: github_branch_name_error
 content: |
   It looks like all the allowed branch names are taken. To solve this, delete some of the branches that start with "${ installer.default_branch_name }".
----
-# For use by external tools
----
-id: links that should not be checked for invalidity
-code: |
-  _WHITELIST_URL_PREFIXES = [
-    'https://github.com/$',
-    'https://github.com/TheLawFantastic/docassemble-GreatForm',
-    'https://github.com/owner_name/repo_name',
-  ]
----

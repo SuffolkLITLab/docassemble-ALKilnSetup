@@ -10,3 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: SuffolkLITLab/ALActions/da_build@main
+        with:
+          ignore-urls: |
+            https://github.com/organizations/
+            https://github.com/$
