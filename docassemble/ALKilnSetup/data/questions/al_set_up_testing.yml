@@ -18,6 +18,7 @@ objects:
 include:
   - al_testing_files_to_push.yml
 ---
+id: interview order
 mandatory: True
 code: |
   # show errors first thing on each loop
@@ -25,14 +26,13 @@ code: |
     show_errors
   
   # Role
-  is_org_admin
+  is_github_org_admin
   if org_role == 'no_permissions':
     no_permissions_kickout
-  
   # Needs
   if secret_type_wanted == 'none' and not wants_to_set_up_tests:
     nothing_wanted_kickout
-  
+
   if secret_type_wanted == 'org' or secret_type_wanted == 'repo':
     get_secrets_info
   
@@ -42,9 +42,13 @@ code: |
   
   # Set them up with an example test file if they want
   if wants_to_set_up_tests:
-    more_than_one_file
-    installer.test_files_wanted
-    
+    test_environments_wanted
+    interviews_to_test
+    prepare_file_data
+    installer.set_files_to_push(
+      environments=test_environments_wanted.true_values(),
+      interviews_to_test=interviews_to_test.true_values()
+    )
   
   # review/confirm
   is_ready
@@ -53,17 +57,6 @@ code: |
   
   #end
   force_ask( 'next_steps' )
----
-depends on:
-  - more_than_one_file
-code: |
-  if more_than_one_file:
-    installer.test_files_wanted = multiple_files.true_values()
-  else:
-    if single_file == 'None' or single_file is None:
-      installer.test_files_wanted = []
-    else:
-      installer.test_files_wanted = [ single_file ]
 ---
 event: end
 question: For ALKiln development
@@ -107,15 +100,18 @@ code: |
   set_github_auth = True
 ---
 code: |
-  if wants_to_set_up_tests:
-    # These vars need to be defined before creating a branch.
-    # Otherwise, because of da execution behavior, they cause
-    # loops that end up creating 5 branches. It seemed to make
-    # sense to put them in here.
-    installer.first_feature_file_str = installer.first_feature_file.content
-    installer.run_form_tests_str = installer.run_form_tests.content
-  
-  installer.update_github()
+  # These vars need to be defined before creating a branch.
+  # Otherwise, because of da execution behavior, they cause
+  # loops that end up creating 5 branches. It seemed to make
+  # sense to put them in here.
+  installer.first_feature_file_str = installer.first_feature_file.content
+  installer.github_n_you_str = installer.github_n_you.content
+  installer.sandbox_str = installer.sandbox.content
+
+  prepare_file_data = True
+---
+code: |
+  installer.update_github( wants_to_set_up_tests )
   update_github = True
 ---
 auto terms:
@@ -161,7 +157,7 @@ terms:
   - add or change files: If you develop docassemble interviews and you can commit to GitHub, you are able to change files.
 
 #If you can "commit" to GitHub from the docassemble Packages page or edit files on GitHub, you can add or change files. Otherwise, you can't.
-#  - Are you the admin of the GitHub organization?: is_org_admin
+#  - Are you the admin of the GitHub organization?: is_github_org_admin
 #    datatype: yesnoradio
 #    show if: is_part_of_org
 #help:
@@ -183,21 +179,21 @@ terms:
 ---
 id: role
 code: |
-  is_org_admin = is_part_of_org and org_role == 'admin'
+  is_github_org_admin = is_part_of_org and org_role == 'admin'
 ---
 id: no permissions
 event: no_permissions_kickout
 question: |
   Someone else will have to set up testing
 subquestion: |
-  If you can commit from the Playground Packages page or otherwise edit repository files then you can set up these tests. Otherwise, let your team know that someone else needs to set up testing.
+  If you are unable to commit from the Playground Packages page or otherwise edit repository files then someone else needs to set up testing for the organization. That person must be able to commit from the Playground Packages page or otherwise edit repository files. Discuss this with your team.
 ---
 # Note: any repo writer can set repo secrets
 id: needs
 question: |
   What do you need to do?
 subquestion: |
-  % if is_org_admin:
+  % if is_github_org_admin:
   Using this form you can {set up GitHub secrets}, or set up the testing package files in a repository, or both. If you set up secrets, you can choose to create secrets for your organization or for a specific repository.
   % else:
   Since you are **not** an admin, you can only use this form to set up an individual **repository**. You can use it to set up GitHub secrets for that repository, or set up the testing package files in the repository, or both.
@@ -209,7 +205,7 @@ subquestion: |
   
   ALKiln tests need GitHub secrets in order to run tests on your docassemble server. If they're not already set up, you'll need to set them up. You can read about GitHub secrets at [https://docs.github.com/en/actions/security-guides/encrypted-secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets).
   
-  %if is_part_of_org and not is_org_admin:
+  %if is_part_of_org and not is_github_org_admin:
   **Pause here.** Ask your admin whether your organization or repository already has the {right GitHub secrets}.
   % endif
 fields:
@@ -217,13 +213,13 @@ fields:
   - Has someone already set up the repository or organization secrets?: already_has_secrets
     show if:
       code: |
-        is_org_admin
+        is_github_org_admin
     datatype: yesnoradio
   # If NOT org admin
   - Has someone already set up the repository's secrets?: already_has_secrets
     show if:
       code: |
-        is_org_admin is False
+        is_github_org_admin is False
     datatype: yesnoradio
   # Always
   - Do you want to update or override those secrets?: wants_to_update_secrets
@@ -235,7 +231,7 @@ fields:
   - What kind of secrets do you need to set up?: secret_type_wanted_radio
     show if:
       code: |
-        is_org_admin
+        is_github_org_admin
     js enable if: |
       val("already_has_secrets") === false || val("wants_to_update_secrets") === true
     datatype: radio
@@ -252,6 +248,20 @@ fields:
       
   - Do you need to set up test files for a specific package?: wants_to_set_up_tests
     datatype: yesnoradio
+  - note: |
+      You can set up different kinds of testing environments.
+      
+      1. [GitHub+You™ tests](https://assemblyline.suffolklitlab.org/docs/components/ALKiln/setup/#githubNyou-details) are more sure to work right away. They pull the package into a project and run tests on your server, so they can slow down your server if the package has modules or if the interview is slow.
+      1. [Sandbox™ tests](https://assemblyline.suffolklitlab.org/docs/components/ALKiln/setup/#sandbox-details) may or may not be more complex to get working. They run on GitHub servers and won't disturb your server.
+      1. [ALKilnInThePlayground™ tests](https://assemblyline.suffolklitlab.org/docs/components/ALKiln/setup/#diy-details) that you run in an interview on your server work completely differently and have nothing to do with GitHub, so we recommend just following [our instructions to create your first test](https://assemblyline.suffolklitlab.org/docs/components/ALKiln/setup#first-test).
+    show if: wants_to_set_up_tests
+  - What types of tests do you want to set up: test_environments_wanted
+    datatype: checkboxes
+    choices:
+      - GitHub+You™ tests: github_n_you
+      - Sandbox™ tests: sandbox
+    minlength: 1
+    enable if: wants_to_set_up_tests
 terms:
   set up GitHub secrets: ${ secrets_list_one_line }
 #help:
@@ -269,7 +279,7 @@ terms:
   #  datatype: radio
   #  show if:
   #    code: |
-  #      not is_org_admin
+  #      not is_github_org_admin
   #  choices:
   #    - Someone has set up the repository or organization secrets already: none
   #    - I need to set up the repository's secrets: repo
@@ -334,7 +344,7 @@ content: |
 
     When you commit or push a file to GitHub, the automated tests will tell GitHub to:
     
-    1. Use an API key from the testing account to make a new Project. The name will start with "testing".
+    1. Use an API key from the testing account to make a new Project (temporarily). The name will start with "testing".
     1. Use the API key to pull your package's GitHub code from the branch that it is testing.
     1. Go through the interview as if the tests were a real person.
     1. Use the API key to delete the Project it created.
@@ -405,7 +415,7 @@ subquestion: |
 
   First, decide on the docassemble account on your server that the tests will use or make a new account specifically for this. The account can be your own account.
   
-  If you have access to that account, log in and [get an API key](https://docassemble.org/docs/api.html#manage_api). Otherwise, ask someone who can get an API key for you.
+  If you have access to that account, log in and [get an API key](https://docassemble.org/docs/api.html#manage_api). Otherwise, ask someone who has access to that account to make an API key for you and to give you that API key. Make the name of the API key clear about its purpose. Make sure to choose "No authentication" as the authentication type.
   
   Note that you will only be able to see the API key once. Once you navigate away from the page, you will not be able to see it again.
 fields:
@@ -462,7 +472,7 @@ fields:
       ---
       
       Next, we need the URL of the GitHub repository. Example:[BR]
-      **`https://github.com/EXAMPLE-DA-ORG/DOCASSEMBLE-EXAMPLEPACKAGE`** (replace "EXAMPLE-DA-ORG/DOCASSEMBLE-EXAMPLEPACKAGE" with the actual owner and repo names)
+      **`https://github.com/example-da-org/docassemble-ExamplePackage`** (replace "example-da-org/docassemble-ExamplePackage" with the actual owner and repo names)
       
       The package name in the repo url must be **exactly** as it appears in GitHub, including lowercase and uppercase letters.
     show if:
@@ -500,10 +510,10 @@ content: |
 ---
 template: files_list
 content: |
-  % if len(installer.test_files_wanted) > 0:
+  % if len(installer.interviews_to_test) > 0:
   * **docassemble/${ installer.package_name }/data/sources/interviews_run.feature** is a very simple example of a test.
   % endif
-  * **.github/workflows/run_interview_tests.yml** tells GitHub when and how to run the tests and save the files created.
+  * Files in **.github/workflows/** tell GitHub when and how to run the tests and save the files created by the tests.
 ---
 template: secrets_list
 content: |
@@ -515,27 +525,15 @@ id: first test
 question: |
   The first test
 subquestion: |
-  We can create your first tests for you if you want. The tests will go to the first page of each interview and check that it loads. You can always edit or delete them in your "Sources" folder later.
+  We can create your first tests for you if you want. From GitHub, ALKiln will automatically make a temporary Project. Then ALKiln will go to the first page of each interview and check that the interview loads. You can always edit or delete these tests in your "Sources" folder later.
   
-  If you want to make one later instead, save this link to [our documentation](https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/automated_integrated_testing).
+  If you want to make one later instead, save this link to [our documentation about making your first test](https://assemblyline.suffolklitlab.org/docs/components/ALKiln/setup#first-test).
 fields:
-  - Do you have more than one YAML file that starts an interview?: more_than_one_file
-    datatype: yesnoradio
-  - Which of those interview files do you want to run in these tests?: multiple_files
+  - Which of this package's interview files start an interview that you want to test?: interviews_to_test
     datatype: checkboxes
     code: |
       installer.get_question_file_names()
     none of the above: Skip this
-    show if: more_than_one_file
-  - Which interview file do you want to run in this test?: single_file
-    input type: radio
-    # A field can only have one type, so the answers all have to be strings
-    # Hense 'None' as a value instead of `None`
-    code: |
-      installer.get_question_file_names() + [[ 'None', "Skip this" ]]
-    show if:
-      variable: more_than_one_file
-      is: False
 ---
 comment: |
   delete this
@@ -589,9 +587,9 @@ review:
       * **Package name**:[BR]
       ${ installer.package_name }
       
-      * **Files to test**:[BR]\
-      % if len(installer.test_files_wanted) > 0:
-      % for test_file in installer.test_files_wanted:
+      * **Files to test that run interviews**:[BR]\
+      % if len(installer.interviews_to_test) > 0:
+      % for test_file in installer.interviews_to_test:
       ${ test_file }[BR]
       % endfor
       % else:
@@ -601,14 +599,11 @@ review:
       
       ---
   - note: |
-      If you continue, this setup tool will make a **new** branch called **${ installer.branch_name }**. You will be able to edit any changes in that branch before merging it with the rest of your code. On the new branch, this setup tool will create or edit ${ 'these files' if len(installer.test_files_wanted) > 0 else 'this file' }:
+      If you continue, this setup tool will make a **new** branch called **${ installer.branch_name }**. You will be able to edit any changes in that branch before merging it with the rest of your code. On the new branch, this setup tool will create or edit ${ 'these files' if len(installer.interviews_to_test) > 0 else 'this file' }:
       
-      % if len(installer.test_files_wanted) > 0:
-      1. interviews_run.feature - test file in the "sources" folder.
-      1. .github/workflows/run_form_tests.yml - runs the tests on GitHub.
-      % else:
-      .github/workflows/run_form_tests.yml - runs the tests on GitHub.
-      % endif
+      % for a_file in installer.files_to_push:
+      1. ${ a_file.get('path', None ) }
+      % endfor
       
       You can edit the changes before merging the branch.
       
@@ -617,8 +612,10 @@ review:
       
   - note: |
       There may be a few more steps after this to finish up. Continue when you are ready.
-      
-      :exclamation-triangle: **You will not be able to come back to this page.**
+
+      <div class="alert alert-warning">
+      :exclamation-triangle: <strong>You will not be able to come back to this page.</strong>
+      </div>
 continue button field: is_ready
 continue button label: Send to GitHub
 ---
@@ -660,7 +657,9 @@ subquestion: |
   
   ${ files_list }
   
-  This tool should also have made a new pull request for you with those files. To finish, follow these instructions regarding that pull request.
+  This tool should also have made a new pull request for you with those files. Note that new files in `.github/workflows/` will only run once you have merged them into your default branch (usually called `main`).
+  
+  To finish, follow these instructions regarding that pull request.
   
   1. [Follow this link to the pull request](${ installer.pull_url }) to make sure it got created.
   1. [Follow this link to your actions page](https://github.com/${ installer.owner_name }/${ installer.repo_name }/actions) to see the first test being run on the new branch. It may take a few minutes to show up, but if all the information was correct it should pass and get a green checkmark.
@@ -671,7 +670,7 @@ subquestion: |
   ---
   % endif
   
-  If you want to disable the tests or just learn more, see [Assembly Line Kiln's documentation](https://assemblyline.suffolklitlab.org/docs/components/ALKiln/alkiln/).
+  See ALKiln's documentation if you want to [disable the tests](https://assemblyline.suffolklitlab.org/docs/components/ALKiln/security#disable) or just [learn more](https://assemblyline.suffolklitlab.org/docs/components/ALKiln/intro).
   
   If you have some feedback, we would love to hear from you! Let the team know or [make a public "issue" in our repository](https://github.com/SuffolkLITLab/docassemble-ALKilnSetup/issues/new).
   
@@ -689,10 +688,11 @@ id: show_errors
 event: show_errors
 question: |
   Sorry, something went wrong
+decoration: user-injured
 subquestion: |
   % for error in installer.errors:
-  **Error: ${ error.status if error.status else '' } ${ error.data[ 'message' ] }**[BR]
-  ${ error.data[ 'details' ] }
+  ${ error.alk_details }[BR]
+  **Error status and message**: ${ error.status if error.status else '' } ${ error.data.get('message', 'Error description is missing') }
   
   ---
   % endfor
@@ -755,7 +755,7 @@ template: github_url_error
 content: |
   Cannot validate the GitHub URL **"${ installer.repo_url }"**. Example of a valid URL:
   
-  **`https://github.com/EXAMPLE-DA-ORG/DOCASSEMBLE-EXAMPLEPACKAGE`** (replace "EXAMPLE-DA-ORG/DOCASSEMBLE-EXAMPLEPACKAGE" with the actual owner and repo names)
+  **`https://github.com/example-da-org/docassemble-ExamplePackage`** (replace "example-da-org/docassemble-ExamplePackage" with the actual owner and repo names)
 ---
 depends on: github_repo_not_found_error
 code: |
@@ -765,7 +765,7 @@ template: github_repo_not_found_error
 content: |
   GitHub cannot find the **${ installer.repo_name }** repository owned by the owner **${ installer.owner_name }**. Example of a valid URL:
   
-  **`https://github.com/EXAMPLE-DA-ORG/DOCASSEMBLE-EXAMPLEPACKAGE`** (replace "EXAMPLE-DA-ORG/DOCASSEMBLE-EXAMPLEPACKAGE" with the actual owner and repo names)
+  **`https://github.com/example-da-org/docassemble-ExamplePackage`** (replace "example-da-org/docassemble-ExamplePackage" with the actual user or orgnaization name and the repo name)
   
   You gave the repository address of **${ installer.repo_url }**. Are you sure that is correct?
 ---
@@ -783,7 +783,7 @@ code: |
 ---
 template: permissions_error
 content: |
-  The user **${ installer.user_name }** has **${ installer.permissions }** permissions for the **${ installer.repo_name }** repository, but needs **write**, **maintain**, or **admin** permissions. You can ask the admin to give you correct access. **${ installer.owner_name }** is the owner.
+  The user **${ installer.user_name }** has **${ installer.permissions }** permissions for the **${ installer.repo_name }** repository, but needs **write**, **maintain**, or **admin** permissions. You can ask the admin to give you correct access. **${ installer.owner_name }** is the GitHub account name of the owner of the package's repository.
 ---
 depends on: org_does_not_exist_error
 code: |
@@ -816,3 +816,19 @@ code: |
 template: github_branch_name_error
 content: |
   It looks like all the allowed branch names are taken. To solve this, delete some of the branches that start with "${ installer.default_branch_name }".
+---
+# Will be offered in the future
+code: |
+  wants_cron = False
+---
+# Will be offered in the future
+code: |
+  needs_custom_config = False
+---
+# Will be offered in the future
+code: |
+  wants_issue_on_failure = False
+---
+# Will be offered in the future
+code: |
+  desired_triggers = []

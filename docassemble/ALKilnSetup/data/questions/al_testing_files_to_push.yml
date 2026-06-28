@@ -18,7 +18,7 @@ content: |
   
   Want to disable the tests? Want to learn more? See ALKiln's docs: https://assemblyline.suffolklitlab.org/docs/components/ALKiln/alkiln/
 
-  % for file_name in installer.test_files_wanted:
+  % for file_name in interviews_to_test.true_values():
   @${ re.sub( r'[^A-Za-z09]+', '' , re.sub( r'\.yml', '', file_name )) }
   Scenario: ${ file_name } runs
     Given I start the interview at "${ file_name }"
@@ -33,19 +33,20 @@ content: |
 comment: |
   The setup interview adds this file (run through mako) to the repo during GitHub test setup.
   This is the workflow file that will trigger GitHub ALKiln tests for the repo.
-  It can be called something like "run_form_tests.yml".
+  It can be called something like "alkiln_github_n_you_tests.yml".
   If you're creating this file manually, make sure to adjust the contents to so that it's no longer using Mako.
   That is, replace things like `"${ '${{' } secrets.SERVER_URL ${ '}}' }"` with `"${{ secrets.SERVER_URL }}"`.
-template: installer.run_form_tests
+template: installer.github_n_you
 content: |
-  name: ALKiln v5 tests
+  name: ALKiln v5 GitHub+You tests
+  # See https://assemblyline.suffolklitlab.org/docs/components/ALKiln/setup#githubNyou-details
   
   on:
     push:
     workflow_dispatch:
       inputs:
         tags:
-          description: 'Optional. Use a "tag expression" specify which tagged tests to run. See https://cucumber.io/docs/cucumber/api/#tag-expressions for syntax.'
+          description: 'Optional. Use a "tag expression" to specify which tagged tests to run. See https://cucumber.io/docs/cucumber/api#tag-expressions for syntax.'
           default: ''
     # To run your tests on a schedule, delete the first "#" symbol at the beginning of each line below.
     ## Also see https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#schedule
@@ -55,11 +56,22 @@ content: |
 
   jobs:
 
-    interview-testing:
+    alkiln-github-n-you-tests:
+      # To avoid `push` and `pull_request` above from running double tests
+      # when someone on the team makes a pull request
+      # 1: Trigger job on push or dispatch from this repository
+      # 2: Trigger job on pull request from a fork
+      if: (
+            github.event_name != 'pull_request'
+            && ! github.event.pull_request.head.repo.fork
+          ) || (
+            github.event_name == 'pull_request'
+            && github.event.pull_request.head.repo.fork
+          )
+
       runs-on: ubuntu-latest
       name: Run interview tests
       steps:
-        - uses: actions/checkout@v3
         - name: Use ALKiln to run tests
           uses: SuffolkLITLab/ALKiln@v5
           with:
@@ -78,6 +90,58 @@ content: |
         #    body: |
         #      An ALKiln test failed. See the action at ${ '${{' } github.server_url ${ '}}' }/${ '${{' } github.repository ${ '}}' }/actions/runs/${ '${{' } github.run_id ${ '}}' }.
         #    labels: |
-        #      bug
-        
+        #      bug     
+---
+comment: |
+  The setup interview adds this file (run through mako) to the repo during GitHub test setup.
+  This is the workflow file that will trigger GitHub ALKiln sandbox tests for the repo: https://assemblyline.suffolklitlab.org/docs/components/ALKiln/setup#sandbox-details
+  It can be called something like "alkiln_sandbox_tests.yml".
+  If you are creating this file manually by copying this code, make sure to adjust the contents to so that it is no longer using Mako.
+  That is, replace things like `"${ '${{' } secrets.SERVER_URL ${ '}}' }"` with `"${{ secrets.SERVER_URL }}"`.
+template: installer.sandbox
+content: |
+  name: ALKiln v5 Sandbox tests
+  # See https://assemblyline.suffolklitlab.org/docs/components/ALKiln/setup#sandbox-details
+  
+  on:
+    push:
+    pull_request:
+    workflow_dispatch:
+      inputs:
+        tags:
+          required: False
+          description: 'Optional. Use a "tag expression" to specify which tagged tests to run (https://cucumber.io/docs/cucumber/api#tag-expressions)'
+        # Experimental
+        show_docker_output:
+          required: false
+          default: false
+          type: boolean
+          description: 'Show the docker logs while building the GitHub server container. It will also save the docker log artifact. This might show sensitive config information.'
+
+  jobs:
+    alkiln-sandbox-tests:
+      runs-on: ubuntu-latest
+
+      steps:
+        - name: "ALKiln - Create the GitHub sandbox docassemble server"
+          id: github_server
+          uses: suffolkLITLab/ALKiln/action_for_github_server@v5
+          with:
+            SHOW_DOCKER_OUTPUT: "${ '${{' } github.event.inputs.show_docker_output ${ '}}' }"
+        - run: echo "ALKiln finished starting the isolated GitHub docassemble server"
+          shell: bash
+
+        - name: "Run ALKiln sandbox tests"
+          if: ${ '${{' } success() ${ '}}' }
+          id: alkiln
+          uses: suffolkLITLab/ALKiln@v5
+          with:
+            # Required inputs. See https://assemblyline.suffolklitlab.org/docs/alkiln/writing#sandbox-inputs
+            SERVER_URL: "${ '${{' } steps.github_server.outputs.SERVER_URL ${ '}}' }"
+            DOCASSEMBLE_DEVELOPER_API_KEY: "${ '${{' } steps.github_server.outputs.DOCASSEMBLE_DEVELOPER_API_KEY ${ '}}' }"
+            INSTALL_METHOD: "server"
+            # To learn more about these optional inputs, see
+            # https://assemblyline.suffolklitlab.org/docs/alkiln/writing#optional-inputs
+            # ALKILN_TAG_EXPRESSION: ""
+            # ALKILN_VERSION: ""
 ---

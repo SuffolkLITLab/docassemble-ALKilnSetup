@@ -1,4 +1,4 @@
-from github import Github  # PyGithub
+from github import Github, GithubException, UnknownObjectException # PyGithub
 from github import PublicKey
 import requests
 from nacl import encoding, public  # pynacl
@@ -18,6 +18,8 @@ class TestInstaller(DAObject):
   def init( self, *pargs, **kwargs ):
     self.default_branch_name = "automated_testing"
     self.errors = []  # Make set() instead?
+    self.files_to_push = []
+    self.pushed_files = []
     super().init(*pargs, **kwargs)
   
   def set_da_info( self ):
@@ -32,21 +34,21 @@ class TestInstaller(DAObject):
       status = response.status_code
       if status == 403:
         # 403 “Access Denied”
-        error = ErrorLikeObject( message='Server API Key', details=self.da_access_denied_error )
+        error = ErrorLikeObject( message='Server API Key', alk_details=self.da_access_denied_error )
         self.errors.append( error )
       elif status == 400:
         # 400 “Error obtaining user information”
-        error = ErrorLikeObject( message='Docassemble user info', details=self.da_user_info_error )
+        error = ErrorLikeObject( message='Docassemble user info', alk_details=self.da_user_info_error )
         self.errors.append( error )
       else:
         self.da_email = response.json()['email']
     except requests.exceptions.ConnectionError as err:
       # https://docs.python-requests.org/en/latest/user/quickstart/#errors-and-exceptions
-      error = ErrorLikeObject( message='Server URL', details=self.da_server_url_error )
+      error = ErrorLikeObject( message='Server URL', alk_details=self.da_server_url_error )
       self.errors.append( error )
     except requests.exceptions.Timeout as err:
       # https://docs.python-requests.org/en/latest/user/quickstart/#errors-and-exceptions
-      error = ErrorLikeObject( message='Server took too long', details=self.da_server_timeout_error )
+      error = ErrorLikeObject( message='Server took too long', alk_details=self.da_server_timeout_error )
       self.errors.append( error )
     
     return self
@@ -70,7 +72,7 @@ class TestInstaller(DAObject):
       # github.GithubException.BadCredentialsException (401, 403)
       log( error1.__dict__, 'console' )
       self.user_name = ''
-      error1.data[ 'details' ] = self.github_token_error
+      error1.alk_details = self.github_token_error
       self.errors.append( error1 )
     
     if self.user_name != '':
@@ -104,7 +106,7 @@ class TestInstaller(DAObject):
       has_scopes = "workflow" in scopes and "repo" in scopes
       
     if not has_scopes:
-      error = ErrorLikeObject( message='Incorrect Personal Access Token scopes', details=self.github_pat_scopes_error )
+      error = ErrorLikeObject( message='Incorrect Personal Access Token scopes', alk_details=self.github_pat_scopes_error )
       self.errors.append( error )
       
     return has_scopes
@@ -119,10 +121,10 @@ class TestInstaller(DAObject):
       try:
         repo = self.github.get_repo( self.owner_name + '/' + self.repo_name )
       except Exception as error2:
-        # github.GithubException.UnknownObjectException (404)
+        # UnknownObjectException (404)
         log( error2.__dict__, 'console' )
         repo = None
-        error2.data[ 'details' ] = self.github_repo_not_found_error
+        error2.alk_details = self.github_repo_not_found_error
         self.errors.append( error2 )
         
     return repo
@@ -140,7 +142,7 @@ class TestInstaller(DAObject):
       repo_name = ''
       package_name = ''
       # Show error
-      error = ErrorLikeObject( message='GitHub URL', details=self.github_url_error )
+      error = ErrorLikeObject( message='GitHub URL', alk_details=self.github_url_error )
       self.errors.append( error )
       
     return [ owner_name, repo_name, package_name ]
@@ -152,7 +154,7 @@ class TestInstaller(DAObject):
     # Are they even on the collaborator list
     is_valid_collaborator = self.repo.has_in_collaborators( self.user_name )
     if not is_valid_collaborator:
-      error1 = ErrorLikeObject( message='Must be a collaborator', details=self.not_collaborator_error )
+      error1 = ErrorLikeObject( message='Must be a collaborator', alk_details=self.not_collaborator_error )
       self.errors.append( error1 )
       
     else:
@@ -162,7 +164,7 @@ class TestInstaller(DAObject):
       
       has_permissions = self.permissions in correct_permissions
       if not has_permissions:
-        error2 = ErrorLikeObject( message='Must have "write" permissions', details=self.permissions_error )
+        error2 = ErrorLikeObject( message='Must have "write" permissions', alk_details=self.permissions_error )
         self.errors.append( error2 )
     
     return is_valid_collaborator
@@ -177,7 +179,7 @@ class TestInstaller(DAObject):
       # UnknownObjectException: 404 {"message": "Not Found", "documentation_url": "https://docs.github.com/rest/reference/orgs#get-an-organization"}
       org = None
       log( error1.__dict__, 'console' )
-      error1.data[ 'details' ] = self.org_does_not_exist_error
+      error1.alk_details = self.org_does_not_exist_error
       self.errors.append( error1 )
     return org
     
@@ -192,14 +194,14 @@ class TestInstaller(DAObject):
       valid = False
       role = None
       log( error2.__dict__, 'console' )
-      error2.data[ 'details' ] = self.not_an_org_member_error
+      error2.alk_details = self.not_an_org_member_error
       self.errors.append( error2 )
 
     # Check if user is admin of org
     if role != 'admin':
       valid = False
       # Show error
-      error3 = ErrorLikeObject( message='Not an admin', details=self.not_org_admin_error )
+      error3 = ErrorLikeObject( message='Not an admin', alk_details=self.not_org_admin_error )
       self.errors.append( error3 )
     
     return valid
@@ -230,7 +232,7 @@ class TestInstaller(DAObject):
           branch_name = branch_name_base + '_' + str( count )
 
     if not found_free_name:
-      error3 = ErrorLikeObject( message='Branch already exists', details=self.github_branch_name_error )
+      error3 = ErrorLikeObject( message='Branch already exists', alk_details=self.github_branch_name_error )
       branch_name = None
       self.errors.append( error3 )
     
@@ -241,13 +243,14 @@ class TestInstaller(DAObject):
   # github: set secrets and create files
   # All checks should have passed at this point
   ###############################
-  def update_github( self ):
+  def update_github( self, wants_to_set_up_tests ):
     """If desired, set repo or org secrets. If desired, add test files to repo."""
     if value('secret_type_wanted') == 'org' or value('secret_type_wanted') == 'repo':
       self.create_secrets()
-    if value( 'wants_to_set_up_tests' ):
+    if wants_to_set_up_tests:
       self.make_new_branch()
-      self.push_files()
+      for file_dict in self.files_to_push:
+        self.push_file( file_dict )
       self.make_pull_request()
     return self
   
@@ -303,7 +306,6 @@ class TestInstaller(DAObject):
     """Get the names of the files in the `questions` folder.
     See https://pygithub.readthedocs.io/en/latest/examples/Repository.html#get-all-of-the-contents-of-the-repository-recursively
     """
-    
     # Get the path to the "questions" folder
     package_path = ""
     # Get the (only possible?) folder inside the "docassemble" folder
@@ -313,39 +315,125 @@ class TestInstaller(DAObject):
             package_path = f"{ item.path }/data/questions"
 
     # Get the names of the files in the "questions" folder
-    question_files = self.repo.get_contents( package_path )
+    file_names_err = None
+    extra_err_msg = f'Unable to get the files in `/data/questions` from `{ self.repo_name }`.'
+    try:
+      question_files = self.repo.get_contents( package_path )
+    except UnknownObjectException as err_missing_dir:
+      file_names_err = err_missing_dir
+      # Discuss: I'd like to be able to update error messages without re-running the module code. Elsewhere we're using templates from the yml, but that doesn't work either. Other suggestions? Use keys to identify messages in a dict in the yml?
+      extra_err_msg = f'GitHub is unable to find your `/data/questions` folder in `{ self.repo_name }`.'
+    except GithubException as err_github_file_names:
+      file_names_err = err_github_file_names
+      extra_err_msg = f'GitHub ran into a problem when trying to get the files in `/data/questions` in `{ self.repo_name }`.'
+    except Exception as err_file_names_other:
+      file_names_err = err_file_names_other
+
+    if file_names_err != None:
+      err_final = ErrorLikeObject(alk_details=extra_err_msg)
+      log( file_names_err.__dict__, 'console' )
+      log( file_names_err.__dict__ )
+      file_names_err.alk_details = extra_err_msg
+      try:
+        err_final.status = file_names_err.status
+      except Exception:
+        err_final.status = 0
+      try:
+        err_final.data['message'] = file_names_err.data['message']
+      except Exception:
+        try:
+          err_final.data['message'] = file_names_err.message
+        except Exception:
+          try:
+            err_final.data = {'message': 'Sorry, no error description.'}
+          except Exception:
+            pass
+      self.errors.append( err_final )
+      return []
+
     names = []
     for file in question_files:
       names.append([ file.name, file.name ])
     
     return names
-  
-  def push_files( self ):
-    """Push each file to the new branch in github in the correct directory."""
-    # Only push test file if they wanted it
-    
-    if len(self.test_files_wanted) > 0:
-      test_path = 'docassemble/' + self.package_name + '/data/sources/interviews_run.feature'
-      test_commit_message = 'Add ' + test_path + ' for ALKiln automated tests'
-      self.send_file( test_path, test_commit_message, self.first_feature_file_str )
+
+  def set_files_to_push( self, environments=[], interviews_to_test=[] ):
+    """
+    Internally, set the paths and other data for the files we will push to GitHub.
+
+    Args:
+      environments ([str]): List of GitHub environments in which to run tests
+      interviews_to_test ([str]): List of interview files for which to write tests
+    """
+    self.envrionments = environments
+    self.interviews_to_test = interviews_to_test
       
-    # Push the mandatory file
-    self.send_file( '.github/workflows/run_form_tests.yml', 'Add .github/workflows/run_form_tests.yml for ALKiln automated tests', self.run_form_tests_str )
+    self.files_to_push = self.get_workflow_file_dicts( environments )
     
-    return self
+    if len( interviews_to_test ) > 0:
+      test_path = 'docassemble/' + self.package_name + '/data/sources/interviews_run.feature'
+      test_commit_message = f'Add { test_path } for ALKiln automated tests'
+      self.files_to_push.append({
+        "path": test_path,
+        "msg": test_commit_message,
+        "contents": self.first_feature_file_str
+      })
+      
+    return self.files_to_push
+
+  def get_workflow_file_dicts( self, environments ):
+    """
+    Returns dictionaries with data for committing each workflow file
+      for the requested environments.
+
+    Returns
+      [{"path": str, "msg": str, "contents": str }]
+    """
+    file_dicts = []
+    if 'github_n_you' in environments:
+      file_dicts.append({
+        "path": '.github/workflows/alkiln_github_n_you_tests.yml',
+        "msg": 'Add .github/workflows/alkiln_github_n_you_tests.yml for ALKiln automated tests',
+        "contents": self.github_n_you_str
+      })
+      
+    if 'sandbox' in environments:
+      file_dicts.append({
+        "path": '.github/workflows/alkiln_sandbox_tests.yml',
+        "msg": 'Add .github/workflows/alkiln_sandbox_tests.yml for ALKiln isolated GitHub tests',
+        "contents": self.sandbox_str
+      })
+      
+    return file_dicts
   
-  def send_file( self, path, msg, contents ):
-    """Either create a new file or update an existing file with the given data
-       and push it to new branch.
-       See https://stackoverflow.com/a/66673303/14144258.
-       TODO: Discuss removing `self` to make it data-based.
-       TODO: Shall we remove the committer's user name/email?"""
-    
+  def push_file( self, file_dict ):
+    """
+    Either create a new file or update an existing file with the given data
+      and push it to new branch.
+      See https://stackoverflow.com/a/66673303/14144258.
+      Discuss: Split into a function and pass argument to make this data-based?
+      Discuss: Shall we remove the committer's user name/email?
+
+    Args:
+      file_dict (dict): Dictionary with necessary values
+      file_dict['path'] (str): Where to put the file in the repo dir
+      file_dict['msg'] (str): Commit message
+      file_dict['contents'] (str): Contents of the file
+
+    Returns
+      TestInstaller
+    """
     #https://pygithub.readthedocs.io/en/latest/examples/Repository.html#create-a-new-file-in-the-repository
     # https://pygithub.readthedocs.io/en/latest/github_objects/Repository.html#github.Repository.Repository.create_file
     try:
       # Try to create the file
-      self.repo.create_file( path, msg, contents, branch=self.branch_name )
+      self.repo.create_file(
+        file_dict.get('path'),
+        file_dict.get('msg'),
+        file_dict.get('contents'),
+        branch=self.branch_name
+      )
+      self.pushed_files.append( file_dict )
     except Exception as error:
       # If a file already exists, update that file instead
       if error.status == 422:
@@ -365,7 +453,7 @@ class TestInstaller(DAObject):
     head_name = self.branch_name
     title = 'Add ALKiln automated tests'  # TODO: Add issue # if desired
     description = '''Added these files:'''
-    if len(self.test_files_wanted) > 0:
+    if len(self.interviews_to_test) > 0:
       description += '''
 - tests/features/interviews_run.feature'''
     description += '''
@@ -382,7 +470,8 @@ Want to disable the tests? See documentation for ALKiln tests at https://suffolk
 # Error helpers
 class ErrorLikeObject():
   """Create object to match PyGithub data structure for errors."""
-  def __init__( self, status=0, message='', details='' ):
+  def __init__( self, status=0, message='Sorry, the error description is missing', alk_details='Sorry, the ALKiln description is missing.' ):
     self.status = status
-    self.data = { 'message': message, 'details': details }
+    self.alk_details = alk_details
+    self.data = { 'message': message }
     log( self.__dict__, 'console' )
