@@ -50,11 +50,10 @@ setup(name='docassemble.ALKilnSetup',
       long_description_content_type='text/markdown',
       author='',
       author_email='example@example.com',
-      license='The MIT License (MIT)',
+      license='MIT',
       url='https://docassemble.org',
       packages=find_namespace_packages(),
-      install_requires=['PyGithub>=1.59.0', 'PyNaCl>=1.5.0', 'docassemble.ALToolbox>=0.8.2', 'requests>=2.31.0'],
+      install_requires=['PyGithub>=2.9.1', 'PyNaCl>=1.6.2', 'docassemble.ALToolbox @ git+https://github.com/SuffolkLITLab/docassemble-ALToolbox.git@main', 'requests>=2.32.5'],
       zip_safe=False,
       package_data=find_package_data(where='docassemble/ALKilnSetup/', package='docassemble.ALKilnSetup'),
      )
-
