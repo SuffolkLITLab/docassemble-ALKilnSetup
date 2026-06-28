@@ -362,14 +362,17 @@ class TestInstaller(DAObject):
     Internally, set the paths and other data for the files we will push to GitHub.
 
     Args:
-      environments ([str]): List of GitHub environments in which to run tests
-      interviews_to_test ([str]): List of interview files for which to write tests
+      environments ([str]): Names of GitHub environments in which to run tests
+      interviews_to_test ([str]): Names of interview files for which to write tests
+
+    Returns
+      [{"path": str, "msg": str, "contents": str }]
     """
     self.envrionments = environments
     self.interviews_to_test = interviews_to_test
-      
+
     self.files_to_push = self.get_workflow_file_dicts( environments )
-    
+
     if len( interviews_to_test ) > 0:
       test_path = 'docassemble/' + self.package_name + '/data/sources/interviews_run.feature'
       test_commit_message = f'Add { test_path } for ALKiln automated tests'
@@ -385,6 +388,9 @@ class TestInstaller(DAObject):
     """
     Returns dictionaries with data for committing each workflow file
       for the requested environments.
+
+    Args
+      environments ([str]): Names of GitHub environments in which to run tests
 
     Returns
       [{"path": str, "msg": str, "contents": str }]

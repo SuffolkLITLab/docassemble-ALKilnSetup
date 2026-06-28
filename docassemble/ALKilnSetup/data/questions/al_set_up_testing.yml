@@ -513,7 +513,7 @@ content: |
   % if len(installer.interviews_to_test) > 0:
   * **docassemble/${ installer.package_name }/data/sources/interviews_run.feature** is a very simple example of a test.
   % endif
-  * Files in **.github/workflows/** tell GitHub when and how to run the tests and save the files created by the tests.
+  * Files in **.github/workflows/** tell GitHub when and how to run the tests and save the files the test run created.
 ---
 template: secrets_list
 content: |
