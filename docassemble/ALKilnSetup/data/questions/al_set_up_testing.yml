@@ -58,6 +58,7 @@ code: |
   #end
   force_ask( 'next_steps' )
 ---
+id: faux end
 event: end
 question: For ALKiln development
 subquestion: |
@@ -359,8 +360,10 @@ id: on testing server
 question: |
   Before we start
 subquestion: |
-  Look at the url of this page. Is this the server where the tests will run?
-yesno: will_test_on_this_server
+  Look at the url of this page.
+fields:
+  - Is this the server where the tests will run?: will_test_on_this_server
+    datatype: yesnoradio
 ---
 template: default_server_url
 content: |
@@ -373,9 +376,9 @@ question: |
   What account are you logged in on?
 subquestion: |
   You, your team, or your organiztion might {want to set up an account just for running tests}. The tests can also just run on your account.
-
-  Are you logged into the docassemble account where the tests will run?
-yesno: logged_into_test_account_on_interview_server
+fields:
+  - Are you logged into the docassemble account where the tests will run?: logged_into_test_account_on_interview_server
+    datatype: yesnoradio
 terms:
   want to set up an account just for running tests: |
     Tap the "Why have a testing account?" button below to learn why you might want to set up an account just for running tests.
@@ -619,6 +622,7 @@ review:
 continue button field: is_ready
 continue button label: Send to GitHub
 ---
+id: end
 event: next_steps
 prevent going back: True
 question: |
@@ -670,7 +674,7 @@ subquestion: |
   ---
   % endif
   
-  See ALKiln's documentation if you want to [disable the tests](https://assemblyline.suffolklitlab.org/docs/components/ALKiln/security#disable) or just [learn more](https://assemblyline.suffolklitlab.org/docs/components/ALKiln/intro).
+  See ALKiln's documentation if you want to [disable the tests](https://assemblyline.suffolklitlab.org/docs/components/ALKiln/security#disable) or to [learn more about ALKiln tests in general](https://assemblyline.suffolklitlab.org/docs/components/ALKiln/intro).
   
   If you have some feedback, we would love to hear from you! Let the team know or [make a public "issue" in our repository](https://github.com/SuffolkLITLab/docassemble-ALKilnSetup/issues/new).
   
