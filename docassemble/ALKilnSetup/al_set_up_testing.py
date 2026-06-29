@@ -169,6 +169,23 @@ class TestInstaller(DAObject):
     
     return is_valid_collaborator
   
+  def get_orgs( self ):
+    """
+    Return all organizations the user belongs to. See
+    https://pygithub.readthedocs.io/en/stable/github_objects/AuthenticatedUser.html#github.AuthenticatedUser.AuthenticatedUser.get_orgs
+    """
+    # Check if org exists
+    try:
+      return self.github.get_orgs()
+    except Exception as err_orgs:
+      log('🍕 100')
+      log( err_orgs.__dict__, 'console' )
+      err_orgs.alk_details = 'We had a problem getting the GitHub organizations you belong to.'
+      if not err_orgs.status:
+        err_orgs.status = 0
+      self.errors.append( err_orgs )
+      return []
+  
   def get_org( self ):
     """Return org if it exists, otherwise None."""
     # Check if org exists
