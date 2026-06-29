@@ -25,43 +25,51 @@ need:
   - installer
 mandatory: True
 code: |
+  # ## Blockers ##
+  
   # show errors first thing on each loop
   if len( installer.errors ) > 0:
     show_errors
 
+  if all_done:
+    dev_end_screen
+
+  # ## Questions ##
   environments
   installer_token
   set_github_auth
-  
+
+  # Org and org secrets
   if gh_owner_type == 'org':
     all_orgs
     gh_org_holder
     if environments.true_values('github_n_you'):
-      desires_secrets
+      seek_secrets_desires  # covets_org_secrets may not get defined
 
+  # Repo
+  get_repos
+  wants_custom_repo
+  gh_repo_holder
+
+  # Personal repo secrets
+  # Discuss: Offer this screen even to those already setting org secrets?
+  # if not defined('covets_org_secrets'):
+  gh_repo_holder.has_alkiln_secrets__repo
+  covets_repo_secrets
   dev_between_screen
-  # get_repos
-  gh_repos
-  gh_repo_name
 
-  log(gh_repo_name, 'console')
-  
-
-  if environments.all_true('github_n_you'):
+  # Docassemble authentication
+  if ( environments.all_true('github_n_you')):
+    if all_done:
+      dev_end_screen
     # Set up da api key and secrets
-    pass
+    dev_end_screen
+
+  log('🍕 over 9000!')
+  dev_end_screen
 ---
-# code: |
-#   gh_repo_name = 'foo'
----
-# code: |
-#   temp_perms_needed = [
-#     'workflow',  # Creating workflow files, I think
-#     'repo',  # Creating repo secrets, branch, PR, I think
-#   ]
-#   if gh_owner_type == 'org':
-#     temp_perms_needed.append('admin:org')
-#   gh_tokens_permission_needed = temp_perms_needed
+code: |
+  all_done = False
 ---
 id: environments
 sets:
@@ -119,7 +127,7 @@ question: GitHub authorization
 subquestion: |
   Sorry this tricky part is here so early. No matter what you want to do, in order to make changes on GitHub this setup tool needs your authorization. It's better to get it over with now.
   
-  You will create a personal access token (a PAT) in **your personal GitHub account** since you personally are the one giving this permission. You can delete the PAT at the end.
+  You must create a personal access token (a PAT) in **your personal GitHub account** since you personally are the one giving this tool permission. You can delete the PAT at the end.
   
   1. [Log into your GitHub account](https://github.com).
   1. Follow directions to start making your "classic" personal access token on GitHub. You can find up-to-date directions in a section in [this GitHub documentation page](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token).
@@ -158,11 +166,11 @@ comment: |
   - All authors doing org stuff should know their org can have secrets
 ---
 id: secrets desires
-# sets: desires_secrets
+continue button field: seek_secrets_desires
 if: gh_owner_type == 'org'
 need:
   - gh_org_holder
-question: GitHub secrets
+question: GitHub organization secrets
 subquestion: |
   ${ info_summary }
 
@@ -170,117 +178,195 @@ subquestion: |
 
   ALKiln tests need some [GitHub secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets) in order to run GitHub+You™ tests on your docassemble server. The usual names for these secrets are "SERVER_URL" and "DOCASSEMBLE_DEVELOPER_API_KEY".
 
-  % if 'admin:org' in installer.github.oauth_scopes:
-  % if gh_org_holder.has_alkiln_secrets:
+  These secrets can be stored for an organization so that all organization tests can have access to them, or they can be stored on an individual repository. This question is about your **organization**.
+
+  % if 'admin:org' in installer.github.oauth_scopes and gh_org_holder.user_role == 'admin':
+  % if gh_org_holder.has_alkiln_secrets__org:
   <div class='alert alert-success'>
   It looks like your GitHub organziation already has the standard ALKiln GitHub secrets!
   </div>
   % else:
-  This setup tool can help you create those secrets for your organization if you want.
+  This setup tool can help you create the standard ALKiln secrets for your organization if you want.
   % endif
   % else:
-  % if gh_org_holder.has_alkiln_secrets:
-  It looks like your GitHub organziation already has the standard ALKiln GitHub secrets! If you need to change your organization's secrets, though, you need to contact an admin of your GitHub organization. You are missing the right permissions to change them yourself. Note for people who know what fine-grained tokens are: This tool is currently missing support for fine-grained tokens.
-  % else:
-  Your organization is missing the standard ALKiln GitHub secrets and you are missing permissions to make those secrets. If you need to create these secrets, contact an admin of your GitHub organization. Note for people who know what fine-grained tokens are: This tool is currently missing support for fine-grained tokens.
-  % endif
+  You are missing permissions to make secrets for your organization. If you need to create the standard ALKiln secrets, contact an admin of your GitHub organization. Note for people who know what fine-grained tokens are: This tool is currently missing support for fine-grained tokens.
   % endif
 fields:
-  - Do you need to change the standard ALKiln secrets for your organization?: desires_secrets
+  - Do you need to change values of the organization's secrets?: covets_org_secrets
     datatype: yesnoradio
     show if:
       code: |
-        gh_org_holder.has_alkiln_secrets
-  - Do you need to create the standard ALKiln secrets for your organization?: desires_secrets
+        'admin:org' in installer.github.oauth_scopes and gh_org_holder.user_role == 'admin' and gh_org_holder.has_alkiln_secrets__org
+  - Do you need to create the standard ALKiln secrets for your organization?: covets_org_secrets
     datatype: yesnoradio
     show if:
       code: |
-        not gh_org_holder.has_alkiln_secrets
+        'admin:org' in installer.github.oauth_scopes and gh_org_holder.user_role == 'admin' and (not gh_org_holder.has_alkiln_secrets__org)
+  - code: |
+      [ alks_independent_fields['all_done'] ]
+# Can't get org secrets if not org admin, I think
+# % if gh_org_holder.has_alkiln_secrets__org:
+# It looks like your GitHub organziation already has the standard ALKiln GitHub secrets! If you need to change your organization's secrets, though, you need to contact an admin of your GitHub organization. You are missing the right permissions to change them yourself. Note for people who know what fine-grained tokens are: This tool is currently missing support for fine-grained tokens.
+# % else:
+# Your organization is missing the standard ALKiln GitHub secrets and you are missing permissions to make those secrets. If you need to create these secrets, contact an admin of your GitHub organization. Note for people who know what fine-grained tokens are: This tool is currently missing support for fine-grained tokens.
+# % endif
 ---
-# id: get the repo
-# sets: gh_repo_name
-# # Future: allow multiple repos
-# question: The repository
-# subquestion: |
-#   You can pick from the list or write your own.
-# fields:
-#   - Pick a repository to write tests for: gh_repo_name
-#     # datatype: object_radio
-#     datatype: object
-#     object labeler: |
-#       lambda repo: repo['full_name']
-#     choices: gh_repos
-#   - Custom: gh_repo_name
-#   # - Pick a repository to write tests for: gh_repo_name
-#   #   # datatype: object_radio
-#   #   datatype: object
-#   #   object labeler: |
-#   #     lambda repo: repo['full_name']
-#   #   choices: gh_repos
-#   #   disable others: True
-# ---
-id: secrets desires
-# sets: desires_secrets
-if: gh_owner_type == 'personal'
-question: GitHub secrets
+id: get the repo
+question: The repository
+subquestion: |
+  You can pick a repository from the list or write in your own repository name. The format of the custom name should be `example-da-org/docassemble-ExamplePackage`.
+fields:
+  - I want to write a custom repository name: wants_custom_repo
+    datatype: yesno
+    label above field: True
+  - Custom repository name: gh_repo_holder_name
+    required: False
+    disable if:
+      variable: wants_custom_repo
+      is: False
+  - Or pick a repository to write tests for: gh_repo_holder
+    datatype: object_radio
+    object labeler: |
+      lambda repo: repo.full_name
+    choices: repo_holders
+    show if:
+      variable: wants_custom_repo
+      is: False
+---
+id: custom repo
+if: defined('gh_repo_holder_name')
+need:
+  - gh_repo_holder_name
+code: |
+  gh_repo_holder_temp = DAObject()
+  
+  try:
+    gh_repo_holder_temp.repo = installer.github.get_repo( gh_repo_holder_name )
+    gh_repo_holder = DAObject('gh_repo_holder', repo=gh_repo_holder_temp.repo, full_name=gh_repo_holder_temp.repo.full_name)
+  
+  except Exception as repo_by_name_err:
+    log( vars(repo_by_name_err), 'console')
+    message = 'Unable to find repository'
+    status = 0
+    try:
+      message = repo_by_name_err.data['message']
+      status = repo_by_name_err.data['status']
+    except Exception as _ignore1:
+      log( _ignore1, 'console')
+      try:
+        message = repo_by_name_err.message
+        status = repo_by_name_err.status
+      except Exception as _ignore2:
+        log( _ignore2, 'console')
+        try:
+          message = repo_by_name_err.msg
+        except Exception as _ignore3:
+          log( _ignore3, 'console')
+          pass
+    repo_by_name_err_faux = ErrorLikeObject(
+      status=status,
+      message=message,
+      alk_details=f'Unable to find a repository called { gh_repo_holder_name }.',
+    )
+    installer.errors.append( repo_by_name_err_faux )
+---
+id: secrets desires repo-style
+continue button field: seek_personal_secrets
+# As of 2023, anyone with 'repo' permissions can edit repo secrets through the API, even if not through the UI
+need:
+  - gh_repo_holder.has_alkiln_secrets__repo
+question: GitHub repository secrets
 subquestion: |
   ${ info_summary }
 
-  Do you want to know a secret? Me either, but we do what we must. Don't worry, you'll probably forget this one. Probably.
+  How many secrets can you keep? Not all of them if you're answering these questions!
 
   ALKiln tests need some [GitHub secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets) in order to run GitHub+You™ tests on your docassemble server. The usual names for these secrets are "SERVER_URL" and "DOCASSEMBLE_DEVELOPER_API_KEY".
 
-  % if 'admin:org' in installer.github.oauth_scopes:
-  % if gh_org_holder.has_alkiln_secrets:
+  These secrets can be stored for an organization so that all organization tests can have access to them, or they can be stored on an individual repository. This question is about the **repository**. To change organization secrets, a GitHub org admin can run this tool and pick the options to manage an organization.
+
+  % if gh_repo_holder.has_alkiln_secrets__repo:
   <div class='alert alert-success'>
-  It looks like your GitHub organziation already has the standard ALKiln GitHub secrets!
+  It looks like this repository already has the standard ALKiln GitHub secrets!
   </div>
   % else:
-  This setup tool can help you create those secrets for your organization if you want.
-  % endif
-  % else:
-  % if gh_org_holder.has_alkiln_secrets:
-  It looks like your GitHub organziation already has the standard ALKiln GitHub secrets! If you need to change your organization's secrets, though, you need to contact an admin of your GitHub organization. You are missing the right permissions to change them yourself. Note for people who know what fine-grained tokens are: This tool is currently missing support for fine-grained tokens.
-  % else:
-  Your organization is missing the standard ALKiln GitHub secrets and you are missing permissions to make those secrets. If you need to create these secrets, contact an admin of your GitHub organization. Note for people who know what fine-grained tokens are: This tool is currently missing support for fine-grained tokens.
-  % endif
+  This setup tool can help you create the standard ALKiln secrets for this repository if you want.
   % endif
 fields:
-  - Do you need to change the standard ALKiln secrets for your organization?: desires_secrets
+  - Do you need to change values of the repository's secrets?: covets_repo_secrets
     datatype: yesnoradio
     show if:
       code: |
-        gh_org_holder.has_alkiln_secrets
-  - Do you need to create the standard ALKiln secrets for your organization?: desires_secrets
+        gh_repo_holder.has_alkiln_secrets__repo
+  - Do you need to create the standard ALKiln secrets for this repository?: covets_repo_secrets
     datatype: yesnoradio
     show if:
       code: |
-        not gh_org_holder.has_alkiln_secrets
+        not gh_repo_holder.has_alkiln_secrets__repo
+  - code: |
+      [ alks_independent_fields['all_done'] ]
 ---
 id: info summary
 template: info_summary
 content: |
   Your information based on your answers so far:
 
-  <dl class='alert alert-info'>
+  <dl class='alert alert-info' style='max-height: 8.7em; display: flex; flex-direction: column;'>
+  
   % if showifdef( installer.attr_name('user_name') ):
   <div markdown=1 style='display: flex; justify-content: space-between'>
   <dt markdown=1>GitHub username</dt>
-  <dd markdown=1>${ installer.user_name }</dd>
+  <dd markdown=1 style='margin-bottom: .2rem;'>${ installer.user_name }</dd>
   </div>
   % endif
-  % if showifdef( 'gh_org_holder' ):
-  <div>
+  
+  % if showifdef('gh_org_holder'):
   <div markdown=1 style='display: flex; justify-content: space-between'>
-  <dt markdown=1>GitHub org to edit</dt>
-  <dd markdown=1>${ gh_org_holder.login }</dd>
+  <dt markdown=1>GitHub org</dt>
+  <dd markdown=1 style='margin-bottom: .2rem;'>${ gh_org_holder.login }</dd>
+  </div>
+  % endif
+  
+  % if showifdef('gh_repo_holder'):
+  <div markdown=1 style='display: flex; justify-content: space-between'>
+  <dt markdown=1>Repository</dt>
+  <dd markdown=1 style='margin-bottom: .2rem;'>${ gh_repo_holder.repo.full_name }</dd>
+  </div>
+  % endif
+  
+  % if showifdef('gh_org_holder') and showifdef( gh_org_holder.attr_name('has_alkiln_secrets__org') ):
+  <div markdown=1 style='display: flex; justify-content: space-between'>
+  <dt markdown=1>Organization is hoarding secrets</dt>
+  <dd markdown=1 style='margin-bottom: .2rem;'>${ gh_org_holder.has_alkiln_secrets__org }</dd>
+  </div>
+  % endif
+  
+  % if defined('covets_org_secrets'):
+  <div markdown=1 style='display: flex; justify-content: space-between'>
+  <dt markdown=1>Will set GitHub org secrets</dt>
+  <dd markdown=1 style='margin-bottom: .2rem;'>${ covets_org_secrets }</dd>
+  </div>
+  % endif
+  
+  % if showifdef('gh_repo_holder') and defined( gh_repo_holder.attr_name('has_alkiln_secrets__repo') ):
+  <div markdown=1 style='display: flex; justify-content: space-between'>
+  <dt markdown=1>Repo holds precious secrets</dt>
+  <dd markdown=1 style='margin-bottom: .2rem;'>${ gh_repo_holder.has_alkiln_secrets__repo }</dd>
+  </div>
+  % endif
+  
+  % if defined('covets_repo_secrets'):
+  <div markdown=1 style='display: flex; justify-content: space-between'>
+  <dt markdown=1>Will set GitHub repo secrets</dt>
+  <dd markdown=1 style='margin-bottom: .2rem;'>${ covets_repo_secrets }</dd>
   </div>
   % endif
   </dl>
+
 ---
 comment: |
   **Your GitHub username**:
-  % if defined( 'installer_token' ):
+  % if defined('installer_token'):
   ${ installer.user_name }
 
   - Edit: installer.server_url
@@ -356,39 +442,13 @@ comment: |
       :exclamation-triangle: <strong>You will not be able to come back to this page.</strong>
       </div>
 ---
-# id: github auth
-# question: |
-#   GitHub
-# subquestion: |
-#   We need some authorization and some information to do operations for you in GitHub.
-
-#   ---
-
-#   GitHub needs you to authorize this tool to make changes on GitHub. You can do that by creating a personal access token (PAT).
-  
-#   You will create a PAT in **your** GitHub account as you personally are the one giving this permission. You can delete the PAT at the end.
-  
-#   To answer the questions, do these steps:
-  
-#   1. [Log into your GitHub account](https://github.com).
-#   1. Follow directions to start making your "classic" personal access token on GitHub. You can find the directions in a section at [this GitHub documentation page](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token).
-#   % if secret_type_wanted == 'org':
-#   1. Tap the checkbox for "admin:org" permissions.
-#   % endif
-#   % if wants_to_set_up_tests or secret_type_wanted == 'repo':
-#   1. Tap the checkbox for "workflow" permissions.
-#   % endif
-#   1. Finish creating the personal access token.
-#   1. Copy the token and paste it below.
-# fields:
-#   - GitHub personal access token: installer_token
-#     datatype: password
-#     help: |
-#       The token must have ${ token_permissions_scope } permissions.
----
 # https://docassemble.org/docs/initial.html#data
 variable name: alks_independent_fields
 data:
+  all_done:
+    label: Is this all you want to do?
+    field: all_done
+    datatype: yesnoradio
   environments:
     label: What types of tests do you need to use?
     field: environments
@@ -411,7 +471,7 @@ data:
         value: personal
       - label: A GitHub organization's repository
         value: org
-  desires_secrets:
+  covets_org_secrets:
     label: Do you want to set secrets?
   github_token_personal:
     label: GitHub individual Personal Access Token (PAT)
@@ -472,8 +532,16 @@ fields:
 # Installer
 # ##############################
 ---
+objects:
+  - orgs_holder_list: DAList.using(object_type=DAObject)
+---
 code: |
   installer.token = installer_token
+---
+need:
+  - installer.github
+code: |
+  installer.user = installer.github.get_user()
 ---
 code: |
   installer.org = gh_org_holder
@@ -500,7 +568,7 @@ code: |
   set_github_auth = True
 ---
 id: has_scopes
-# Discuss: We could make permissions much more fine-grained. That is, setting secrets is just admin:org or repo. Do we want to make it that complicated?
+# Discuss: We could make permissions much more fine-grained. That is, setting secrets doesn't need 'workflow'. Do we want to make it that complicated?
 
 # Make sure the developer gave the token the right scopes
 code: |
@@ -519,149 +587,10 @@ code: |
     
   installer.missing_scopes = missing_scopes
 ---
-# https://pygithub.readthedocs.io/en/stable/github_objects/Organization.html#github.Organization.Organization.get_secrets
-# https://pygithub.readthedocs.io/en/stable/github_objects/Repository.html#github.Repository.Repository.get_secrets
-# Ah, the token doesn't have the right permissions? That is, I do belong to an org, but I get an error when I try to get secrets for the org. Wait, what? I'm an admin, but I don't have access to secrets?
-id: org secrets
-need:
-  - installer.user
-generic object: DAObject
-code: |
-  alkiln_secrets_found = []
-  org_data = x.org
-  org_secrets = org_data.get_secrets()
-  secrets_names = [ secret.name for secret in org_secrets ]
-
-  if 'SERVER_URL' in secrets_names:
-    alkiln_secrets_found.append('SERVER_URL')
-  if 'DOCASSEMBLE_DEVELOPER_API_KEY' in secrets_names:
-    alkiln_secrets_found.append('DOCASSEMBLE_DEVELOPER_API_KEY')
-
-  installer.alkiln_secrets = alkiln_secrets_found
-  
-  if len( alkiln_secrets_found ) == 2:
-    x.has_alkiln_secrets = True
-  else:
-    x.has_alkiln_secrets = False
----
-id: get the repo
-sets: gh_repo_name
-# Future: allow multiple repos
-question: The repository
-subquestion: |
-  You can pick from the list or write your own.
-fields:
-  - Pick a repository to write tests for: gh_repo_name
-    # datatype: object_radio
-    datatype: object
-    object labeler: |
-      lambda repo: repo['full_name']
-    choices: gh_repos
-  - Custom: gh_repo_name
-  # - Pick a repository to write tests for: gh_repo_name
-  #   # datatype: object_radio
-  #   datatype: object
-  #   object labeler: |
-  #     lambda repo: repo['full_name']
-  #   choices: gh_repos
-  #   disable others: True
----
-id: repos list
-# Discuss: Allow choosing branches?
-# If picked org: Show org's list of repos to pick from (https://pygithub.readthedocs.io/en/stable/github_objects/Organization.html#github.Organization.Organization.get_repos)
-# If no org: Show list of personal repos (https://pygithub.readthedocs.io/en/stable/github_objects/NamedUser.html#github.NamedUser.NamedUser.get_repos)
-
-# Set list of all relevant and accessible repos. Should show private repos.
-code: |
-  # get me 'em 'pos!
-  gh_repos_data = []
-
-  log('🍕', 'console')
-  log(vars(gh_org_holder), 'console')
-
-  try:
-    if gh_owner_type == 'org':
-      gh_repos_data = gh_org_holder.org.get_repos(sort='updated')
-    else:
-      # TODO: This also wasn't working
-      gh_repos_data = installer.user.get_repos(sort='updated')
-  except Exception as get_repos_err:
-    log( get_repos_err.__dict__, 'console' )
-    # Any empty list should show a text field for a custom repo
-    raise
-    pass
-
-  # log(gh_org_holder.get_repos().totalCount, 'console')
-
-  # Convert it from an iterator into a regular list
-  log('🍕 101', 'console')
-  log(gh_repos_data.totalCount, 'console')
-  # gh_repos_temp = list(gh_repos_data)
-  gh_repos_temp = []
-  for repo in gh_repos_data:
-    gh_repos_temp.append(repo)
-  
-  # log(len(gh_repos_temp), 'console')
-  # log(gh_repos_temp[0].full_name, 'console')
-  # # gh_repos_dict = [ {'full_name': repo.full_name} for repo in gh_repos_temp ]
-  
-  gh_repos = gh_repos_temp[0:5]
-  log(gh_repos, 'console')
-  get_repos = True
----
-  # except Exception as get_repos_err:
-  #   log('🍕 104', 'console')
-  #   # UnknownObjectException (404)
-  #   log( get_repos_err.__dict__, 'console' )
-  #   # Any empty list should show a text field for a custom repo
-  #   pass
-  #   # get_repos_err_faux = ErrorLikeObject(
-  #   #   alkiln_details='Error looking for list of repositories'
-  #   # )
-  # Package name: .name or .full_name (with owner)
-  # .html_url if start supporting non-github repos
-  # gh_repo = installer.github.get_repo( f'{gh_org_holder.login}/{gh_repo_name}')
-  
-  # installer.owner_name, installer.repo_name, installer.package_name = installer.get_github_info_from_repo_url( repo_url )
-  
-  # repo = None
-  # if installer.repo_name:
-  #   # Check if repo exists
-  #   try:
-  #     repo = installer.github.get_repo( installer.owner_name + '/' + installer.repo_name )
-  #   except Exception as error2:
-  #     # UnknownObjectException (404)
-  #     log( error2.__dict__, 'console' )
-  #     repo = None
-  #     error2.alk_details = installer.github_repo_not_found_error
-  #     installer.errors.append( error2 )
----
-  # # If wants to do any repo stuff. Also defines installer.owner_name if it's not defined already.
-  # if gh_owner_type == 'personal':
-  #   installer.repo = installer.get_repo( installer.repo_url )
-  #   if installer.repo:
-  #     # TODO: Add branch name to confirmation page or final page?
-  #     # TODO: Allow inst_user to pick a custom branch name or to push to default branch?
-  #     installer.branch_name = installer.get_free_branch_name()
-  #     installer.has_correct_permissions()
-  
-  # # Auth for setting org secrets
-  # if gh_owner_type == 'org':
-  #   installer.org = installer.get_org()
-  #   if installer.org and inst_user:
-  #     installer.is_valid_org_admin( inst_user, installer.org.login )
----
-need:
-  - installer.github
-code: |
-  installer.user = installer.github.get_user()
----
-objects:
-  - orgs_holder_list: DAList.using(object_type=DAObject) #, complete_attribute='user_is_admin')
----
 need:
   - installer.user
   - orgs_holder_list
+# TODO: Improve - replace all_orgs with orgs_holder_list
 code: |
   import traceback
 
@@ -687,43 +616,137 @@ code: |
   if ok:
     temp_orgs = []
     for org in org_pages:
-      new_org = orgs_holder_list[ orgs_holder_list.number_gathered() ]
-      new_org.org = org
-      new_org.login = org.login
-      # membership = installer.user.get_organization_membership( new_org.login )
-      # new_org.user_role = membership.role
-      temp_orgs.append( new_org )
+      # Breaks if don't use a DAObject
+      new_org_holder = orgs_holder_list[ orgs_holder_list.number_gathered() ]
+      new_org_holder.org = org
+      new_org_holder.login = org.login
+      membership = installer.user.get_organization_membership( new_org_holder.login )
+      new_org_holder.user_role = membership.role
+      temp_orgs.append( new_org_holder )
     orgs_holder_list.gathered = True
+  
     temp_orgs.sort( key=lambda org : org.login.lower() )
     all_orgs = temp_orgs
 ---
-# generic object: DAObject
-# # Make sure user is admin of org
-# need:
-#   - installer.user
-#   - x.membership_error
-#   - x.login
-# code: |
-#   user_is_admin_temp = True
-#   # Check if user belongs to org
-#   try:
-#     x.membership = installer.user.get_organization_membership( x.login )
-#     x.user_role = x.membership.role
-#   except Exception as membership_err:
-#     user_is_admin_temp = False
-#     x.user_role = 'role error!'
-#     membership_err.alk_details = x.membership_error
-#     installer.errors.append( membership_err )
+# https://pygithub.readthedocs.io/en/stable/github_objects/Organization.html#github.Organization.Organization.get_secrets
+id: org secrets
+need:
+  - installer.user
+generic object: DAObject
+code: |
+  secrets_names = []
+  alkiln_secrets_found = []
+  org_data = x.org
+  try:
+    org_secrets = org_data.get_secrets()
+    secrets_names = [ secret.name for secret in org_secrets ]
+  except Exception as secrets_err:
+    message = 'Unable to get repository secrets'
+    try:
+      message = secrets_err.data['message']
+    except Exception as _ignore:
+      try:
+        message = secrets_err.message
+      except Exception as _ignore:
+        try:
+          message = secrets_err.msg
+        except Exception as _ignore:
+          pass
+    secrets_err_faux = ErrorLikeObject( message=message, alk_details='Unable to look for the organization\'s existing GitHub secrets using the permissions that you gave to your GitHub Personal Access Token (PAT).' )
+    installer.errors.append( secrets_err_faux )
 
-#   # Check if user is admin of org
-#   if x.user_role != 'admin':
-#     user_is_admin_temp = False
-#     # # Show error
-#     # role_error = ErrorLikeObject( message='Not an admin', alk_details=installer.not_org_admin_error )
-#     # installer.errors.append( role_error )
+  if 'SERVER_URL' in secrets_names:
+    alkiln_secrets_found.append('SERVER_URL')
+  if 'DOCASSEMBLE_DEVELOPER_API_KEY' in secrets_names:
+    alkiln_secrets_found.append('DOCASSEMBLE_DEVELOPER_API_KEY')
+
+  installer.alkiln_secrets_org = alkiln_secrets_found
   
-#   x.user_is_admin = user_is_admin_temp
+  if len( alkiln_secrets_found ) == 2:
+    x.has_alkiln_secrets__org = True
+  else:
+    x.has_alkiln_secrets__org = False
 ---
+id: repos holders
+objects:
+  - repo_holders: DAList.using(object_type=DAObject)
+---
+id: repos list
+# Resources:
+# https://pygithub.readthedocs.io/en/stable/github_objects/Organization.html#github.Organization.Organization.get_repos
+# https://pygithub.readthedocs.io/en/stable/github_objects/NamedUser.html#github.NamedUser.NamedUser.get_repos
+# Repo information
+# Package name: .name or .full_name (with owner)
+# .html_url if start supporting non-github repos
+# gh_repo = installer.github.get_repo( f'{gh_org_holder.login}/{gh_repo_holder}')
+# installer.owner_name, installer.repo_name, installer.package_name = installer.get_github_info_from_repo_url( repo_url )
+
+# ####
+# Set list of all relevant and accessible repos. Should show private repos.
+# ####
+code: |
+  gh_repos_data = []
+
+  chosen_org = gh_org_holder.org
+
+  try:
+    if gh_owner_type == 'org':
+      gh_repos_data = chosen_org.get_repos(sort='updated')
+    else:
+      gh_repos_data = installer.user.get_repos(sort='updated')
+  except Exception as get_repos_err:
+    log( get_repos_err.__dict__, 'console' )
+    # Any empty list will just show a text field for a custom repo
+    pass
+  
+  for repo in gh_repos_data:
+    # Breaks if don't use a DAObject
+    new_repo_holder = repo_holders[ repo_holders.number_gathered() ]
+    new_repo_holder.repo = repo
+    new_repo_holder.full_name = repo.full_name
+  repo_holders.gathered = True
+  
+  get_repos = True
+---
+# https://pygithub.readthedocs.io/en/stable/github_objects/Repository.html#github.Repository.Repository.get_secrets
+id: repo secrets
+need:
+  - installer.user
+generic object: DAObject
+code: |
+  secrets_names__repo = []
+  alkiln_secrets_found__repo = []
+  repo_data = x.repo
+  try:
+    repo_secrets = repo_data.get_secrets()
+    secrets_names__repo = [ secret.name for secret in repo_secrets ]
+    repo_secrets = None  # PaginatedList object can't be pickled
+  except Exception as secrets_err__repo:
+    message = 'Unable to get repository secrets'
+    try:
+      message = secrets_err__repo.data['message']
+    except Exception as _ignore:
+      try:
+        message = secrets_err__repo.message
+      except Exception as _ignore:
+        try:
+          message = secrets_err__repo.msg
+        except Exception as _ignore:
+          pass
+    secrets_err_faux = ErrorLikeObject( message=message, alk_details='Unable to look for the repository\'s existing GitHub secrets using the permissions that you gave to your GitHub Personal Access Token (PAT).' )
+    installer.errors.append( secrets_err_faux )
+
+  if 'SERVER_URL' in secrets_names__repo:
+    alkiln_secrets_found__repo.append('SERVER_URL')
+  if 'DOCASSEMBLE_DEVELOPER_API_KEY' in secrets_names__repo:
+    alkiln_secrets_found__repo.append('DOCASSEMBLE_DEVELOPER_API_KEY')
+
+  installer.alkiln_secrets__repo = alkiln_secrets_found__repo
+  
+  if len( alkiln_secrets_found__repo ) == 2:
+    x.has_alkiln_secrets__repo = True
+  else:
+    x.has_alkiln_secrets__repo = False
 ---
 comment: |
   So if they're not an admin, what do we tell them about org secrets? Nothing?
@@ -835,7 +858,15 @@ comment: |
       edit_user_api_info - modify others users’ API keys (https://docassemble.org/docs/api.html#api_user_user_id_api_post)
       > The special privilege anonymous can be used if you want to confer privileges on users who are not logged in. For example:
 ---
-id: dev screen
+id: dev between
 continue button field: dev_between_screen
 question: We're in between
+subquestion: |
+  ${ info_summary }
+---
+id: dev end
+event: dev_end_screen
+question: Over 9000!
+subquestion: |
+  ${ info_summary }
 ---
