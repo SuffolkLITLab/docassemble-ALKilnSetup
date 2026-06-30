@@ -1,7 +1,7 @@
 metadata:
-  title: Set up GitHub automated interview testing
-  short title: Set up automated testing
-  description: Set up GitHub automated testing for docassemble interviews. This tool was created through the Document Assembly Line project.
+  title: Set up ALKiln GitHub automated interview testing
+  short title: Set up ALKiln testing
+  description: Set up ALKiln GitHub automated testing for docassemble interviews. This tool was created through the Document Assembly Line project.
 ---
 features:
   question back button: True
@@ -19,7 +19,6 @@ include:
   - al_testing_files_to_push.yml
 ---
 id: interview order
-mandatory: True
 code: |
   # show errors first thing on each loop
   if len( installer.errors ) > 0:
@@ -57,6 +56,8 @@ code: |
   
   #end
   force_ask( 'next_steps' )
+
+  original_alkiln_setup_interview = True
 ---
 id: faux end
 event: end
@@ -79,6 +80,7 @@ code: |
       secret_type_wanted = 'repo'
 ---
 code: |
+  # This was always a bad flow... but I'm not sure of a better one.
   if will_test_on_this_server:
     if not logged_into_test_account_on_interview_server:
       log_into_test_account
@@ -358,18 +360,18 @@ content: |
 ---
 id: on testing server
 question: |
-  Before we start
+  Where will these tests run?
 subquestion: |
-  Look at the url of this page.
+  GitHub will trigger the tests, but for the GitHub+You™ tests ALKiln will need to upload interviews to your server and run them there. You can read more in [the GitHub+You™ documentation](https://assemblyline.suffolklitlab.org/docs/components/ALKiln/setup/#githubNyou-details).
+
+  You are running this tool on ${ default_server_url }.
 fields:
-  - Is this the server where the tests will run?: will_test_on_this_server
+  - Is this the server where you need to run the GitHub+You™ tests?: will_test_on_this_server
     datatype: yesnoradio
 ---
 template: default_server_url
 content: |
-  % if will_test_on_this_server:
   ${ url_of('root', _external=True) }
-  % endif
 ---
 id: logged_into_test_account_on_interview_server
 question: |
@@ -538,14 +540,13 @@ fields:
       installer.get_question_file_names()
     none of the above: Skip this
 ---
-comment: |
-  delete this
----
 id: confirm info review
 question: |
   Is this information correct?
 subquestion: |
+  <div class="alert alert-warning">
   You will not be able to come back here after continuing.
+  </div>
 review:
   - Edit: installer.server_url
     button: |
@@ -589,15 +590,19 @@ review:
       % if wants_to_set_up_tests:
       * **Package name**:[BR]
       ${ installer.package_name }
+      % endif
       
-      * **Files to test that run interviews**:[BR]\
+      ---
+  - Edit: installer.interviews_to_test
+    button: |
+      ##### Files to test that run interviews
+      
       % if len(installer.interviews_to_test) > 0:
       % for test_file in installer.interviews_to_test:
-      ${ test_file }[BR]
+      * ${ test_file }[BR]
       % endfor
       % else:
       No files
-      % endif
       % endif
       
       ---
