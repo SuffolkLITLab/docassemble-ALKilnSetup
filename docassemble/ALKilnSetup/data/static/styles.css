@@ -39,7 +39,8 @@ ul {
   color: #3b842c;
 }
 
-.da-review ul {
+.da-review ul,
+.da-review ol {
   list-style: none;
   padding: .5em;
   border: 4px solid #55555555;

@@ -1,4 +1,8 @@
 # TODO: Use set_parts() or the equivalent with org name, then repo name
+# Docs: (unlikely) Does da not look in lower blocks when the current block sets the value for a var? Test. Maybe I ran into other problems
+# Docs: `if` statements in question blocks are hard to remember if you're not used to them (duh). Are they a bad collaboration practice?
+# Docs: If no questions show up on a screen because `show if` `code`, the variable will not be found, even if you use `sets`. DA skips the screen.
+# Upstream: If field is missing from page, fields that depend on it should be _disabled_ or _hidden_ by default.
 ---
 include:
   - al_set_up_testing.yml
@@ -23,13 +27,18 @@ objects:
   - installer: TestInstaller
 ---
 id: interview order
+# TODO: Secrets have gotten out of hand. Must reign them in!
 need:
   - installer
 mandatory: True
 code: |
+  # ## Some legacy code ##
+  
   use_original_form = False
   if use_original_form:
     original_alkiln_setup_interview
+
+  secret_type_wanted = None
   
   # ## Blockers ##
   
@@ -37,8 +46,12 @@ code: |
   if len( installer.errors ) > 0:
     show_errors
 
-  if just_set_secrets:
-    dev_end_screen
+  # wants_to_set_up_tests = not just_secrets__org  # legacy value
+  # secret_type_wanted = gh_owner_type  # legacy value
+
+  # # Finish if can
+  # if just_secrets__org:
+  #   wrap_it_up
 
   # ## Questions ##
 
@@ -47,7 +60,8 @@ code: |
   # Docassemble authentication
   if ( environments.all_true('github_n_you')):
     get_da_api_key
-  
+
+  gh_owner_type
   installer.token
   set_github_auth
 
@@ -56,63 +70,187 @@ code: |
     all_orgs
     gh_org_holder
     if environments.true_values('github_n_you'):
-      seek_secrets_desires  # covets_org_secrets may not get defined
+      # Page skips if `show if` `code` hides covets_org_secrets
+      # Must use intermediate variable
+      org_secrets_desires
+      if not covets_org_secrets:
+        just_secrets__org = False
+      wants_to_set_up_tests = not just_secrets__org  # legacy value
+      secret_type_wanted = 'org'  # legacy value
+
+  # TODO: Remove the need for setting repo_holders.there_are_any. There's some funky logic going on and we need to work it out.
+  # Discuss: Should we offer to let people also set repo secrets before this?
+  if covets_org_secrets and just_secrets__org:
+    repo_holders.there_are_any = False
+    installer.fill_gh_org_info
+    wrap_it_up
 
   # Repo
+  wait_for_repos
   get_repos
   wants_custom_repo
   gh_repo_holder
 
   # Personal repo secrets
-  # Discuss: Offer this screen even to those already setting org secrets?
-  # Discuss: Strongly recommend making the secrets if there are none
-  # if not defined('covets_org_secrets'):
-  gh_repo_holder.has_alkiln_secrets__repo
-  covets_repo_secrets
+  # Discuss: Strongly recommend making the secrets if there are none?
+  if environments.true_values('github_n_you'):
+    # Discuss: Offer repo secrets even to those already setting org secrets?
+    if not covets_org_secrets:
+      gh_repo_holder.has_alkiln_secrets__repo
+      if not covets_repo_secrets:
+        just_secrets__repo = False
+      wants_to_set_up_tests = (
+        not just_secrets__org
+        and not just_secrets__repo
+      ) # legacy value
+      secret_type_wanted = 'repo'  # legacy value
 
-  installer.fill_gh_info
+  # # CYA and finish if can
+  # # Research: Can we get to this point and still evaluate to True?
+  # if (
+  #   (covets_org_secrets or covets_repo_secrets)
+  #   and (just_secrets__org or just_secrets__repo)
+  # ):
+  #   wants_to_set_up_tests = False  # legacy value
+  #   secret_type_wanted = 'org' if covets_org_secrets else 'repo'  # legacy value
+  #   installer.fill_gh_org_info
+  #   installer.fill_gh_repo_info
+  #   wrap_it_up
+
+  installer.fill_gh_repo_info
 
   # Interviews
-  if not just_set_secrets:
-    interviews_to_test
-    prepare_file_data
-    installer.set_files_to_push(
-      environments=environments.true_values(),
-      interviews_to_test=interviews_to_test.true_values()
-    )
+  interviews_to_test
+  prepare_file_data
+  installer.set_files_to_push(
+    environments=environments.true_values(),
+    interviews_to_test=interviews_to_test.true_values()
+  )
+  wants_to_set_up_tests = True  # legacy value
+  if not defined('secret_type_wanted'):
+    secret_type_wanted = gh_owner_type  # legacy value
+  
+  # # legacy_values
   
   # dev_between_screen
 
-  is_ready
+  # # review/confirm
+  # is_ready
+  # # send the secrets and files to github
+  # update_github
+  
+  # # end
+  # force_ask( 'next_steps' )
+
+  wrap_it_up
 
   log('🍕 over 9000!')
   dev_end_screen
 ---
-id: just set secrets
+id: just set secrets org default
 code: |
-  just_set_secrets = False
+  just_secrets__org = False  # Default
 ---
-id: for old edit page
+id: just secrets repo default
 code: |
-  wants_to_set_up_tests = not just_set_secrets
-  secret_type_wanted = gh_owner_type
-  legacy_values = True
+  just_secrets__repo = False # Default
 ---
-id: installer github attrs
+# id: for old edit page
+# code: |
+#   wants_to_set_up_tests = not just_secrets__org and not just_secrets__repo
+#   secret_type_wanted = gh_owner_type
+#   legacy_values = True
+---
+id: wrap it up
+code: |
+  # legacy_values
+  
+  dev_between_screen
+
+  # review/confirm
+  is_ready
+  # send the secrets and files to github
+  update_github
+  
+  # end
+  force_ask('next_steps')
+
+  wrap_it_up = True
+---
+id: send all to github
+code: |
+  # If didn't stop at org secrets, dev will be asked about repo secrets
+  desires_secrets = covets_org_secrets or covets_repo_secrets
+  # Legacy code mixed with new code
+  installer.update_github( wants_to_set_up_tests, desires_secrets=desires_secrets )
+  update_github = True
+---
+id: installer github attrs for repo
+# TODO: I know. We don't have an 'else'. For now, want to see errors.
+if: defined('gh_repo_holder')
 code: |
   installer.org = gh_org_holder.org
   installer.repo = gh_repo_holder.repo
   installer.repo_name = gh_repo_holder.repo.name
   installer.package_name = re.sub( r'docassemble-', '', installer.repo_name )
   installer.owner_name = gh_repo_holder.repo.owner.login
-  installer.fill_gh_info = True
+  # token_permissions_scope = comma_and_list( installer.github.oauth_scopes )
+  installer.repo_url = gh_repo_holder.repo.html_url
+  installer.set_github_auth()
+  installer.fill_gh_repo_info = True
+---
+id: installer github attrs for just org
+code: |
+  installer.org = gh_org_holder.org
+  installer.owner_name = installer.org.login
+  installer.set_github_auth()
+  installer.fill_gh_org_info = True
 ---
 id: installer da attr
 code: |
   installer.server_url_input
   installer.da_api_key
-  installer.set_da_info()
+  auth_da_info
   get_da_api_key = True
+---
+id: set da info
+need:
+  - installer.da_api_key
+# Use the interview url to get the user's Playground id.
+code: |
+  """"""
+  # Start clean (idempotent for da's loops).
+  installer.errors = []
+  installer.server_url = installer.server_url_input.rstrip('/')
+  
+  try:
+    # https://docassemble.org/docs/api.html#user
+    response = requests.get(installer.server_url + '/api/user', params={ 'key': installer.da_api_key })
+    status = response.status_code
+    if status == 403:
+      # 403 “Access Denied”
+      error = ErrorLikeObject( message='Server API Key', alk_details=installer.da_access_denied_error )
+      installer.errors.append( error )
+    elif status == 400:
+      # 400 “Error obtaining user information”
+      error = ErrorLikeObject( message='Docassemble user info', alk_details=installer.da_user_info_error )
+      installer.errors.append( error )
+    else:
+      # This triggered a JSON error once. Unable to replicate
+      log('🍕 9000', 'console')
+      log(response, 'console')
+      log(response.json(), 'console')
+      installer.da_email = response.json()['email']
+  except requests.exceptions.ConnectionError as err:
+    # https://docs.python-requests.org/en/latest/user/quickstart/#errors-and-exceptions
+    error = ErrorLikeObject( message='Server URL', alk_details=installer.da_server_url_error )
+    installer.errors.append( error )
+  except requests.exceptions.Timeout as err:
+    # https://docs.python-requests.org/en/latest/user/quickstart/#errors-and-exceptions
+    error = ErrorLikeObject( message='Server took too long', alk_details=installer.da_server_timeout_error )
+    installer.errors.append( error )
+
+  auth_da_info = True
 ---
 id: environments
 sets:
@@ -122,7 +260,7 @@ subquestion: |
   This tool can help you set up [ALKiln](https://assemblyline.suffolklitlab.org/docs/components/ALKiln/intro) automated integrated testing for docassemble packages that have a GitHub repository. Specifically, this tool can help you:
 
   - Create workflow files for a repository that will trigger your tests on GitHub
-  - Create pr change GitHub secrets for your repository or organization to provide necessary secure information for the tests
+  - Create or change GitHub secrets for your repository or organization to provide necessary secure information for the tests
   
   :clock: With experience, setup can take about 5 minutes. It can take a while longer if you are unfamiliar with GitHub or docassemble details, or if you need to contact administrators.
   
@@ -148,18 +286,21 @@ fields:
 ---
 id: server url
 question: |
-  GitHub+You™ docassemble server url
+  GitHub+You™ docassemble server information
 subquestion: |
-  Sorry these tricky parts are here so early. GitHub+You™ tests do need these GitHub secrets, though. See the help page for more information.
+  Sorry these tricky parts are here so early. GitHub+You™ tests do need these GitHub secrets, though. Press the informational button to learn more about GitHub secrets.
   
-  GitHub will trigger the tests, but for the GitHub+You™ tests ALKiln will need to upload interviews to Projects on your server and visit those interviews. You can read more in [the GitHub+You™ documentation](https://assemblyline.suffolklitlab.org/docs/components/ALKiln/setup/#githubNyou-details).
+  GitHub will trigger the tests, but {ALKiln will need to create Projects on your docassemble server}. You can read more in [the GitHub+You™ documentation](https://assemblyline.suffolklitlab.org/docs/components/ALKiln/setup/#githubNyou-details).
 
-  This tool needs 2 pieces of information: your server's address and a docassemble API key.
+  This tool needs 2 pieces of information to make the necessary GitHub secrets:
+  
+  1. Your server's address so it can find the interviews.
+  1. A docassemble API key so a {tester account} can make Projects on your server that ALKiln will test.
 
-  You are running this tool on [${ default_server_url }](${ default_server_url }).
 fields:
-  - Is this the server where you need to run the GitHub+You™ tests?: will_test_on_this_server
+  - 'Will you run the GitHub+You™ tests on this server, [${ default_server_url }](${ default_server_url })?': will_test_on_this_server
     datatype: yesnoradio
+  # TODO: Ensure no trailing '/' on the url
   - What is the address of the server where you need to run these tests?: installer.server_url_input
     enable if:
       variable: will_test_on_this_server
@@ -169,15 +310,19 @@ fields:
       **https://legal-dev.example.org**
     validate: |
       lambda y: True if y.startswith('http://') or y.startswith('https://') else validation_error("The URL should start with http!")
-  - 'Do you already have an API key for the {tester account}?': already_has_da_api_key
+  - 'Do you already have an API key for the tester account?': already_has_da_api_key
     datatype: yesnoradio
     required: False
-  - What is the tester account API key?: installer.da_api_key
-    enable if: already_has_da_api_key
+    help: |
+      If you don't yet have a tester account or want to learn more about tester accounts, answer "No" to read more on the next page.
+  - What is the tester account's API key?: installer.da_api_key
+    show if: already_has_da_api_key
     datatype: password
 terms:
+  ALKiln will need to create Projects on your docassemble server: |
+    GitHub+You™ tests specifically are the tests that need to make Projects on your docassemble server.
   tester account: |
-    The account that will own the Projects that ALKiln will create and use.
+    The account that will store the Projects that ALKiln will create and test.
 help:
   label: Managing GitHub secrets
   content: ${ about_secrets }
@@ -238,60 +383,76 @@ content: |
 id: tester api key
 # TODO: Store the API key on the user's account so they can reuse it. https://docassemble.org/docs/external.html?
 question: |
-  GitHub+You™ tester account API key
+  Docassemble tester account API key
 subquestion: |
-  Another tricky part is the tester account and its API key.
+  Setting up a docassemble API key can be tricky the first twenty or thirty times.
   
-  We {highly recommend} you, your team, or your organization set up a "tester account" on your docassemble server. You can use your account as the {tester account}.
-  
-  You are logged in as ${ user_info().email }.
+  We {highly recommend} you, your team, or your organization set up a "{tester account}" on your docassemble server, though you can use your own account as the tester account if you need to.
 fields:
-  - Is this the account that will own the Projects that ALKiln will create and use?: is_testing_account
-    datatype: yesnoradio
-    required: False
+  # ⚠️ Must use fancy quotes for term to ensure proper term behavior
+  # TODO: Is there a way we can test that the API key has correct security method? How about permissions? Make a test Project and visit that interview?
   - note: |
-      Since the tester account is a different account, you will need to make an API key for the tester account. If you can sign in to the tester account, go to a different browser than this one and log in as the {tester account}. Otherwise, ask someone who has access to the tester account account to make an API key for you and to give you that API key.
+      To make an API token for the {tester account} you or someone else needs to:
 
-      Whoever logs into the account should do the following:
-    show if:
-      variable: is_testing_account
-      is: False
-  # ⚠️ Must use fancy quotes with the term to ensure proper term behavior
-  - note: |
-      Go to [${ installer.server_url_input }/manage_api](${ installer.server_url_input }/manage_api) and [add a new API key](https://docassemble.org/docs/api.html#manage_api). Stay on that page.
-      
-      1. Make the name of the API key clear about its purpose.
-      1. Make sure to {choose “No authentication” as the security method}.
-      1. Make sure the key has permission to
-          1. Create new Projects.
-          1. Go to interviews on the server.
-          1. Whatever else you need. For example, permission to sign in on the server.
+      1. Go to the tester account on ${ installer.server_url_input }. This can be your own account.
+      1. Go to [${ installer.server_url_input }/manage_api](${ installer.server_url_input }/manage_api)
+      1. Press to add a new API key
+      1. You **must** {choose “No authentication” as the security method}.
+      1. Make sure the key has permission to at least:
+          1. Create new Projects
+          1. Go to interviews on the server
+          1. If you are unsure which options to pick, talk to an administrator of ${ installer.server_url_input }
+      1. Avoid navigating away from the page until you have copied the API key. **You will only be able to see the API key once**. Once you navigate away, you will not be able to see the API key again.
+      1. Press to create the new API key
+      1. Copy the API key
+      1. If you have a password manager, save it in your password manager
+      1. Paste the API key into the field below
+      1. You can now close the page with the API key
 
-      Copy the new API key. **You will only be able to see the API key once**. Once you navigate away from the page with the API key, you will not be able to see it again.
+      You can [read more about adding a new docassemble API key in the docassemble docs](https://docassemble.org/docs/api.html#manage_api).
   - The API key of the docassemble account: installer.da_api_key
     datatype: password
 terms:
   'highly recommend': |
-    Tap the "Why have a tester account?" button below to learn why you might want to set up an account on the docassemble server just for running tests.
+    Tap the "Why make a tester account?" button below to learn why you might want to set up an account on your docassemble server just for running tests.
   tester account: |
-    The account that will own the Projects that ALKiln will create and use.
-  # ⚠️ Must use fancy quotes with the term to ensure proper term behavior
+    The account that will store the docassemble Projects that ALKiln will create and test.
+  # ⚠️ Must use fancy quotes for term to ensure proper term behavior
   choose “No authentication” as the security method: |
     Currently it is impossible to use an IP address when authenticating GitHub+You™ tests. GitHub uses many different IP addresses.
 help:
   label: Why make a tester account?
   content: ${ why_special_account }
 ---
+comment: |
+  Discuss: Would this text and wording be useful for helping clarify how to set up a docassemble API key?
+
+  % if installer.server_url_input == default_server_url:
+  % if user_info().email and user_info().email != 'None':
+  Remember that you are currently logged into [default_server_url](${ default_server_url }) as ${ user_info().email }.
+  % endif
+  % endif
+  
+  - 'Is the account show above the {tester account} which will store the Projects that ALKiln will create and test?': is_testing_account
+    datatype: yesnoradio
+    required: False
+    show if:
+      code: |
+        installer.server_url_input == default_server_url and (user_info().email and user_info().email != 'None')
+  - note: |
+      In that case, whenever we say "tester account" we are talking about your account. Or something. Or we can just use mako to create the right text.
+    show if: is_testing_account
+---
 template: why_special_account
 content: |
   **Why would you want to set up an account on your docassemble server just for testing?**
   
-  1. Using a separate account is more secure. You will give GitHub permission to do things on your server with that account. If you become unsure of the behavior of the account you will at least be able to more easily see where the behvior is coming from. 
-  2. A tester account improves logistics. For eample, setting tests up on a developer's account may cause problems in the future. If the developer leaves and the organization deletes their account the tests will fail.
-  3. A separate account may reduce confusion for the developer. GitHub will use that account to run the tests. It will create Projects in that account, upload files into those Projects, and then delete those Projects. If a developer is using that docassemble account, they may find it confusing.
+  1. It means stronger security. For example, if your GitHub account gets compromised, separate accounts can make it easier to tell which account is misbehaving and what it is doing.
+  1. It helps with logistics. Setting tests up on a developer's account may cause problems in the future, for one thing. If the developer leaves and the organization deletes their account the tests will fail.
+  1. It can aviod confusing account shenanigans. ALKiln will create Projects in the tester account, upload files into those Projects, and then delete those Projects. If a developer is using the same docassemble account, they may find it confusing.
 
   <div markdown=1 class='alert alert-warning'>
-  Especially avoid using an admin account as the tester account if possible. The tests for that account will be able to do anything that an admin can do. The tester account must have developer permissions, but it rarely needs more than that.
+  Especially avoid using an admin account as the tester account if possible. Creating an API token with high levels of access, even by accident, is always best to avoid when possible. The ALKiln tester account must have developer permissions, but it rarely needs more than that.
   </div>
 ---
 # id: more da info
@@ -323,7 +484,7 @@ content: |
 #   except requests.exceptions.Timeout as err:
 #     # https://docs.python-requests.org/en/latest/user/quickstart/#errors-and-exceptions
 #     error = ErrorLikeObject( message='Server took too long', alk_details=installer.da_server_timeout_error )
-#     self.errors.append( error )
+#     installer.errors.append( error )
 ---
 ---
 # ###########
@@ -341,12 +502,14 @@ fields:
         alks_independent_fields['gh_owner_type'],
       ]
   - note: |
-      We also need to get more complex details and some authorization to make the right changes on GitHub. **For more detailed instructions**, leave these questions blank and continue to the next page.
+      We also need to get {more complex details and authorization} to make the right changes on GitHub.
   - code: |
       [
         alks_independent_fields['github_token_personal'],
         alks_independent_fields['github_token_org'],
       ]
+terms:
+  more complex details and authorization: For more detailed instructions, leave these questions blank and continue to the next page.
 ---
 id: github token
 sets: installer.token
@@ -393,7 +556,7 @@ comment: |
   - All authors doing org stuff should know their org can have secrets
 ---
 id: secrets desires
-continue button field: seek_secrets_desires
+continue button field: org_secrets_desires
 if: gh_owner_type == 'org'
 need:
   - gh_org_holder
@@ -401,9 +564,9 @@ question: GitHub organization secrets
 subquestion: |
   ${ info_summary }
 
-  Do you want to know a secret? Me either, but we do what we must. Don't worry, you'll probably forget this one. Probably.
+  <!-- Do you want to know a secret? Me either, but we do what we must. Don't worry, you'll probably forget this one. Probably. -->
 
-  ALKiln tests need some [GitHub secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets) in order to run GitHub+You™ tests on your docassemble server. The usual names for these secrets are "SERVER_URL" and "DOCASSEMBLE_DEVELOPER_API_KEY".
+  Again, ALKiln tests need [GitHub secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets) in order to run GitHub+You™ tests on your docassemble server. The usual names for these secrets are "SERVER_URL" and "DOCASSEMBLE_DEVELOPER_API_KEY".
 
   These secrets can be stored for an organization so that all organization tests can have access to them, or they can be stored on an individual repository. This question is about your **organization**.
 
@@ -416,7 +579,7 @@ subquestion: |
   This setup tool can help you create the standard ALKiln secrets for your organization if you want.
   % endif
   % else:
-  You are missing permissions to make secrets for your organization. If you need to create the standard ALKiln secrets, contact an admin of your GitHub organization. Note for people who know what fine-grained tokens are: This tool is currently missing support for fine-grained tokens.
+  You are missing permissions to make secrets for your organization. If you need to create the standard ALKiln secrets, contact an admin of your GitHub organization. Let them know that this setup tool only supports "classic" GitHub tokens.
   % endif
 fields:
   - Do you need to change values of the organization's secrets?: covets_org_secrets
@@ -429,8 +592,15 @@ fields:
     show if:
       code: |
         'admin:org' in installer.github.oauth_scopes and gh_org_holder.user_role == 'admin' and (not gh_org_holder.has_alkiln_secrets__org)
+  # Will this show up if the other two are invisible
   - code: |
-      [ alks_independent_fields['just_set_secrets'] ]
+      [ alks_gh_authed_fields['just_secrets__org'] ]
+validation code: |
+  if (not 'admin:org' in installer.github.oauth_scopes) or (not gh_org_holder.user_role == 'admin'):
+    covets_org_secrets = False
+help:
+  label: Managing GitHub secrets
+  content: ${ about_secrets }
 # Can't get org secrets if not org admin, I think
 # % if gh_org_holder.has_alkiln_secrets__org:
 # It looks like your GitHub organziation already has the standard ALKiln GitHub secrets! If you need to change your organization's secrets, though, you need to contact an admin of your GitHub organization. You are missing the right permissions to change them yourself. Note for people who know what fine-grained tokens are: This tool is currently missing support for fine-grained tokens.
@@ -438,15 +608,30 @@ fields:
 # Your organization is missing the standard ALKiln GitHub secrets and you are missing permissions to make those secrets. If you need to create these secrets, contact an admin of your GitHub organization. Note for people who know what fine-grained tokens are: This tool is currently missing support for fine-grained tokens.
 # % endif
 ---
+id: long time to get repositories
+continue button field: wait_for_repos
+question: Press continue to choose from a list of repositories
+subquestion: |
+  If you have a lot of repositories, it may take some time to get them all.
+---
 id: get the repo
 question: The repository
 subquestion: |
   You can pick a repository from the list or write in your own repository name. The format of the custom name should be `example-da-org/docassemble-ExamplePackage`.
 fields:
-  - I want to write a custom repository name: wants_custom_repo
+  - My repository is missing from the list: wants_custom_repo
     datatype: yesno
     label above field: True
-  - Custom repository name: gh_repo_holder_name
+  - note: |
+      Sorry about that. This list should have all the
+      % if gh_owner_type == 'org':
+      organization's
+      % endif
+      repositories that you have access to. Write the name below and we will try to get that repository.
+      
+      You might also make sure your GitHub Personal Access Token is for the correct account and has the right permissions. Your GitHub PAT ends with ${ installer.token[-4:] }. Here are all of your PAT permissions: { comma_and_list( installer.github.oauth_scopes ) }.
+    show if: wants_custom_repo
+  - Missing or custom repository name: gh_repo_holder_name
     required: False
     disable if:
       variable: wants_custom_repo
@@ -502,7 +687,6 @@ code: |
       installer.errors.append( repo_by_name_err_faux )
 ---
 id: secrets desires repo-style
-continue button field: seek_personal_secrets
 # In 2023, anyone with 'repo' permissions could edit repo secrets through the API, even if not through the UI. It may change.
 need:
   - gh_repo_holder.has_alkiln_secrets__repo
@@ -521,7 +705,7 @@ subquestion: |
   It looks like this repository already has the standard ALKiln GitHub secrets!
   </div>
   % else:
-  This setup tool can help you create the standard ALKiln secrets for this repository if you want.
+  This setup tool can help you create the standard ALKiln GitHub secrets for this repository if you want.
   % endif
 fields:
   - Do you need to change values of the repository's secrets?: covets_repo_secrets
@@ -529,13 +713,13 @@ fields:
     show if:
       code: |
         gh_repo_holder.has_alkiln_secrets__repo
-  - Do you need to create the standard ALKiln secrets for this repository?: covets_repo_secrets
+  - Do you need to create the standard ALKiln GitHub secrets for this repository?: covets_repo_secrets
     datatype: yesnoradio
     show if:
       code: |
         not gh_repo_holder.has_alkiln_secrets__repo
   - code: |
-      [ alks_independent_fields['just_set_secrets'] ]
+      [ alks_independent_fields['just_secrets__repo'] ]
 ---
 id: info summary
 # TODO: Add full review screen info?
@@ -554,7 +738,7 @@ content: |
   
   % if showifdef( installer.attr_name('server_url_input') ):
   <div markdown=1 style='display: flex; justify-content: space-between'>
-  <dt markdown=1>Tester account docassemble server</dt>
+  <dt markdown=1>Tester account server</dt>
   <dd markdown=1 style='margin-bottom: .2rem;'>${ installer.server_url_input }</dd>
   </div>
   % endif
@@ -582,7 +766,7 @@ content: |
   
   % if showifdef('gh_org_holder') and showifdef( gh_org_holder.attr_name('has_alkiln_secrets__org') ):
   <div markdown=1 style='display: flex; justify-content: space-between'>
-  <dt markdown=1>Organization is hoarding secrets</dt>
+  <dt markdown=1>GitHub org is hoarding secrets</dt>
   <dd markdown=1 style='margin-bottom: .2rem;'>${ gh_org_holder.has_alkiln_secrets__org }</dd>
   </div>
   % endif
@@ -596,7 +780,7 @@ content: |
   
   % if showifdef('gh_repo_holder') and defined( gh_repo_holder.attr_name('has_alkiln_secrets__repo') ):
   <div markdown=1 style='display: flex; justify-content: space-between'>
-  <dt markdown=1>Repo holds precious secrets</dt>
+  <dt markdown=1>Repo holds many secrets</dt>
   <dd markdown=1 style='margin-bottom: .2rem;'>${ gh_repo_holder.has_alkiln_secrets__repo }</dd>
   </div>
   % endif
@@ -609,92 +793,15 @@ content: |
   % endif
   </dl>
 ---
-comment: |
-  **Your GitHub username**:
-  % if defined('installer.token'):
-  ${ installer.user_name }
-
-  - Edit: installer.server_url
-    button: |
-      #####Docassemble account and server:
-      
-      * **Tester account API key**:  \*\*\*\*${ installer.da_api_key[-4:] }
-      
-      * **Server to test on**:[BR]
-      ${ installer.server_url }
-      
-      ######**Your answers also gave us this information:**
-      
-      * **Test account email:**[BR]
-      ${ installer.da_email }
-      
-      ---
-  - Edit: installer.token
-    button: |
-      #####GitHub repo and permission
-      
-      * **Personal access token**: \*\*\*\*${ installer.token[-4:] }
-      
-      % if not wants_to_set_up_tests and secret_type_wanted == 'org':
-      * **GitHub organization**:[BR]
-      ${ installer.owner_name }
-      % else:
-      * **Repository URL**:[BR]
-      [https://github.com/${ installer.owner_name }/${ installer.repo_name }](https://github.com/${ installer.owner_name }/${ installer.repo_name })
-      % endif
-      
-      ######**Your answers also gave us this information:**
-      
-      * **Your GitHub username**:[BR]
-      ${ installer.user_name }
-      
-      % if wants_to_set_up_tests or secret_type_wanted == 'repo':
-      * **Owner of the repository**:[BR]
-      ${ installer.owner_name }
-      % endif
-      
-      % if wants_to_set_up_tests:
-      * **Package name**:[BR]
-      ${ installer.package_name }
-      
-      * **Files to test that run interviews**:[BR]\
-      % if len(installer.interviews_to_test) > 0:
-      % for test_file in installer.interviews_to_test:
-      ${ test_file }[BR]
-      % endfor
-      % else:
-      No files
-      % endif
-      % endif
-      
-      ---
-  - note: |
-      If you continue, this setup tool will make a **new** branch called **${ installer.branch_name }**. You will be able to edit any changes in that branch before merging it with the rest of your code. On the new branch, this setup tool will create or edit ${ 'these files' if len(installer.interviews_to_test) > 0 else 'this file' }:
-      
-      % for a_file in installer.files_to_push:
-      1. ${ a_file.get('path', None ) }
-      % endfor
-      
-      You can edit the changes before merging the branch.
-      
-      ---
-    show if: wants_to_set_up_tests
-      
-  - note: |
-      There may be a few more steps after this to finish up. Continue when you are ready.
-
-      <div class="alert alert-warning">
-      :exclamation-triangle: <strong>You will not be able to come back to this page.</strong>
-      </div>
----
 # https://docassemble.org/docs/initial.html#data
 variable name: alks_independent_fields
 data:
   # Discuss: Set tokens part way, then ask if want to stop, then go on to push files if desired?
-  just_set_secrets:
-    label: Do you want to just set GitHub tokens?
-    field: just_set_secrets
+  just_secrets__repo:
+    label: Do you want to skip to the end and just set GitHub secrets?
+    field: just_secrets__repo
     datatype: yesnoradio
+    show if: covets_repo_secrets
   environments:
     label: What types of tests do you need to use?
     field: environments
@@ -717,12 +824,13 @@ data:
         value: personal
       - label: A GitHub organization's repository
         value: org
-  covets_org_secrets:
-    label: Do you want to set secrets?
+  # covets_org_secrets:
+  #   label: Do you want to set secrets?
   github_token_personal:
     label: GitHub individual Personal Access Token (PAT)
     field: installer.token
     datatype: password
+    required: False
     enable if:
       variable: gh_owner_type
       is: personal
@@ -733,6 +841,7 @@ data:
     label: GitHub organization Personal Access Token (PAT)
     field: installer.token
     datatype: password
+    required: False
     enable if:
       variable: gh_owner_type
       is: org
@@ -745,6 +854,14 @@ variable name: alks_gh_authed_fields
 need:
   - all_orgs
 data:
+  just_secrets__org:
+    label: Do you want to skip to the end and just set GitHub secrets?
+    field: just_secrets__org
+    datatype: yesnoradio
+    show if:
+      code: |
+        'admin:org' in installer.github.oauth_scopes and gh_org_holder.user_role == 'admin'
+    enable if: covets_org_secrets
   github_token_generic:
     label: GitHub individual Personal Access Token (PAT)
     field: installer.token
@@ -781,36 +898,51 @@ fields:
 objects:
   - orgs_holder_list: DAList.using(object_type=DAObject)
 ---
-need:
-  - installer.github
+id: branch name
 code: |
-  installer.user = installer.github.get_user()
+  installer.branch_name = installer.get_free_branch_name()
 ---
 need:
   - installer.token
+# Check token credentials and set initial token-based values
 code: |
-  # Check token credentials
-  installer.github = Github( installer.token )
-  inst_user = installer.github.get_user()
+  collected = []
   try:
-    installer.user_name = inst_user.login
+    installer.github = Github( installer.token )
+    collected.append('github')
+    installer.user = installer.github.get_user()
+    collected.append('user')
+    installer.user_name = installer.user.login
+    collected.append('login')
   except Exception as setup_err:
     # github.GithubException.BadCredentialsException (401, 403)
+    collected.append('error')
     # This error may be missing status and data and message
     log( setup_err.__dict__, 'console' )
-    installer.user_name = ''
     setup_error_faux = ErrorLikeObject( message='Incorrect Personal Access Token', alk_details=installer.github_token_error )
     installer.errors.append( setup_error_faux )
+
+  if not 'login' in collected:
+    installer.user_name = None
+  if not 'user' in collected:
+    installer.user = None
+  if not 'github' in collected:
+    installer.github = None
   
-  if installer.user_name != '':
+  if not 'error' in collected:
     installer.missing_scopes
+  else:
+    installer.missing_scopes = ['Found no permission scopes for this GitHub Personal Access Token.']
   
   set_github_auth = True
 ---
 id: has_scopes
 # Discuss: We could make permissions much more fine-grained. That is, setting secrets doesn't need 'workflow'. Do we want to make it that complicated?
 
-# Make sure the developer gave the token the right scopes
+need:
+  - installer.github
+
+# Make sure the developer gave the token the right token scopes
 code: |
   missing_scopes = []
   if not 'repo' in installer.github.oauth_scopes:
@@ -822,8 +954,8 @@ code: |
       missing_scopes.append('"admin:org"')
 
   if len( missing_scopes ) > 0:
-    error = ErrorLikeObject( message='Incorrect Personal Access Token scopes', alk_details=github_pat_scopes_error )
-    installer.errors.append( error )
+    scopes_err = ErrorLikeObject( message='Incorrect Personal Access Token scopes', alk_details=github_pat_scopes_error )
+    installer.errors.append( scopes_err )
     
   installer.missing_scopes = missing_scopes
 ---
@@ -921,8 +1053,13 @@ id: repos list
 # gh_repo = installer.github.get_repo( f'{gh_org_holder.login}/{gh_repo_holder}')
 # installer.owner_name, installer.repo_name, installer.package_name = installer.get_github_info_from_repo_url( repo_url )
 
+need:
+  - gh_org_holder
+  - installer.user
+  - installer.user_name
+
 # ####
-# Set list of all relevant and accessible repos. Should show private repos.
+# Get list of all relevant and accessible repos. Should show private repos.
 # ####
 code: |
   gh_repos_data = []
@@ -940,6 +1077,23 @@ code: |
     pass
   
   for repo in gh_repos_data:
+    # TODO: MVP make sure dev is collaborator.
+    # # Are they even on the collaborator list
+    # is_valid_collaborator = repo.has_in_collaborators( installer.user_name )
+    # if not is_valid_collaborator:
+    #   non_collab_err = ErrorLikeObject( message='Must be a repository collaborator', alk_details=installer.not_collaborator_error )
+    #   installer.errors.append( non_collab_err )
+      
+    # else:
+    #   # Do they have a permission level that allows writing (pushing, etc)
+    #   correct_permissions = [ 'admin', 'maintain', 'write' ]
+    #   installer.permissions = repo.get_collaborator_permission( installer.user_name )
+      
+    #   has_permissions = installer.permissions in correct_permissions
+    #   if not has_permissions:
+    #     repo_perms_err = ErrorLikeObject( message='Your GitHub account is missing 'admin', 'mainatain', or 'write' permissions in the repository', alk_details=installer.permissions_error )
+    #     installer.errors.append( repo_perms_err )
+  
     # Breaks if don't use a DAObject
     new_repo_holder = repo_holders[ repo_holders.number_gathered() ]
     new_repo_holder.repo = repo
@@ -987,6 +1141,23 @@ code: |
     x.has_alkiln_secrets__repo = True
   else:
     x.has_alkiln_secrets__repo = False
+---
+---
+# Default values (conditional)
+---
+id: secrets false when sandbox
+if: not environments.true_values('github_n_you')
+code: |
+  secret_type_wanted = None
+  wants_to_set_up_tests = True
+  wants_files = True
+  covets_org_secrets = False
+  just_secrets__org = False
+  covets_repo_secrets = False
+  just_secrets__repo = False
+---
+---
+# Brainstorming
 ---
 comment: |
   So if they're not an admin, what do we tell them about org secrets? Nothing?

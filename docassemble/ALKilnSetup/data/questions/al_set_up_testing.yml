@@ -530,17 +530,20 @@ id: first test
 question: |
   The first test
 subquestion: |
-  We can create your first tests for you if you want. From GitHub, ALKiln will automatically make a temporary Project. Then ALKiln will go to the first page of each interview and check that the interview loads. You can always edit or delete these tests in your "Sources" folder later.
+  We can create your first tests for you if you want. From GitHub, ALKiln will automatically make a temporary docassemble Project. Then ALKiln will go to the first page of each interview and check that the interview loads. You can always edit or delete these tests in your "Sources" folder later.
   
   If you want to make one later instead, save this link to [our documentation about making your first test](https://assemblyline.suffolklitlab.org/docs/components/ALKiln/setup#first-test).
 fields:
-  - Which of this package's interview files start an interview that you want to test?: interviews_to_test
+  - Which of this package's files start an interview that you want to test?: interviews_to_test
     datatype: checkboxes
     code: |
       installer.get_question_file_names()
     none of the above: Skip this
 ---
 id: confirm info review
+# TODO: add display choosing to skip secrets or test files
+continue button field: is_ready
+continue button label: Send to GitHub
 question: |
   Is this information correct?
 subquestion: |
@@ -607,13 +610,25 @@ review:
       
       ---
   - note: |
+      If you continue, this test will set up these GitHub secrets for
+      % if secret_type_wanted == 'org':
+      your organization:
+      % else:
+      the repository:
+      % endif
+
+      ${ secrets_list }
+
+      ---
+    show if: secret_type_wanted != None
+  - note: |
       If you continue, this setup tool will make a **new** branch called **${ installer.branch_name }**. You will be able to edit any changes in that branch before merging it with the rest of your code. On the new branch, this setup tool will create or edit ${ 'these files' if len(installer.interviews_to_test) > 0 else 'this file' }:
       
       % for a_file in installer.files_to_push:
       1. ${ a_file.get('path', None ) }
       % endfor
       
-      You can edit the changes before merging the branch.
+      :pen: You can edit the changes before merging the branch.
       
       ---
     show if: wants_to_set_up_tests
@@ -624,8 +639,6 @@ review:
       <div class="alert alert-warning">
       :exclamation-triangle: <strong>You will not be able to come back to this page.</strong>
       </div>
-continue button field: is_ready
-continue button label: Send to GitHub
 ---
 id: end
 event: next_steps
@@ -684,8 +697,13 @@ subquestion: |
   If you have some feedback, we would love to hear from you! Let the team know or [make a public "issue" in our repository](https://github.com/SuffolkLITLab/docassemble-ALKilnSetup/issues/new).
   
   ---
+# new_session isn't creating a new session
 buttons:
-  - Start again: restart
+  - Start new form: new_session
+    color: warning
+# buttons:
+#   - Restart this form: restart
+#     color: warning
 #terms:
 #  encrypted docassemble login information: ${ secrets_popover }
 comment: |

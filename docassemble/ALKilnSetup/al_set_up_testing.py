@@ -92,6 +92,24 @@ class TestInstaller(DAObject):
       self.org = self.get_org()
       if self.org and user:
         self.is_valid_org_admin( user, self.org.login )
+        
+  def set_github_auth2( self ):
+    """Get and set all the information needed to authorize to
+    GitHub and handle all possible errors."""
+    # Start clean. Other errors should have been handled already.
+    self.errors = []
+    
+    # Check token credentials
+    self.github = Github( self.token )
+    user = self.github.get_user()
+    try:
+      self.user_name = user.login
+    except Exception as error1:
+      # github.GithubException.BadCredentialsException (401, 403)
+      log( error1.__dict__, 'console' )
+      self.user_name = ''
+      error1.alk_details = self.github_token_error
+      self.errors.append( error1 )
     
     return self
   
@@ -260,10 +278,11 @@ class TestInstaller(DAObject):
   # github: set secrets and create files
   # All checks should have passed at this point
   ###############################
-  def update_github( self, wants_to_set_up_tests ):
+  def update_github( self, wants_to_set_up_tests, desires_secrets=True ):
     """If desired, set repo or org secrets. If desired, add test files to repo."""
-    if value('secret_type_wanted') == 'org' or value('secret_type_wanted') == 'repo':
-      self.create_secrets()
+    if desires_secrets:  # TODO: main.yml wants just this
+      if value('secret_type_wanted') == 'org' or value('secret_type_wanted') == 'repo':
+        self.create_secrets()
     if wants_to_set_up_tests:
       self.make_new_branch()
       for file_dict in self.files_to_push:
