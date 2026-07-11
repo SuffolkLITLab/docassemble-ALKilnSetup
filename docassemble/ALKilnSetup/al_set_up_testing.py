@@ -92,26 +92,6 @@ class TestInstaller(DAObject):
       self.org = self.get_org()
       if self.org and user:
         self.is_valid_org_admin( user, self.org.login )
-        
-  def set_github_auth2( self ):
-    """Get and set all the information needed to authorize to
-    GitHub and handle all possible errors."""
-    # Start clean. Other errors should have been handled already.
-    self.errors = []
-    
-    # Check token credentials
-    self.github = Github( self.token )
-    user = self.github.get_user()
-    try:
-      self.user_name = user.login
-    except Exception as error1:
-      # github.GithubException.BadCredentialsException (401, 403)
-      log( error1.__dict__, 'console' )
-      self.user_name = ''
-      error1.alk_details = self.github_token_error
-      self.errors.append( error1 )
-    
-    return self
   
   def has_right_scopes( self, scopes ):
     """Make sure the developer gave the token the right scopes"""
@@ -168,21 +148,22 @@ class TestInstaller(DAObject):
   def has_correct_permissions( self ):
     """Return True if user has at least write permissions to the repo, else False and add error."""
     has_permissions = False
+    self.permissions = None
     
     # Are they even on the collaborator list
     is_valid_collaborator = self.repo.has_in_collaborators( self.user_name )
     if not is_valid_collaborator:
-      error1 = ErrorLikeObject( message='Must be a collaborator', alk_details=self.not_collaborator_error )
+      error1 = ErrorLikeObject( message='Must be a collaborator on the repository', alk_details=self.not_collaborator_error )
       self.errors.append( error1 )
       
     else:
       # Do they have a permission level that allows writing (pushing, etc)
-      correct_permissions = [ 'admin', 'maintain', 'write' ]
+      correct_permissions = [ 'admin', 'maintain', 'write', 'push' ]
       self.permissions = self.repo.get_collaborator_permission( self.user_name )
       
       has_permissions = self.permissions in correct_permissions
       if not has_permissions:
-        error2 = ErrorLikeObject( message='Must have "write" permissions', alk_details=self.permissions_error )
+        error2 = ErrorLikeObject( message='Must have at least "write" permissions in the repository', alk_details=self.permissions_error )
         self.errors.append( error2 )
     
     return is_valid_collaborator
@@ -285,6 +266,7 @@ class TestInstaller(DAObject):
         self.create_secrets()
     if wants_to_set_up_tests:
       self.make_new_branch()
+      # self.files_to_push is set in the yml using .set_files_to_push()
       for file_dict in self.files_to_push:
         self.push_file( file_dict )
       self.make_pull_request()

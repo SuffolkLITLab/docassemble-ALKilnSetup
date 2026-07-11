@@ -550,17 +550,29 @@ subquestion: |
   <div class="alert alert-warning">
   You will not be able to come back here after continuing.
   </div>
+
+  
+#   * **Test account API key**:  \*\*\*\*${ installer.da_api_key[-4:] }
+  
+#   * **Server to test on**:[BR]
+#   ${ installer.server_url }
+  
+#   **Your answers also gave us this information:**
+  
+#   * **Test account email:**[BR]
+#   ${ installer.da_email }
+
 review:
   - Edit: installer.server_url
     button: |
-      #####Docassemble account and server:
+      ##### Docassemble account and server:
       
       * **Test account API key**:  \*\*\*\*${ installer.da_api_key[-4:] }
       
       * **Server to test on**:[BR]
       ${ installer.server_url }
       
-      ######**Your answers also gave us this information:**
+      **Your answers also gave us this information:**
       
       * **Test account email:**[BR]
       ${ installer.da_email }
@@ -568,7 +580,7 @@ review:
       ---
   - Edit: installer.token
     button: |
-      #####GitHub repo and permission
+      ##### GitHub repo and permission
       
       * **Personal access token**: \*\*\*\*${ installer.token[-4:] }
       
@@ -580,7 +592,7 @@ review:
       [https://github.com/${ installer.owner_name }/${ installer.repo_name }](https://github.com/${ installer.owner_name }/${ installer.repo_name })
       % endif
       
-      ######**Your answers also gave us this information:**
+      **Your answers also gave us this information:**
       
       * **Your GitHub username**:[BR]
       ${ installer.user_name }
