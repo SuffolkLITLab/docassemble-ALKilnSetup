@@ -39,7 +39,7 @@ code: |
 ---
 template: da_access_denied_error
 content: |
-  The server **${ installer.server_url }** did not accept the API key **\*\*\*\*${ installer.da_api_key[-4:] }**. Double check that it is the right API key for the right server.
+  The server **${ installer.server_url }** did not accept the docassemble API key **\*\*\*\*${ installer.da_api_key[-4:] }**. Double check that it is the right API key for the right server.
 ---
 depends on: da_user_info_error
 code: |
@@ -63,7 +63,7 @@ code: |
 ---
 template: github_pat_scopes_error
 content: |
-  Your [GitHub Personal Access Token (PAT)](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) ending in **\*\*\*${ installer.token[-4:] }** is **missing these scopes: ${ comma_and_list( missing_scopes ) }**. If the token is still visible, you can try copying and pasting the token again, or you can try [making a new token](https://github.com/settings/tokens).
+  Your [GitHub Personal Access Token (PAT)](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) ending in **\*\*\*${ installer.token[-4:] }** is **missing these scopes: ${ comma_and_list( missing_scopes ) }**. If you can still copy the token, you can try copying and pasting the token again, or you can try [making a new token](https://github.com/settings/tokens).
 ---
 depends on: github_url_error
 code: |
@@ -140,3 +140,10 @@ template: github_branch_name_error
 content: |
   It looks like all the allowed branch names are taken. To solve this, delete some of the branches that start with "${ installer.default_branch_name }".
 ---
+depends on: admins_0_orgs
+code: |
+ installer.admins_0_orgs = admins_0_orgs.content
+---
+template: admins_0_orgs
+content: |
+  This ALKiln setup tool is unable to find any GitHub organizations where **${ installer.user_name }** is an admin.

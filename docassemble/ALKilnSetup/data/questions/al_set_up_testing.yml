@@ -564,6 +564,7 @@ subquestion: |
 
 review:
   - Edit: installer.server_url
+    show if: showifdef( installer.attr_name('da_api_key'), False )  # the_coveted_secrets.any_true()
     button: |
       ##### Docassemble account and server:
       

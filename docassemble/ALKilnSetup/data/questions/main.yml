@@ -1,28 +1,47 @@
-# Co-authors: Will, fractal, JF
+# Co-authors: Will, fractal, JF, CaroRob
 ---
-# 🖊️
+# 🖊️ Terms
 # "assignments block": Only assigns primitives
 # "referring block": Uses any name exceptions at all (trigger block?)
 ---
 # 🔧 MVP
-# TODO MVP: 2 initial secrets screens - one org_secrets type vs. org_repo or repo type
+# 2 initial secrets screens - one org_secrets type vs. org_repo or repo type
+# Do we already take care of both workflow files?
+# Ensure non-admin members can push files for orgs
+# Describe lack of support for maintainers
+# Make sure dev is repo collaborator. We can do that by only showing them repos for which they are collaborators.
 ---
 # 🔧 Post MVP
-# TODO: Post MVP, check whether an org has restricted access to the token (add a check for fine-grained in future). Note that fine-grained PATs need to specify an owner or some such.
+# TODO post MVP: check whether an org has restricted access to the token (add a check for fine-grained in future). Note that fine-grained PATs need to specify an owner or some such.
 # TODO: Offer to give files before pushing to GitHub
 # TODO: When custom repo, try to get repo. If can, and repo is wrong perms, show that to the author.
 # TODO: Allow custom org if org not shown. Explain why it wasn't shown (not admin when user wants org secrets), like with repo.
 # TODO: Use set_parts() or the equivalent with org name, then repo name
 # TODO: Allow `maintainer` role to do these tasks too. Otherwise, describe the lack.
----
-# 📚
-# Docs: (unlikely) Does da not look in lower blocks when the current block sets the value for a var? Test. Maybe I ran into other problems.
-# Docs: the setup tool doesn't support repo/org mainatainers right now. Access to secrets, permission for secrets for organization repository-level secrets are write, maintain, admin (https://docs.github.com/en/organizations/managing-user-access-to-your-organizations-repositories/managing-repository-roles/repository-roles-for-an-organization#permissions-for-each-role). I think organization-level secrets are just admins.
+# Allow modifying branches other than main
+# Allow PR on branches other than main
+# Replace all_orgs with gh_org_holders - improvement?
+# Make term for "you" - The GitHub user that this PAT belongs to
+# Explain why can't set org secrets
+# Offer repeat visitors as close to a one-pager as we can get. Can leave any field blank. If they get it wrong, they get a (smart) error screen.
+# Tell an org admin who is setting just org secrets that a repo may have its own secrets that override the org secrets. Just in case they have one hanging around that seems to not be using the right secrets.
+# Remove `installer` and move methods in here?
+# Research more efficient way to get just the repos owned by the "user"
+# Make funny screen for no secrets and no tests
+# Confirm wants both secrets should use previously detected secrets
 ---
 # 💬
 # Discuss: secrets choices screens - On choose org, show which ones is admin of and which ones is non-admin of in separate list? Show role in option? Same for repositories?
 # Discuss: Should all authors doing org stuff know their org can have secrets, even if they don't have permission to set the secrets?
 # Discuss: Data structure - list of items they want to manage as opposed to flags? Can be one or more of ['secrets_org', 'secrets_repo', 'feature_files', 'workflow_files']
+# Discuss: Can we ask about test files first before getting da info for secrets? Better overall experience to have something easier first or something easier at the end?
+# Discuss: When getting author's repos, should we exclude repos that have an org since they're not doing this for an org?
+# Discuss: Get the org secrets of a repository if the author is the admin of the org and has the right scopes? How?
+# If repo happens to belong to an org, see if we can get the org and the org secrets?
+---
+# 📚
+# Docs: (unlikely) Does da not look in lower blocks when the current block sets the value for a var? Test. Maybe I ran into other problems.
+# Docs: the setup tool doesn't support repo/org mainatainers right now. Access to secrets, permission for secrets for organization repository-level secrets are write, maintain, admin (https://docs.github.com/en/organizations/managing-user-access-to-your-organizations-repositories/managing-repository-roles/repository-roles-for-an-organization#permissions-for-each-role). I think organization-level secrets are just admins.
 ---
 # ⬆️
 # Upstream: If field is missing from page, fields that depend on it should be _disabled_ or _hidden_ by default.
@@ -36,9 +55,6 @@
 # square-github
 # code
 # file-code
----
-# 🧠
-# Theory: `if` keys that go with blocks are hard to remember and keep in context. Are they a bad collaboration practice?
 ---
 include:
   - al_set_up_testing.yml
@@ -67,6 +83,7 @@ objects:
 ---
 objects:
   - gh_org_holders: DAList.using(object_type=DAObject)
+  - gh_org_holders_dict: DADict.using(object_type=DAObject, there_are_any=False, there_is_another=False, gathered=True)
 ---
 id: repos holders
 objects:
@@ -155,8 +172,8 @@ need:
   - installer
 mandatory: True
 code: |
-  # #### Some legacy code ####
   
+  # #### Some legacy code ####
   # TODO: Offer choice for original form
   use_original_form = False
   if use_original_form:
@@ -165,7 +182,6 @@ code: |
   secret_type_wanted = None
   
   # #### Blockers ####
-  
   # show errors first thing on each loop
   if len( installer.errors ) > 0:
     show_errors
@@ -178,45 +194,43 @@ code: |
     neutralize_ALL_SECRETS_vars  # assignments block
 
   the_coveted_secrets  # Define object before validation code
-  current_target
+  task_type
   installer.token
-  
-  prep_github_auth
-  # installer.set_github_auth()  # Breaks question order
+
+  prep_github_auth  # need to organize the auth stuff
   
   # ## Neutralize unwanted vars ##
-
-  if current_target == 'org_secrets':
+  if task_type == 'org_secrets':
     neutralize_ALL_REPO_vars
     secret_type_wanted = 'org' # legacy value
     covets_secrets__org = True  # TODO replace
     just_secrets__org = True  # TODO replace
-    covets_any_secrets = True  # TODO: implement
-  
-  if current_target == 'sole_repo':
+
+  if task_type == 'sole_repo':
     neutralize_ALL_ORG_vars
-  
-  if current_target == 'org_repo':
-    pass
-  
-  if current_target == 'sole_repo':
-    pass
-  
+
   # ## Org and repo ##
-  if 'org' in current_target:
+  if 'org' in task_type:
     all_orgs
     gh_org_holder
     installer.assign_gh_org_info
 
-  if 'repo' in current_target:
+  if 'repo' in task_type:
     wait_for_repos_list_warning
     get_repos
-    wants_custom_repo  # unnecessary?
+    wants_custom_repo  # unnecessary to reference here?
     gh_repo_holder
     installer.assign_gh_repo_info
 
   # ## Secrets ##
   if environments.all_true('github_n_you'):
+  
+    # - Internal test management -
+    if url_args.get('alks_test', False):
+      which_secrets_to_pre_set
+      set_internal_tests_secrets
+
+    # - Usual flow -
     the_coveted_secrets['repo']
     if the_coveted_secrets.any_true():
       installer.server_url_input
@@ -226,22 +240,88 @@ code: |
       neutralize_ALL_SECRETS_vars
 
   # ## Interviews ##
-  if wants_feature_file:
+  if wants_feature_file or wants_workflow_files:
     interviews_to_test
     prepare_file_data  # assignments block
     installer.files_to_push
-
-  # TODO: Make funny screen for no secrets and no tests
   
   wrap_it_up
-  
-  log('🍕 over 9000!')
-  dev_end_screen
 ---
+---
+id: reset secrets for internal tests
+question: Internal testing screen
+subquestion: |
+  You shouldn't be seeing this. If you do, please report or ignore, and skip the question.
+fields:
+  - Which secrets to set?: which_secrets_to_pre_set
+    datatype: checkboxes
+    choices:
+      - Repo: repo
+      - Org: org
+    none of the above: False
+---
+id: delete the secrets
+need:
+  - task_type
+  - which_secrets_to_pre_set
+  - alkiln_internal_secrets
+code: |
+  power_token = get_config('ALKS_GH_ADMIN_ADMINORG_TOKEN')
+  gh_admin = Github( power_token )
+
+  alkiln_internal_secrets
+  
+  for secret in alkiln_internal_secrets:
+    secret.delete()
+
+  if 'org' in task_type and 'org' in which_secrets_to_pre_set:
+    try:
+      _org = gh_org_holder.org
+      _org.create_secret('SERVER_URL', '123', secret_type='actions')
+      _org.create_secret('DOCASSEMBLE_DEVELOPER_API_KEY', '456', secret_type='actions')
+    except Exception:
+      pass
+  
+  if 'repo' in task_type and 'repo' in which_secrets_to_pre_set:
+    try:
+      _repo = gh_repo_holder.repo
+      _repo.create_secret('SERVER_URL', '789', secret_type='actions')
+      _repo.create_secret('DOCASSEMBLE_DEVELOPER_API_KEY', '000', secret_type='actions')
+    except Exception:
+      pass
+
+  set_internal_tests_secrets = True
+---
+id: get secrets for internal tests
+code: |
+  _temp_secrets = []
+
+  _org_secrets = []
+  try:
+    _org_secrets = list(showifdef('gh_org_holder', None).org.get_secrets())
+  except Exception:
+    pass
+  _temp_secrets = [
+    _org_secret for _org_secret in _org_secrets
+    if _org_secret.name == 'SERVER_URL'
+    or _org_secret.name == 'DOCASSEMBLE_DEVELOPER_API_KEY' ]
+
+  _repo_secrets = []
+  try:
+    _repo_secrets = list(showifdef('gh_repo_holder', None ).repo.get_secrets())
+  except Exception:
+    pass
+  
+  _temp_secrets += [
+    _repo_secret for _repo_secret in _repo_secrets
+    if _repo_secret.name == 'SERVER_URL'
+    or _repo_secret.name == 'DOCASSEMBLE_DEVELOPER_API_KEY' ]
+
+  alkiln_internal_secrets = _temp_secrets
 ---
 id: set files to push
-needs:
-  - envrionments
+need:
+  - environments
   - interviews_to_test
 
 # ####
@@ -289,6 +369,7 @@ code: |
   # review/confirm
   is_ready
   # send desired items to github
+  set_github_auth
   update_github
   
   # end
@@ -320,8 +401,12 @@ code: |
   installer.package_name = re.sub( r'docassemble-', '', installer.repo_name )
   installer.owner_name = gh_repo_holder.repo.owner.login
   installer.repo_url = gh_repo_holder.repo.html_url
-  installer.set_github_auth()
   installer.assign_gh_repo_info = True
+---
+id: check github auth and get values
+code: |
+  installer.set_github_auth()
+  set_github_auth = True
 ---
 id: server url
 need:
@@ -333,7 +418,10 @@ id: set da info
 need:
   - installer.server_url
   - installer.da_api_key
+
+# ####
 # Use the interview url to get the user's Playground id.
+# ####
 code: |
   # Start with clean errors list (idempotent for da's loops).
   installer.errors = []
@@ -361,10 +449,19 @@ code: |
       installer.errors.append( error )
   
     else:
+      # TODO post MVP: Change this to pass the response's error through
       log('🖊️ ALKilnSetup unhandled DA API key failure response. Response:', 'console')
       log(response, 'console')
       error = ErrorLikeObject( message=response, status=status, alk_details='ALKiln is unsure why it is unable to use the docassemble API key.' )
       installer.errors.append( error )
+
+  
+  except NameError:
+    raise
+  except AttributeError:
+    raise
+  except KeyError:
+    raise
   
   except requests.exceptions.ConnectionError as da_key_connection_err:
     # https://docs.python-requests.org/en/latest/user/quickstart/#errors-and-exceptions
@@ -413,7 +510,7 @@ subquestion: |
 
   First, choose your testing environments.
 
-  <details markdown=1 class='alert alert-info' style="max-height: unset;">
+  <details markdown=1 class='callout info' style="max-height: unset;">
   <summary>About different testing environments</summary>
   
   ---
@@ -429,7 +526,7 @@ fields:
         alks_independent_fields['environments'],
       ]
 ---
-id: github secrets plain
+id: da server info
 # TODO: for org admins that just set secrets, add a link to review org secrets on their GitHub org
 # TODO: does our current code look at/communicate a repository's organization-level secrets when we're on the `sole_repo` path?
 need:
@@ -467,15 +564,9 @@ fields:
   - I want details and instructions for the docassemble API key before entering the API key: wants_more_API_key_info
     datatype: yesno
     label above field: True
-  - 'Are you able to get a docassemble API key for the {tester account}?': can_get_da_api_key
-    datatype: yesnoradio
-    required: False
-    hide if: wants_more_API_key_info
-    help: |
-      If you don't yet have a tester account or want to learn more about tester accounts, answer "No" to read more on the next page.
   - What is the tester account's API key?: installer.da_api_key
-    show if: can_get_da_api_key
     datatype: password
+    hide if: wants_more_API_key_info
 terms:
   tester account: |
     The account that will store the Projects that ALKiln will create and test.
@@ -607,8 +698,8 @@ content: |
   1. It helps with logistics. Setting tests up on a developer's account may cause problems in the future, for one thing. If the developer leaves and the organization deletes their account the tests will fail.
   1. It can aviod confusing account shenanigans. ALKiln will create Projects in the tester account, upload files into those Projects, and then delete those Projects. If a developer is using the same docassemble account, they may find it confusing.
 
-  <div markdown=1 class='alert alert-warning'>
-  Especially avoid using an admin account as the tester account if possible. Creating an API token with high levels of access, even by accident, is always best to avoid when possible. The ALKiln tester account must have developer permissions, but it rarely needs more than that.
+  <div markdown=1 class='alert alert-warning' style='margin-left: -1em; margin-right: -1em;'>
+  :exclamation-triangle: Especially avoid using an admin account as the tester account if possible. Creating an API token with high levels of access, even by accident, is always best to avoid when possible. The ALKiln tester account must have developer permissions, but it rarely needs more than that.
   </div>
 ---
 ---
@@ -617,31 +708,33 @@ content: |
 # ###########
 ---
 id: gh account type
-sets: current_target
+sets: task_type
 question: GitHub authorization ${ gh_icon__repo }
 subquestion: |
+  ${ info_so_far }
+  
   What you want to do and what you can do will depend on your relationship to the GitHub repository or organization.
 fields:
   - code: |
-      [ alks_independent_fields['current_target'], ]
+      [ alks_independent_fields['task_type'], ]
       
   - note: |
       This tool also needs authorization to make the right changes on GitHub. For that, it needs a GitHub Personal Access Token from your GitHub account.
-    show if: current_target
+    show if: task_type
   # Need gh PAT for pushing/branch/PR and/or secrets, so get it first.
   # TODO: Change `.token` to `.gh_PAT`. More distinct.
   - I want details and instructions for the GitHub Personal Access Token before giving an access token: wants_more_PAT_info
     datatype: yesno
     label above field: True
     js show if: |
-      val('current_target') !== null
+      val('task_type') !== null
   - code: |
       [
         alks_independent_fields['github_token_sole_repo'],
         alks_independent_fields['github_token_org'],
       ]
 validation code: |  # Sets values
-  if current_target == 'org_secrets':
+  if task_type == 'org_secrets':
     the_coveted_secrets['org'] = True
     the_coveted_secrets['repo'] = False
 ---
@@ -659,7 +752,7 @@ subquestion: |
   1. In [your GitHub settings](https://github.com/settings/tokens/new), follow [up-to-date directions](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) to start making your "classic" GitHub Personal Access Token.
   1. Make sure you choose an expiration date for your token that aligns with your organization's or project's security practices
   1. Tap the checkboxes for "repo" and "workflow" permissions
-  % if current_target == 'org_repo':
+  % if task_type == 'org_repo':
   1. Tap the checkboxes for "admin:org" permissions
   % endif
   1. Finish creating the Personal Access Token
@@ -671,20 +764,20 @@ fields:
       ]
 ---
 id: github details
-sets: gh_org_holder
+sets: gh_org_holder_name
 question: GitHub organization
 subquestion: |
   ${ info_so_far }
 
-  % if current_target == 'org_secrets':
+  % if task_type == 'org_secrets':
   These are the organizations you are an admin of.
   % else:
-  These are the organizations you belong to.
+  These are the organizations whose repositories you are able to edit.
   % endif
 fields:
   - code: |
       [
-        alks_gh_authed_fields['gh_org_holder']
+        alks_gh_authed_fields['gh_org_holder_name']
       ]
 ---
 template: gh_icon__org
@@ -697,13 +790,48 @@ if: |
   False
 # if: |
 #   (
-#     current_target == 'org_repo'
+#     task_type == 'org_repo'
 #     and 'admin:org' in installer.github.oauth_scopes
 #     and gh_org_holder.user_role == 'admin'
 #   )
 need:
   - gh_org_holder
 question: GitHub organization secrets ${ gh_icon__org }
+---
+id: get org obj
+need:
+  - gh_org_holder_name
+code: |
+  try:
+    gh_org_holder = gh_org_holders_dict[ gh_org_holder_name ]
+  
+  except Exception as org_by_name_err:
+    log('🤕 Error getting org', 'console')
+    log( vars(org_by_name_err), 'console')
+    message = 'Unable to find organization'
+    status = 0
+    try:
+      message = org_by_name_err.data['message']
+      status = org_by_name_err.data['status']
+    except Exception as _ignore1:
+      log( _ignore1, 'console')
+      try:
+        message = org_by_name_err.message
+        status = org_by_name_err.status
+      except Exception as _ignore2:
+        log( _ignore2, 'console')
+        try:
+          message = org_by_name_err.msg
+        except Exception as _ignore3:
+          log( _ignore3, 'console')
+          pass
+    org_by_name_err_faux = ErrorLikeObject(
+      status=status,
+      message=message,
+      alk_details=f'Unable to find a organization called "{ gh_org_holder_name }".',
+    )
+    gh_org_holder = None  # Research: Why is this necessary?
+    installer.errors.append( org_by_name_err_faux )
 ---
 id: get the repo
 if: not defined('gh_repo_holder_name')
@@ -718,7 +846,7 @@ fields:
     label above field: True
   - note: |
       Sorry about that. This list should have all the
-      % if current_target == 'org_repo':
+      % if task_type == 'org_repo':
       organization's
       % endif
       repositories that you have access to. Write the name below and we will try to get that repository.
@@ -730,11 +858,19 @@ fields:
     disable if:
       variable: wants_custom_repo
       is: False
-  - Or pick a repository to write tests for: gh_repo_holder
-    datatype: object_radio
-    object labeler: |
-      lambda repo: repo.full_name
-    choices: repo_holders
+  # - Or pick a repository to write tests for: gh_repo_holder
+  #   datatype: object_radio
+  #   object labeler: |
+  #     lambda repo: repo.full_name
+  #   choices: repo_holders
+  #   show if:
+  #     variable: wants_custom_repo
+  #     is: False
+  - Or pick a repository to write tests for: gh_repo_holder_name
+    datatype: radio
+    choices:
+      code: |
+        [ repo.full_name for repo in repo_holders ]
     show if:
       variable: wants_custom_repo
       is: False
@@ -777,7 +913,7 @@ code: |
     repo_by_name_err_faux = ErrorLikeObject(
       status=status,
       message=message,
-      alk_details=f'Unable to find a repository called { gh_repo_holder_name }.',
+      alk_details=f'Unable to find a repository at [https://github.com/{ gh_repo_holder_name }](https://github.com/{ gh_repo_holder_name }).',
     )
     gh_repo_holder = None  # Research: Why is this necessary?
     installer.errors.append( repo_by_name_err_faux )
@@ -789,7 +925,7 @@ content: |
 id: long time to get repositories
 continue button field: wait_for_repos_list_warning
 question: |
-  % if 'org' in current_target:
+  % if 'org' in task_type:
   Press continue to choose from a list of repositories ${ gh_org_holder.org.login } owns ${ gh_icon__org }
   % else:
   Press continue to choose from a list of all repositories where you are an owner or collaborator ${ gh_icon__repo }
@@ -814,9 +950,9 @@ subquestion: |
 # TODO MVP: Also need this but for the "just secrets" path
 id: repo and org secrets
 if: |
-  environments.all_true('github_n_you') and 'repo' in current_target
+  environments.all_true('github_n_you') and 'repo' in task_type
 need:
-  - current_target
+  - task_type
   - installer.github.oauth_scopes
   - gh_repo_holder.has_alkiln_secrets__repo
   - about_secrets
@@ -836,35 +972,40 @@ subquestion: |
   
   For more information about GitHub secrets press the "About GitHub secrets" button.
 
-  The status of your current GitHub secrets:
+  <div markdown=1 class='callout info'>
+  
+  **The status of your current GitHub secrets**:
   
   % if gh_repo_holder.has_alkiln_secrets__repo:
-  Your repository already has ALKiln's standard GitHub secrets[BR]
+  Repository-level secrets: Your repository already has ALKiln's standard GitHub secrets
   % else:
-  Your repository does not yet have ALKiln's standard GitHub secrets[BR]
+  Repository-level secrets: Your repository does not yet have ALKiln's standard GitHub secrets
   % endif
-  % if '💬🔒 No org perms path' and current_target == 'org_repo':
-    % if gh_org_holder.user_role != 'admin':
-  This tool is unable to see whether you have standard ALKiln  organization-level GitHub secrets because you are not an admin of ${ gh_org_holder.org.login }. If you need to create the standard ALKiln secrets for your organization, contact an admin of your GitHub organization. Let them know that this setup tool only supports "classic" GitHub tokens.
+  
+  % if '💬🔒 No org perms path' and task_type == 'org_repo':
+    % if showifdef('gh_org_holder') and gh_org_holder.user_role != 'admin':
+  Organization-level secrets: This tool is unable to see whether you have standard ALKiln  organization-level GitHub secrets because you are not an admin of ${ gh_org_holder.org.login }. If you need to create the standard ALKiln secrets for your organization, contact an admin of your GitHub organization. Let them know that this setup tool only supports "classic" GitHub tokens.
     % elif not 'admin:org' in installer.github.oauth_scopes:
-  This tool is unable to see whether you have standard ALKiln  organization-level GitHub secrets because you did not mark "admin:org" when you made your GitHub Personal Access Token.
+  Organization-level secrets: This tool is unable to see whether you have standard ALKiln  organization-level GitHub secrets because you did not mark "admin:org" when you made your GitHub Personal Access Token.
     % endif
   % endif
-  % if '💬👍 Yes perms path' and current_target == 'org_repo':
-    % if gh_org_holder.user_role == 'admin' and 'admin:org' in installer.github.oauth_scopes:
+  % if '💬👍 Yes perms path' and task_type == 'org_repo':
+    % if showifdef('gh_org_holder') and gh_org_holder.user_role == 'admin' and 'admin:org' in installer.github.oauth_scopes:
       % if gh_org_holder.has_alkiln_secrets__org:
-  Your organization has ALKiln's standard GitHub secrets
+  Organization-level secrets: Your organization has ALKiln's standard GitHub secrets
       % else:
-  Your organization does not yet have ALKiln's standard GitHub secrets
+  Organization-level secrets: Your organization does not yet have ALKiln's standard GitHub secrets
       % endif
     % endif
   % endif
+  
+  </div>
 
-  % if current_target == 'org_repo' and gh_org_holder.user_role == 'admin' and not 'admin:org' in installer.github.oauth_scopes:
+  % if task_type == 'org_repo' and showifdef('gh_org_holder') and gh_org_holder.user_role == 'admin' and not 'admin:org' in installer.github.oauth_scopes:
   If you do want organization-level secrets, you will need to start this setup again and use a token that includes the "admin:org" permissions. A different token can change a lot of necessary information.
   % endif
 
-  % if current_target == 'org_repo' and gh_org_holder.has_alkiln_secrets__org and gh_repo_holder.has_alkiln_secrets__repo:
+  % if task_type == 'org_repo' and gh_org_holder.has_alkiln_secrets__org and gh_repo_holder.has_alkiln_secrets__repo:
   :warning: You have both organization-level secrets and repository-level secrets. We recommend picking just one of those. Repository-level secrets override organization-level secrets and that can get confusing. This form is currently unable to help with removing GitHub secrets. You can still change the values of the existing secrets if you want, though.
   % endif
 
@@ -878,9 +1019,7 @@ fields:
   - Do you need to create the standard ALKiln repository-level GitHub secrets?: the_coveted_secrets['repo'] 
     datatype: yesnoradio
     # TODO MVP: Test whether this default Mako works correctly
-    default: ${ True }
-    # default: ${ False }
-    # default: ${ not ('org' in current_target and the_coveted_secrets['org']) }
+    default: ${ (not 'org' in task_type and not the_coveted_secrets['org']) or None }
     show if:
       code: |
         not gh_repo_holder.has_alkiln_secrets__repo
@@ -890,27 +1029,29 @@ fields:
     datatype: yesnoradio
     show if:
       code: |
-        'org' in current_target and 'admin:org' in installer.github.oauth_scopes and gh_org_holder.user_role == 'admin' and gh_org_holder.has_alkiln_secrets__org
+        'org' in task_type and 'admin:org' in installer.github.oauth_scopes and gh_org_holder.user_role == 'admin' and gh_org_holder.has_alkiln_secrets__org
   - Do you need to create the standard ALKiln organization-level secrets?: the_coveted_secrets['org']
     datatype: yesnoradio
     default: True
     show if:
       code: |
-        'org' in current_target and 'admin:org' in installer.github.oauth_scopes and gh_org_holder.user_role == 'admin' and (not gh_org_holder.has_alkiln_secrets__org)
+        'org' in task_type and 'admin:org' in installer.github.oauth_scopes and gh_org_holder.user_role == 'admin' and (not gh_org_holder.has_alkiln_secrets__org)
   
   - note: |
       :warning: We strongly recommend just choosing one type of secret to set, but you can choose to set both types at the same time if you need to.
+    # Will log an error in the console when the_coveted_secrets['org'] is missing from the page
     js show if: |
       val("the_coveted_secrets['repo']") && val("the_coveted_secrets['org']")
   - Are you sure you want to set both types of secrets?: covets_all_secrets
     datatype: yesnoradio
+    # Will log an error in the console when the_coveted_secrets['org'] is missing from the page
     js show if: |
       val("the_coveted_secrets['repo']") && val("the_coveted_secrets['org']")
     
 validation code: |
   if (the_coveted_secrets['repo'] and the_coveted_secrets['org']) and not covets_all_secrets:
     validation_error('If you want to only set one type of secret, pick just one secret.', field='covets_all_secrets' )
-  if (not 'admin:org' in installer.github.oauth_scopes) or (not gh_org_holder.user_role == 'admin'):
+  if (not 'admin:org' in installer.github.oauth_scopes) or (showifdef('gh_org_holder') and not gh_org_holder.user_role == 'admin'):
     covets_secrets__org = False
     the_coveted_secrets['org'] = False
 ---
@@ -919,39 +1060,44 @@ id: feature file
 question: |
   Files <div markdown=1>:files:</div>
 subquestion: |
+  ${ info_so_far }
+  
   Almost there!
 
   This tool can add some files to your repository.
   
-  First, this tool can create your first tests for you by making a file called `interviews_run.feature`. The test or tests would just check whether the interview or interviews load. You can always edit or delete this file in your "Sources" folder later.
-  
-  You can also read [our documentation about making your first test](https://assemblyline.suffolklitlab.org/docs/components/ALKiln/setup#first-test).
+  First, this tool can make 'workflow' files that will make sure GitHub runs your tests.
 fields:
+  - I want the workflow files: wants_workflow_files
+    datatype: yesno
+    default: True
+  - note: |
+      Second, this tool can create your first tests for you by making a file called `interviews_run.feature`. The test or tests would just check whether the interview or interviews load. You can always edit or delete this file in your "Sources" folder later.
+  
+      You can also read [our documentation about making your first test](https://assemblyline.suffolklitlab.org/docs/components/ALKiln/setup#first-test).
   - I want the "interviews_run.feature" file: wants_feature_file
     datatype: yesno
     default: True
   - Which of this package's files start an interview that you want to test?: interviews_to_test
     datatype: checkboxes
+    none of the above: False
+    minlength: 1
     show if: wants_feature_file
     code: |
       installer.get_question_file_names()
-  - note: |
-      Second, this tool can make 'workflow' files that will make sure GitHub runs these tests.
-  - I want the workflow files: wants_workflow_files
-    datatype: yesno
-    default: True
-validation code: |
-  if not wants_feature_file:
-    interviews_to_test = []
 ---
-id: confirm info review
+id: interviews_to_test fallback
+objects:
+  interviews_to_test: DADict.using(gathered=True, there_are_any=False, there_is_another=False)
+---
+id: final review
 # TODO post MVP: show what the user is choosing to skip (secrets, etc)
 continue button field: is_ready
 continue button label: Send to GitHub
 question: |
   Is this information correct?
 subquestion: |
-  <div class="alert alert-warning gx-5">
+  <div class='alert alert-warning' style='margin-left: -1em; margin-right: -1em;'>
   You will not be able to come back here after continuing.
   </div>
 
@@ -961,7 +1107,7 @@ review:
     button: |
       ##### Docassemble tester account and server:
 
-      <div markdown=1 class="alk_value_block">
+      <div markdown=1 class='alk_value_block'>
       * **Account API key**: \*\*\*\*${ installer.da_api_key[-4:] }
       
       * **Server to test on**:[BR]
@@ -970,7 +1116,7 @@ review:
       
       **Your answers also gave us this information:**
 
-      <div markdown=1 class="alk_value_block">
+      <div markdown=1 class='alk_value_block'>
       * **Account email:**[BR]
       ${ installer.da_email }
       </div>
@@ -990,14 +1136,14 @@ review:
     button: |
       ##### GitHub repo and permission
 
-      <div markdown=1 class="alk_value_block">
+      <div markdown=1 class='alk_value_block'>
       **Personal access token**: \*\*\*\*${ installer.token[-4:] }
       
-      % if 'org' in current_target:
+      % if 'org' in task_type:
       **GitHub organization**: [${ installer.owner_name }](https://github.com/${ installer.owner_name })
       % endif
       
-      % if 'repo' in current_target:
+      % if 'repo' in task_type:
       **Repository URL**:[BR]
       [${ gh_repo_holder.repo.html_url }](${ gh_repo_holder.repo.html_url })
       % endif
@@ -1005,7 +1151,7 @@ review:
       
       **Your answers also gave us this information:**
 
-      <div markdown=1 class="alk_value_block">
+      <div markdown=1 class='alk_value_block'>
       **Your GitHub username**: ${ installer.user_name }
       </div>
       
@@ -1015,10 +1161,9 @@ review:
     button: |
       ##### Files you want
 
-      <div markdown=1 class="alk_value_block">
+      <div markdown=1 class='alk_value_block'>
       % if wants_feature_file:
-      * The first test (the `.feature` file)
-      * Files to test that run interviews. Specifically:
+      * The first tests (the `.feature` file), that will have tests to load these interviews:
         % if len( interviews_to_test.true_values() ) > 0:
           % for test_file in interviews_to_test.true_values():
           * ${ test_file }[BR]
@@ -1065,7 +1210,7 @@ review:
   - note: |
       There may be a few more steps after this to finish up. Continue when you are ready.
 
-      <div class="alert alert-warning">
+      <div class='alert alert-warning' style='margin-left: -1em; margin-right: -1em;'>
       :exclamation-triangle: <strong>You will not be able to come back to this page.</strong>
       </div>
 ---
@@ -1087,7 +1232,6 @@ code: |
 id: info summary
 # Discuss: Add full review screen info?
 # Discuss: Order items in a different order than page appearance? There are some things I think are more important at certain times.
-# TODO post MVP: Include environments
 template: info_so_far
 need:
   - summary_row_start
@@ -1096,18 +1240,64 @@ need:
 content: |
   Your information based on your answers so far:
 
-  <dl class='alert alert-secondary' style='max-height: 8.7em; display: flex; flex-direction: column;'>
+  <dl markdown=1 class='callout secondary' style='max-height: 8.7em; display: flex; flex-direction: column;'>
+  
+  % if defined('task_type'):
+  ${ summary_row_start } You are filling this out for
+  ${ summary_row_middle } 
+  % if 'org' in task_type:
+  An organization
+  % else:
+  A repository
+  % endif
+  ${ summary_row_end }
+  % endif
+
+  % if defined('environments'):
+  ${ summary_row_start }
+  % if environments.all_true():
+  ALKiln test types
+  % else:
+  ALKiln test type
+  % endif
+  ${ summary_row_middle } 
+  % if environments['github_n_you']:
+  GitHub+You™${ ',' if environments.all_true() else '' }
+  % endif
+  % if environments['sandbox']:
+  Sandbox™
+  % endif
+  ${ summary_row_end }
+  % endif
+
+  % if showifdef( installer.attr_name('user_name') ):
+  ---
+  % endif
   
   % if showifdef( installer.attr_name('user_name') ):
   ${ summary_row_start } GitHub username
   ${ summary_row_middle } ${ installer.user_name }
   ${ summary_row_end }
   % endif
+
+  % if showifdef( installer.attr_name('server_url_input') ):
+  ---
+  % endif
   
   % if showifdef( installer.attr_name('server_url_input') ):
   ${ summary_row_start } Docassemble server
   ${ summary_row_middle } ${ installer.server_url_input }
   ${ summary_row_end }
+  % endif
+  
+  % if showifdef( installer.attr_name('da_api_key') ):
+  ${ summary_row_start } Tester account docassemble API key
+  ${ summary_row_middle } ****${ installer.da_api_key[-4:] }
+  ${ summary_row_end }
+  % endif
+
+  % if showifdef('gh_org_holder') or showifdef('gh_repo_holder'):
+  ---
   % endif
   
   % if showifdef('gh_org_holder'):
@@ -1134,57 +1324,51 @@ content: |
   ${ summary_row_end }
   % endif
   
-  % if showifdef('gh_org_holder') and showifdef( gh_org_holder.attr_name('has_alkiln_secrets__org') ):
-  ${ summary_row_start } GitHub org is hoarding secrets
-  ${ summary_row_middle } ${ gh_org_holder.has_alkiln_secrets__org }
-  ${ summary_row_end }
-  % endif
-  
-  % if showifdef('current_target') == 'org' and  defined('covets_secrets__org'):
-  ${ summary_row_start } Author will set GitHub org secrets
-  ${ summary_row_middle } ${ covets_secrets__org }
-  ${ summary_row_end }
-  % endif
-  
-  % if showifdef('gh_repo_holder') and defined( gh_repo_holder.attr_name('has_alkiln_secrets__repo') ):
-  ${ summary_row_start } Repo holds many secrets
-  ${ summary_row_middle } ${ gh_repo_holder.has_alkiln_secrets__repo }
-  ${ summary_row_end }
-  % endif
-  
-  % if defined('covets_secrets__repo'):
-  ${ summary_row_start } Author will set GitHub repo secrets
-  ${ summary_row_middle } ${ covets_secrets__repo }
-  ${ summary_row_end }
-  % endif
-  
-  % if showifdef( installer.attr_name('da_api_key') ):
-  ${ summary_row_start } Tester account docassemble API key
-  ${ summary_row_middle } ****${ installer.da_api_key[-4:] }
-  ${ summary_row_end }
-  % endif
-  
   % if showifdef( installer.attr_name('token') ):
   ${ summary_row_start } GitHub Personal Access Token
   ${ summary_row_middle } ****${ installer.token[-4:] }
   ${ summary_row_end }
   % endif
   
-  % if showifdef( 'current_target' ):
-  ${ summary_row_start } You are filling this out for
-  ${ summary_row_middle } 
-  % if 'org' in current_target:
-  An organization
-  % else:
-  A repository
-  % endif
-  ${ summary_row_end }
-  % endif
-  
   </dl>
 
   ---
+
+comment: |
+  <dl class='alert alert-secondary' style='max-height: 8.7em; display: flex; flex-direction: column;'>
   
+
+  % if 'org' in showifdef('task_type', ''):
+  
+    % if not defined('covets_secrets__org') and showifdef('gh_org_holder') and showifdef( gh_org_holder.attr_name('has_alkiln_secrets__org') ):
+  ${ summary_row_start } GitHub org is hoarding secrets
+  ${ summary_row_middle } ${ gh_org_holder.has_alkiln_secrets__org }
+  ${ summary_row_end }
+    % endif
+  
+    % if defined('covets_secrets__org'):
+  ${ summary_row_start } Author will set GitHub org secrets
+  ${ summary_row_middle } ${ covets_secrets__org }
+  ${ summary_row_end }
+    % endif
+  
+  % endif
+
+  % if 'repo' in showifdef('task_type', ''):
+  
+    % if not defined('covets_secrets__repo') and defined( gh_repo_holder.attr_name('has_alkiln_secrets__repo') ):
+  ${ summary_row_start } Repo holds many secrets
+  ${ summary_row_middle } ${ gh_repo_holder.has_alkiln_secrets__repo }
+  ${ summary_row_end }
+    % endif
+  
+    % if defined('covets_secrets__repo'):
+  ${ summary_row_start } Author will set GitHub repo secrets
+  ${ summary_row_middle } ${ covets_secrets__repo }
+  ${ summary_row_end }
+    % endif
+  
+  % endif
 ---
 ---
 # https://docassemble.org/docs/initial.html#data
@@ -1208,9 +1392,9 @@ data:
       - label: Sandbox™ tests
         value: sandbox
     minlength: 1
-  current_target:
+  task_type:
     label: What do you want to manage ALKiln for on GitHub?
-    field: current_target
+    field: task_type
     datatype: radio
     choices:
       - label: An individual repository you are able to edit
@@ -1230,7 +1414,7 @@ data:
     field: installer.token
     datatype: password
     js show if: |
-      val('current_target') && val('current_target') == 'sole_repo' && val('wants_more_PAT_info') !== true
+      val('task_type') && val('task_type') == 'sole_repo' && val('wants_more_PAT_info') !== true
     # Instruct both "repo" _and_ "workflow" to avoid confusion from gh auto-selecting "repo" when you select "workflow"
     help: |
       The token must have "repo" and "workflow" permissions. For more detailed instructions, this question and continue to the next page.
@@ -1239,7 +1423,7 @@ data:
     field: installer.token
     datatype: password
     js show if: |
-      val('current_target') && val('current_target').includes('org') && val('wants_more_PAT_info') !== true
+      val('task_type') && val('task_type').includes('org') && val('wants_more_PAT_info') !== true
     # Auth overkill sometimes, but simplifies instructions and not impactful
     help: |
       The token must have "admin:org", "repo", and "workflow" permissions. For more detailed instructions, this question and continue to the next page.
@@ -1291,27 +1475,35 @@ data:
       code: |
         'admin:org' in installer.github.oauth_scopes and gh_org_holder.user_role == 'admin'
     enable if: covets_secrets__org
-  gh_org_holder:
+  # gh_org_holder:
+  #   label: Which organization do you want to manage tests for?
+  #   field: gh_org_holder
+  #   datatype: object_radio
+  #   object labeler: |
+  #     lambda org: org.login
+  #   choices: ( org for org in all_orgs )
+  #   minlength: 1
+  gh_org_holder_name:
     label: Which organization do you want to manage tests for?
-    field: gh_org_holder
-    datatype: object_radio
-    object labeler: |
-      lambda org: org.login
-    choices: ( org for org in all_orgs )
+    field: gh_org_holder_name
+    datatype: radio
+    choices:
+      code: |
+        [ org.login for org in all_orgs ]
     minlength: 1
 ---
 # https://docassemble.org/docs/initial.html#data
 # ⚠️ include `reconsider: True` or the fields won’t update when you change them and refresh the page
 reconsider: True
 variable name: after_gh_owner_type
-# GitHub PAT field for page with instructions. Unlike on the previous screen, current_target is now defined, so only need one field.
+# GitHub PAT field for page with instructions. Unlike on the previous screen, task_type is now defined, so only need one field.
 data:
   github_token_fallback:
     label: Your GitHub Personal Access Token (PAT)
     field: installer.token
     datatype: password
     help: |
-      % if current_target == 'sole_repo':
+      % if task_type == 'sole_repo':
       The token must have "repo" and "workflow" permissions. For more detailed instructions, skip and continue to the next page.
       % else:
       The token must have "admin:org", "repo", and "workflow" permissions. For more detailed instructions, skip and continue to the next page.
@@ -1365,6 +1557,7 @@ code: |
     # github.GithubException.BadCredentialsException (401, 403)
     collected.append('error')
     # This error may be missing status and data and message
+    log('0500', 'console')
     log( setup_err.__dict__, 'console' )
     setup_error_faux = ErrorLikeObject( message='Incorrect Personal Access Token', alk_details=installer.github_token_error )
     installer.errors.append( setup_error_faux )
@@ -1376,10 +1569,10 @@ code: |
   if not 'github' in collected:
     installer.github = None
   
-  if not 'error' in collected:
-    installer.missing_scopes  # Watch out for review blocks
-  else:
+  if 'error' in collected:
     installer.missing_scopes = ['Found no permission scopes for this GitHub Personal Access Token.']
+  else:
+    installer.missing_scopes  # Watch out for review blocks
   
   prep_github_auth = True
 ---
@@ -1397,7 +1590,7 @@ code: |
     missing_scopes.append('"repo"')
   if not 'workflow' in installer.github.oauth_scopes:
     missing_scopes.append('"workflow"')
-  if current_target == 'org_secrets':
+  if task_type == 'org_secrets':
     if not 'admin:org' in installer.github.oauth_scopes:
       missing_scopes.append('"admin:org"')
 
@@ -1410,7 +1603,6 @@ code: |
 need:
   - installer.user
   - gh_org_holders
-# TODO post MVP: replace all_orgs with gh_org_holders - improvement?
 
 # ####
 # Get regular list of all author's orgs. If wants org secrets, ensure author is admin.
@@ -1419,11 +1611,12 @@ code: |
   import traceback
 
   ok = False
+  temp_orgs = []
   try:
     org_pages = installer.user.get_orgs()
     ok = True
   except Exception as err_orgs:
-    err_orgs.alk_details = 'We had a problem getting the GitHub organizations you belong to.'
+    err_orgs.alk_details = 'We had a problem getting the GitHub organizations whose repositories you are able to edit.'
     if not hasattr( err_orgs, 'status' ):
       err_orgs.status = 0
     if not hasattr( err_orgs, 'message'):
@@ -1437,69 +1630,110 @@ code: |
     installer.errors.append( err_orgs )
     all_orgs = []
 
+  log('🐸 100', 'console')
   if ok:
+    log('🐸 101', 'console')
     temp_orgs = []
     for org in org_pages:
+      log('🐸 102', 'console')
       membership = installer.user.get_organization_membership( org.login )
-      if current_target == 'org_secrets' and membership.role != 'admin':
+      if task_type == 'org_secrets' and membership.role != 'admin':
+        log('🐸 103', 'console')
         continue
-      # Breaks if don't use a DAObject
+      # Object checkboxes breaks if don't use a DAObject, which was once a consideration and should be again.
+      log('🐸 104', 'console')
       new_org_holder = gh_org_holders[ gh_org_holders.number_gathered() ]
       new_org_holder.org = org
       new_org_holder.login = org.login
+      log('🐸 105', 'console')
       new_org_holder.user_role = membership.role
       temp_orgs.append( new_org_holder )
+      log(new_org_holder.user_role, 'console')
+
+      new_org_obj = gh_org_holders_dict[  org.login ]
+      new_org_obj.org = org
+      new_org_obj.login = org.login
+      new_org_obj.user_role = membership.role
+      
+    log('🐸 106', 'console')
     gh_org_holders.gathered = True
 
     if gh_org_holders.number_gathered() == 0:
-      # TODO MVP: add error to installer
-      log('🌈 800', 'console')
-  
+      installer.errors.append( ErrorLikeObject( message='Unable to find GitHub organizations', status=0, alk_details=installer.admins_0_orgs ) )
+      
     temp_orgs.sort( key=lambda org : org.login.lower() )
     all_orgs = temp_orgs
+---
+# What datastructure do we want?
+objects:
+  - alkiln_secrets: DAObject.using(gathered='True', there_are_any='False', there_is_another='False')
 ---
 # https://pygithub.readthedocs.io/en/stable/github_objects/Organization.html#github.Organization.Organization.get_secrets
 id: org secrets
 need:
   - installer.user
-generic object: 
+generic object: DAObject
 
 # ####
-# Check org for pre-existing ALKiln secrets
+# Check for existing ALKiln org-level secrets
 # ####
 code: |
-  existing_secrets_names = []
-  alkiln_secrets_found = []
-  org_data = x.org
+  org_alk_secrets_names = []
   try:
-    org_secrets = org_data.get_secrets()
-    existing_secrets_names = [ secret.name for secret in org_secrets ]
-  except Exception as secrets_err:
-    message = 'Unable to get repository secrets'
+    alkiln_secrets.org
+    org_alk_secrets_names = [ secret.name for secret in alkiln_secrets.org ]
+  
+  except NameError:
+    raise
+  except AttributeError:
+    raise
+  except KeyError:
+    raise
+  except Exception as org_secrets_err:
+    # .has_alkiln_secrets__org = False
+    alkiln_secrets.org = []
+    message = org_secrets_err
     try:
-      message = secrets_err.data['message']
+      message = org_secrets_err.data['message']
     except Exception as _ignore:
       try:
-        message = secrets_err.message
+        message = org_secrets_err.message
       except Exception as _ignore:
         try:
-          message = secrets_err.msg
+          message = org_secrets_err.msg
         except Exception as _ignore:
           pass
-    secrets_err_faux = ErrorLikeObject( message=message, alk_details='Unable to look for the organization\'s existing GitHub secrets using the permissions that you gave to your GitHub Personal Access Token (PAT).' )
+    secrets_err_faux = ErrorLikeObject( message=message, alk_details='The GitHub Personal Access Token (PAT) you gave does not have permission to look for the organization\'s existing GitHub secrets. You will also be unable to set the organization-level GitHub secrets.' )
     installer.errors.append( secrets_err_faux )
 
-  if 'SERVER_URL' in existing_secrets_names:
-    alkiln_secrets_found.append('SERVER_URL')
-  if 'DOCASSEMBLE_DEVELOPER_API_KEY' in existing_secrets_names:
-    alkiln_secrets_found.append('DOCASSEMBLE_DEVELOPER_API_KEY')
+  if 'SERVER_URL' in org_alk_secrets_names:
+    org_alk_secrets_names.append('SERVER_URL')
+  if 'DOCASSEMBLE_DEVELOPER_API_KEY' in org_alk_secrets_names:
+    org_alk_secrets_names.append('DOCASSEMBLE_DEVELOPER_API_KEY')
 
-  installer.alkiln_secrets_org = alkiln_secrets_found
+  installer.alkiln_secrets__org = org_alk_secrets_names
   
-  if len( alkiln_secrets_found ) == 2:
+  if len( org_alk_secrets_names ) == 2:
     x.has_alkiln_secrets__org = True
   else:
     x.has_alkiln_secrets__org = False
+---
+id: org alkiln secrets
+need:
+  - alkiln_secrets
+
+# ######
+# Add org secrets to alkiln_secrets
+# ######
+code: |
+  # if 'org' in task_type and showifdef('gh_org_holder', None):
+  org_secrets = list(showifdef('gh_org_holder', None).org.get_secrets())
+  alkiln_secrets.org = [
+    org_secret for org_secret in org_secrets
+    if org_secret.name == 'SERVER_URL'
+    or org_secret.name == 'DOCASSEMBLE_DEVELOPER_API_KEY' ]
+  if len( alkiln_secrets.org ) > 0:
+    alkiln_secrets.there_are_any = True
 ---
 id: repos list
 # Resources:
@@ -1524,7 +1758,7 @@ code: |
   gh_repos_data = []
 
   try:
-    if current_target == 'org_repo':
+    if task_type == 'org_repo':
       gh_repos_data = gh_org_holder.org.get_repos(sort='updated')
     else:
       unsorted = list( installer.user.get_repos(affiliation='owner') )
@@ -1546,23 +1780,12 @@ code: |
   repo_holders.gathered = True
   get_repos = True
 ---
-# TODO MVP: Do we already take care of both workflow files?
-# TODO post MVP: Make term for "you" - The GitHub user that this PAT belongs to
-# TODO post MVP: Explain why can't set org secrets
-# Discuss: Can we ask about test files first before getting da info for secrets? Better overall experience to have something easier first or something easier at the end?
-# TODO post MVP: offer repeat visitors as close to a one-pager as we can get. Can leave any field blank. If they get it wrong, they get a (smart) error screen.
-# Research: Remove `installer` and move methods in here?
-# √ TODO MVP: Ensure non-admin members can get list of non-admin orgs 
-# TODO MVP: Ensure non-admin members can push files for orgs
-# TODO MVP: make sure dev is repo collaborator. We can do that by only showing them repos that they are collaborators for.
-# TODO post MVP: Tell an org admin setting org secrets that a repo may have its own secrets that override the org secrets.
-# Research: More efficient way to get just the repos owned by the "user"
-# Discuss: When getting author's repos, should we exclude repos that have an org since they're not doing this for an org?
-# Discuss: Get the org secrets of a repository if the author is the admin of the org and has the right scopes? How?
----
 # Get repository's org secrets. org secrets of a repository.
 # https://docs.github.com/en/rest/actions/secrets?apiVersion=2026-03-10#list-repository-organization-secrets
 # https://pygithub.readthedocs.io/en/stable/github_objects/Repository.html#github.Repository.Repository.organization
+---
+# 🧠
+# DA functions models: 1. DAList of DAObject(s) with property to trigger and, possibly, a `description`/`name`. 2. Unique prop names to trigger.
 ---
 # https://pygithub.readthedocs.io/en/stable/github_objects/Repository.html#github.Repository.Repository.get_secrets
 id: repo secrets
@@ -1571,19 +1794,23 @@ need:
 generic object: DAObject
 
 # ####
-# Check for existing ALKiln repo GitHub secrets
+# Check for existing ALKiln repo-level GitHub secrets
 # ####
 code: |
   secrets_names__repo = []
   alkiln_secrets_found__repo = []
-  repo_obj = x.repo
   try:
-    # Gets only repo-level secrets, not org secrets
-    repo_secrets = repo_obj.get_secrets()
-    secrets_names__repo = [ secret.name for secret in repo_secrets ]
-    repo_secrets = None  # PaginatedList object can't be pickled
+    alkiln_secrets.repo
+    secrets_names__repo = [ secret.name for secret in alkiln_secrets.repo ]
+  
+  except NameError:
+    raise
+  except AttributeError:
+    raise
+  except KeyError:
+    raise
   except Exception as secrets_err__repo:
-    message = 'Unable to get repository secrets'
+    message = secrets_err__repo
     try:
       message = secrets_err__repo.data['message']
     except Exception as _ignore:
@@ -1594,7 +1821,7 @@ code: |
           message = secrets_err__repo.msg
         except Exception as _ignore:
           pass
-    secrets_err_faux = ErrorLikeObject( message=message, alk_details='Unable to look for the repository\'s existing GitHub secrets using the permissions that you gave to your GitHub Personal Access Token (PAT).' )
+    secrets_err_faux = ErrorLikeObject( message=message, alk_details='The GitHub Personal Access Token (PAT) you gave does not have permission to look for the repository\'s existing GitHub secrets. You will also be unable to set the repository-level GitHub secrets.' )
     installer.errors.append( secrets_err_faux )
 
   if 'SERVER_URL' in secrets_names__repo:
@@ -1603,31 +1830,30 @@ code: |
     alkiln_secrets_found__repo.append('DOCASSEMBLE_DEVELOPER_API_KEY')
 
   installer.alkiln_secrets__repo = alkiln_secrets_found__repo
-  log(alkiln_secrets_found__repo, 'console')
   
   if len( alkiln_secrets_found__repo ) == 2:
     x.has_alkiln_secrets__repo = True
   else:
     x.has_alkiln_secrets__repo = False
 ---
+id: repo alkiln secrets
+need:
+  - alkiln_secrets
+
+# ######
+# Add repo secrets to alkiln_secrets
+# ######
+code: |
+  repo_secrets = list(showifdef('gh_repo_holder', None ).repo.get_secrets())
+  alkiln_secrets.repo = [
+    repo_secret for repo_secret in repo_secrets
+    if repo_secret.name == 'SERVER_URL'
+    or repo_secret.name == 'DOCASSEMBLE_DEVELOPER_API_KEY' ]
+  if len( alkiln_secrets.repo ) > 0:
+    alkiln_secrets.there_are_any = True
+---
 id: repo push vals
 code: |
   installer.branch_name = installer.get_free_branch_name()
   set_push_vals = True
----
----
-# Placeholders for development
----
----
-id: dev between
-continue button field: dev_between_screen
-question: We're in between
-subquestion: |
-  ${ info_so_far }
----
-id: dev end
-event: dev_end_screen
-question: Over 9000!
-subquestion: |
-  ${ info_so_far }
 ---

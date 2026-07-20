@@ -83,3 +83,26 @@ ul {
 .alk_value_block *:last-child {
   margin-bottom: 0;
 }
+
+.callout {
+  padding: .5em;
+  border-left: 4px solid;
+  border-radius: var(--bs-border-radius-lg);
+  margin-bottom: 1em;
+  overflow-y: scroll;
+}
+
+.callout.secondary {
+  background: var(--bs-secondary-bg-subtle);
+  border-color: var(--bs-secondary-border-subtle);
+  color: var(--bs-secondary-color);
+}
+
+.callout.info {
+  background: var(--bs-info-bg-subtle);
+  border-color: var(--bs-info);
+}
+
+.callout p:last-child {
+  margin-bottom: 0;
+}
