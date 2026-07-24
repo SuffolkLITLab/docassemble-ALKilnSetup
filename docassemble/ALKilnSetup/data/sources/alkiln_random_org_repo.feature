@@ -13,6 +13,8 @@ Feature: Manage sandbox tests
 
 # ALKilnland/docassemble-OrgRepoWithMember
 
+# Error screen id: show_errors
+
 # Start by generating randomized tests.
 @sole_repo @happy
 Scenario: Sandbox 1 placeholder name

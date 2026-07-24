@@ -146,25 +146,35 @@ class TestInstaller(DAObject):
     return [ owner_name, repo_name, package_name ]
 
   def has_correct_permissions( self ):
-    """Return True if user has at least write permissions to the repo, else False and add error."""
+    """
+    Return True if user has at least write permissions to the repo, else False and add error.
+
+    https://pygithub.readthedocs.io/en/stable/github_objects/Repository.html#github.Repository.Repository.get_collaborator_permission
+    """
+    correct_permissions = [ 'admin', 'maintain', 'write', 'push' ]
     has_permissions = False
     self.permissions = None
     
     # Are they even on the collaborator list
-    is_valid_collaborator = self.repo.has_in_collaborators( self.user_name )
-    if not is_valid_collaborator:
-      error1 = ErrorLikeObject( message='Must be a collaborator on the repository', alk_details=self.not_collaborator_error )
-      self.errors.append( error1 )
-      
-    else:
-      # Do they have a permission level that allows writing (pushing, etc)
-      correct_permissions = [ 'admin', 'maintain', 'write', 'push' ]
+    is_valid_collaborator = False
+    try:
+      # This sort of tests whether the person has push/write access to the repo
+      # 403 {"message": "Must have push access to view repository collaborators."...
       self.permissions = self.repo.get_collaborator_permission( self.user_name )
-      
-      has_permissions = self.permissions in correct_permissions
-      if not has_permissions:
-        error2 = ErrorLikeObject( message='Must have at least "write" permissions in the repository', alk_details=self.permissions_error )
-        self.errors.append( error2 )
+      is_valid_collaborator = True
+    except GithubException as no_write_perms_err:
+      write_perms_err_faux = ErrorLikeObject(
+        message=no_write_perms_err.data['message'],
+        status=no_write_perms_err.data['status'],
+        alk_details='You must have the ability to edit files in the repository "push" access) to continue. You might want to try to create a GitHub Personal Access Token with the settings ("scopes") this tool described earlier, or you can try using a different GitHub user account. Note that this tool accepts only classic GitHub Personal Access Tokens. Fine-grained tokens won\'t work.' )
+      self.errors.append( write_perms_err_faux )
+      return is_valid_collaborator
+
+    # Do they have a permission level that allows writing (pushing, etc)
+    has_permissions = self.permissions in correct_permissions
+    if not has_permissions:
+      perms_err_faux = ErrorLikeObject( message='The GitHub user must have at least "write" permissions in the repository. That is, the user must be able to edit the files in the repository.', alk_details=self.permissions_error )
+      self.errors.append( perms_err_faux )
     
     return is_valid_collaborator
   

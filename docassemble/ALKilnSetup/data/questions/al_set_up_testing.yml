@@ -720,7 +720,7 @@ buttons:
 #terms:
 #  encrypted docassemble login information: ${ secrets_popover }
 comment: |
-  TODO: Should we offer to delete their personal access token for them in the interview itself? Do we have enough permissions?
+  TODO: Should we offer to delete their personal access token for them in the interview itself? Do we have enough authorization?
   TODO: Implement feedback form instead of linking issues. See AL core for that.
   TODO: Add link to documentation on writing tests.
 ---

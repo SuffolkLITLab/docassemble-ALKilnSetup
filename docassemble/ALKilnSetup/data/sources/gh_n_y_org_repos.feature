@@ -20,6 +20,8 @@ Feature: Manage github_n_you tests for an org repo
 # alkilnert/docassemble-SoleRepoWithNoCollaborator
 # alkilnert/docassemble-SoleRepoWithCollaborator
 
+# Error screen id: show_errors
+
 @happy @row1
 Scenario: G_n_Y org repo admin
   And I start the interview at "main.yml&alks_test=true"
@@ -32,12 +34,14 @@ Scenario: G_n_Y org repo admin
   And I set the var "installer.token" to the GitHub secret "ALKILN_ALKS_GH_ADMIN_ADMINORG_TOKEN"
   # And I get to any of the question ids ["da server info"] with this data:
   And I get to any of the question ids ["tester api key"] with this data:
+    | var | value |
     | gh_org_holder_name | ALKilnland |
     | wait_for_repos_list_warning | True |
     # | wants_custom_repo | False |
     | gh_repo_holder_name | ALKilnland/docassemble-OrgRepoWithMember |
-    | which_secrets_to_pre_set['repo'] | False |
-    | which_secrets_to_pre_set['org'] | True |
+    | secrets_to_pre_set['repo'] | True |
+    | secrets_to_pre_set['org'] | True |
+    | secrets_to_pre_set['None'] | False |
     | the_coveted_secrets['repo'] | True |
     | the_coveted_secrets['org'] | True |
     | covets_all_secrets | True |
@@ -47,6 +51,7 @@ Scenario: G_n_Y org repo admin
     | wants_more_API_key_info | True |
   And I set the var "installer.da_api_key" to the GitHub secret "ALKILN_ALKS_VALID_DA_API_KEY"
   And I get to any of the question ids ["final review"] with this data:
+    | var | value |
     | wants_workflow_files | True |
     | wants_feature_file | True |
     | interviews_to_test['choose_me_1.yml'] | True |
@@ -61,6 +66,8 @@ Scenario: G_n_Y org repo admin
 #  And I tap to continue
 #  And I set the var "task_type" to "org_repo"
 #  And I set the var "wants_more_PAT_info" to "False"
+#  And I set the var "installer.token" to the GitHub secret ""
+#  And I set the var "installer.token" to the GitHub secret ""
 #  And I tap to continue
 #
 #@sad @row3
@@ -71,6 +78,7 @@ Scenario: G_n_Y org repo admin
 #  And I tap to continue
 #  And I set the var "task_type" to "org_repo"
 #  And I set the var "wants_more_PAT_info" to "False"
+#  And I set the var "installer.token" to the GitHub secret ""
 #  And I tap to continue
 #
 #@sad @row4
@@ -81,6 +89,7 @@ Scenario: G_n_Y org repo admin
 #  And I tap to continue
 #  And I set the var "task_type" to "org_repo"
 #  And I set the var "wants_more_PAT_info" to "False"
+#  And I set the var "installer.token" to the GitHub secret ""
 #  And I tap to continue
 #
 #@sad @row5
@@ -91,6 +100,7 @@ Scenario: G_n_Y org repo admin
 #  And I tap to continue
 #  And I set the var "task_type" to "org_repo"
 #  And I set the var "wants_more_PAT_info" to "False"
+#  And I set the var "installer.token" to the GitHub secret ""
 #  And I tap to continue
 #
 #@sad @row6
@@ -101,6 +111,7 @@ Scenario: G_n_Y org repo admin
 #  And I tap to continue
 #  And I set the var "task_type" to "org_repo"
 #  And I set the var "wants_more_PAT_info" to "False"
+#  And I set the var "installer.token" to the GitHub secret ""
 #  And I tap to continue
 #
 #@sad @row7
@@ -111,6 +122,7 @@ Scenario: G_n_Y org repo admin
 #  And I tap to continue
 #  And I set the var "task_type" to "org_repo"
 #  And I set the var "wants_more_PAT_info" to "False"
+#  And I set the var "installer.token" to the GitHub secret ""
 #  And I tap to continue
 
 @happy @row8
@@ -120,32 +132,30 @@ Scenario: G_n_Y org repo admin with only repo secrets
   And I set the var "environments['github_n_you']" to "True"
   And I tap to continue
   And I set the var "task_type" to "org_repo"
-  And I set the var "wants_more_PAT_info" to "False"
-  And I tap to continue
   And I set the var "installer.token" to the GitHub secret "ALKILN_ALKS_GH_ADMIN_ADMINORG_TOKEN"
-  # And I get to any of the question ids ["da server info"] with this data:
-  And I get to any of the question ids ["tester api key"] with this data:
+  And I get to any of the question ids ["da server info"] with this data:
+    | var | value |
     | gh_org_holder_name | ALKilnland |
     | wait_for_repos_list_warning | True |
-    # | wants_custom_repo | False |
+    #| wants_custom_repo | False |
     | gh_repo_holder_name | ALKilnland/docassemble-OrgRepoWithMember |
-    | which_secrets_to_pre_set['repo'] | False |
-    | which_secrets_to_pre_set['org'] | True |
+    #| secrets_to_pre_set['repo'] | False |
+    #| secrets_to_pre_set['org'] | False |
+    | secrets_to_pre_set['None'] | True |
     | the_coveted_secrets['repo'] | True |
     | the_coveted_secrets['org'] | False |
-    # | covets_all_secrets | True |
-    | will_test_on_this_server | True |
-    # | installer.server_url_input | https://apps-dev.suffolklitlab.org/ |
-    # Change the below for all other tests
-    | wants_more_API_key_info | False |
+    #| covets_all_secrets | True |
+  And I set the var "will_test_on_this_server" to "True"
   And I set the var "installer.da_api_key" to the GitHub secret "ALKILN_ALKS_VALID_DA_API_KEY"
   And I get to any of the question ids ["final review"] with this data:
+    | var | value |
     | wants_workflow_files | True |
     | wants_feature_file | True |
     | interviews_to_test['choose_me_1.yml'] | True |
     | interviews_to_test['choose_me_2.yml'] | True |
     | is_ready | True |
 
+# May repeat row 2, just avoiding error, which is a surface difference until we can test afterwards whether we actually set secrets
 @happy @row9
 Scenario: G_n_Y org repo admin with only org secrets
   And I start the interview at "main.yml&alks_test=true"
@@ -153,68 +163,184 @@ Scenario: G_n_Y org repo admin with only org secrets
   And I set the var "environments['github_n_you']" to "True"
   And I tap to continue
   And I set the var "task_type" to "org_repo"
-  And I set the var "wants_more_PAT_info" to "False"
-  And I tap to continue
   And I set the var "installer.token" to the GitHub secret "ALKILN_ALKS_GH_ADMIN_ADMINORG_TOKEN"
-  # And I get to any of the question ids ["da server info"] with this data:
-  And I get to any of the question ids ["tester api key"] with this data:
+  And I get to any of the question ids ["da server info"] with this data:
+    | var | value |
     | gh_org_holder_name | ALKilnland |
     | wait_for_repos_list_warning | True |
     # | wants_custom_repo | False |
     | gh_repo_holder_name | ALKilnland/docassemble-OrgRepoWithMember |
-    | which_secrets_to_pre_set['repo'] | False |
-    | which_secrets_to_pre_set['org'] | True |
+    #| secrets_to_pre_set['repo'] | False |
+    #| secrets_to_pre_set['org'] | False |
+    | secrets_to_pre_set['None'] | True |
     | the_coveted_secrets['repo'] | False |
     | the_coveted_secrets['org'] | True |
     # | covets_all_secrets | True |
-    | will_test_on_this_server | True |
-    # | installer.server_url_input | https://apps-dev.suffolklitlab.org/ |
-    # Change the below for all other tests
-    | wants_more_API_key_info | False |
+  And I set the var "will_test_on_this_server" to "True"
   And I set the var "installer.da_api_key" to the GitHub secret "ALKILN_ALKS_VALID_DA_API_KEY"
   And I get to any of the question ids ["final review"] with this data:
+    | var | value |
     | wants_workflow_files | True |
     | wants_feature_file | True |
     | interviews_to_test['choose_me_1.yml'] | True |
     | interviews_to_test['choose_me_2.yml'] | True |
     | is_ready | True |
 
+@happy @row10
+Scenario: G_n_Y org repo admin with no secrets
+  And I start the interview at "main.yml&alks_test=true"
+  And the max seconds for each Step is 20
+  And I set the var "environments['github_n_you']" to "True"
+  And I tap to continue
+  And I set the var "task_type" to "org_repo"
+  And I set the var "installer.token" to the GitHub secret "ALKILN_ALKS_GH_ADMIN_ADMINORG_TOKEN"
+  And I get to any of the question ids ["final review"] with this data:
+    | var | value |
+    | gh_org_holder_name | ALKilnland |
+    | wait_for_repos_list_warning | True |
+    # | wants_custom_repo | False |
+    | gh_repo_holder_name | ALKilnland/docassemble-OrgRepoWithMember |
+    #| secrets_to_pre_set['repo'] | False |
+    #| secrets_to_pre_set['org'] | False |
+    | secrets_to_pre_set['None'] | True |
+    | the_coveted_secrets['repo'] | False |
+    | the_coveted_secrets['org'] | False |
+    | wants_workflow_files | True |
+    | wants_feature_file | True |
+    | interviews_to_test['choose_me_1.yml'] | True |
+    | interviews_to_test['choose_me_2.yml'] | True |
+    | is_ready | True |
 
+# @row11 low priority. repeats r1, just with non-da-repo, which is currently valid as of 2026/07/22. TODO: Transfer non-da-repo to other row.
 
+@happy @row12
+Scenario: G_n_Y org repo member and writer
+  And I start the interview at "main.yml&alks_test=true"
+  And the max seconds for each Step is 20
+  And I set the var "environments['github_n_you']" to "True"
+  And I tap to continue
+  And I set the var "task_type" to "org_repo"
+  And I set the var "installer.token" to the GitHub secret "ALKILN_ALKS_GH_MEMBER_ADMINORG_TOKEN"
+  And I get to any of the question ids ["get the repo"] with this data:
+    | var | value |
+    | gh_org_holder_name | ALKilnland |
+    | wait_for_repos_list_warning | True |
+  And I should NOT see the phrase "OrgRepoWithReadOnlyMembers"
+  And I should NOT see the phrase "OrgRepoWithNoMembers"
+  And I SHOULD see the phrase "OrgRepoWithMember"
+  And I get to any of the question ids ["da server info"] with this data:
+    | var | value |
+    #| wants_custom_repo | False |
+    | gh_repo_holder_name | ALKilnland/docassemble-OrgRepoWithMember |
+    #| secrets_to_pre_set['repo'] | False |
+    #| secrets_to_pre_set['org'] | False |
+    | secrets_to_pre_set['None'] | True |
+    | the_coveted_secrets['repo'] | True |
+    # TODO: Check that this field is hidden
+    #| the_coveted_secrets['org'] | False |
+  And I set the var "will_test_on_this_server" to "True"
+  And I set the var "installer.da_api_key" to the GitHub secret "ALKILN_ALKS_VALID_DA_API_KEY"
+  And I get to any of the question ids ["final review"] with this data:
+    | var | value |
+    | wants_workflow_files | True |
+    | wants_feature_file | True |
+    | interviews_to_test['choose_me_1.yml'] | True |
+    | interviews_to_test['choose_me_2.yml'] | True |
+    | is_ready | True |
 
+# # Phrase assertion done by 12 now
+# @medium @row13
+# Scenario: G_n_Y org member repo non-writer
+#   And I start the interview at "main.yml&alks_test=true"
+#   And the max seconds for each Step is 20
+#   And I set the var "environments['github_n_you']" to "True"
+#   And I tap to continue
+#   And I set the var "task_type" to "org_repo"
+#   And I set the var "installer.token" to the GitHub secret "ALKILN_ALKS_GH_MEMBER_WORKFLOW_TOKEN"
+#   And I get to any of the question ids ["get the repo"] with this data:
+#     | gh_org_holder_name | ALKilnland |
+#     | wait_for_repos_list_warning | True |
+#   And I should NOT see the phrase "OrgRepoWithReadOnlyMembers"
+#   And I should NOT see the phrase "OrgRepoWithNoMembers"
+#   And I SHOULD see the phrase "OrgRepoWithMember"
 
+@sad @row14
+Scenario: G_n_Y org repo member non-writing scopes
+  And I start the interview at "main.yml&alks_test=true"
+  And the max seconds for each Step is 20
+  And I set the var "environments['github_n_you']" to "True"
+  And I tap to continue
+  And I set the var "task_type" to "org_repo"
+  And I set the var "installer.token" to the GitHub secret "ALKILN_ALKS_GH_MEMBER_GIST_TOKEN"
+  And I tap to continue
+      #And I get to any of the question ids ["show_errors"] with this data:
+      #  | gh_org_holder_name | ALKilnland |
+      #  | wait_for_repos_list_warning | True |
+      #  # | wants_custom_repo | False |
+      #  | gh_repo_holder_name | ALKilnland/docassemble-OrgRepoWithReadOnlyMembers |
+      #  #| secrets_to_pre_set['repo'] | False |
+      #  #| secrets_to_pre_set['org'] | False |
+      #  | secrets_to_pre_set['None'] | True |
+  Then the question id SHOULD be "show_errors"
+  And I take a screenshot
 
-  
-  # And I set the var "gh_org_holder_name" to "ALKilnland"
-  # And I tap to continue
-  # And I set the var "wait_for_repos_list_warning" to "True"
-  # # And I set the var "wants_custom_repo" to "False"
-  # And I set the var "gh_repo_holder_name" to "ALKilnland/docassemble-OrgRepoWithMember"
-  # And I tap to continue
-  # And I set the var "which_secrets_to_pre_set['repo']" to "False"
-  # And I set the var "which_secrets_to_pre_set['org']" to "True"
-  # the_coveted_secrets['repo']
-  # the_coveted_secrets['org']
-  # covets_all_secrets
-  # will_test_on_this_server
-  # # installer.server_url_input
-  # wants_more_API_key_info
-  # 
-  # And I get to any of the question ids ["final review"] with this data:
-  # | var | value |
-  # | which_secrets_to_pre_set['repo'] | False |
-  # | which_secrets_to_pre_set['org'] | False |
-  # | environments['sandbox'] | True |
-  # | task_type | org_repo |
-  # | wants_more_PAT_info |  True |
-  # | installer.token | ALKILN_ALKS_GH_ADMIN_ADMINORG_TOKEN |
-  # | gh_org_holder_name | ALKilnland |
-  # | wait_for_repos_list_warning | True |
-  # | wants_custom_repo | False |
-  # | gh_repo_holder_name | ALKilnland/docassemble-OrgRepoWithMember |
-  # | wants_workflow_files | True |
-  # | wants_feature_file | True |
-  # | interviews_to_test['choose_me_1.yml'] | True |
-  # | interviews_to_test['choose_me_2.yml'] | True |
-  # | is_ready | True |
+@happy @row15
+Scenario: G_n_Y org repo member non-org-secret scopes
+  And I start the interview at "main.yml&alks_test=true"
+  And the max seconds for each Step is 20
+  And I set the var "environments['github_n_you']" to "True"
+  And I tap to continue
+  And I set the var "task_type" to "org_repo"
+  And I set the var "installer.token" to the GitHub secret "ALKILN_ALKS_GH_MEMBER_WORKFLOW_TOKEN"
+  And I get to any of the question ids ["da server info"] with this data:
+    | var | value |
+    | gh_org_holder_name | ALKilnland |
+    | wait_for_repos_list_warning | True |
+    #| wants_custom_repo | False |
+    | gh_repo_holder_name | ALKilnland/docassemble-OrgRepoWithMember |
+    #| secrets_to_pre_set['repo'] | False |
+    #| secrets_to_pre_set['org'] | False |
+    | secrets_to_pre_set['None'] | True |
+    | the_coveted_secrets['repo'] | True |
+    # TODO: Check that this field is hidden
+    #| the_coveted_secrets['org'] | False |
+  And I set the var "will_test_on_this_server" to "True"
+  And I set the var "installer.da_api_key" to the GitHub secret "ALKILN_ALKS_VALID_DA_API_KEY"
+  And I get to any of the question ids ["final review"] with this data:
+    | var | value |
+    | wants_workflow_files | True |
+    | wants_feature_file | True |
+    | interviews_to_test['choose_me_1.yml'] | True |
+    | interviews_to_test['choose_me_2.yml'] | True |
+    | is_ready | True |
+
+@happy @row16
+Scenario: G_n_Y org repo admin non-org-secret scopes
+  And I start the interview at "main.yml&alks_test=true"
+  And the max seconds for each Step is 20
+  And I set the var "environments['github_n_you']" to "True"
+  And I tap to continue
+  And I set the var "task_type" to "org_repo"
+  And I set the var "installer.token" to the GitHub secret "ALKILN_ALKS_GH_ADMIN_WORKFLOW_TOKEN"
+  And I get to any of the question ids ["da server info"] with this data:
+    | var | value |
+    | gh_org_holder_name | ALKilnland |
+    | wait_for_repos_list_warning | True |
+    #| wants_custom_repo | False |
+    | gh_repo_holder_name | ALKilnland/docassemble-OrgRepoWithMember |
+    #| secrets_to_pre_set['repo'] | False |
+    #| secrets_to_pre_set['org'] | False |
+    | secrets_to_pre_set['None'] | True |
+    | the_coveted_secrets['repo'] | True |
+    # TODO: Check that this field is hidden
+    #| the_coveted_secrets['org'] | False |
+  And I set the var "will_test_on_this_server" to "True"
+  And I set the var "installer.da_api_key" to the GitHub secret "ALKILN_ALKS_VALID_DA_API_KEY"
+  And I get to any of the question ids ["final review"] with this data:
+    | var | value |
+    | wants_workflow_files | True |
+    | wants_feature_file | True |
+    | interviews_to_test['choose_me_1.yml'] | True |
+    | interviews_to_test['choose_me_2.yml'] | True |
+    | is_ready | True |
 

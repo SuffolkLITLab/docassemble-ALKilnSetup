@@ -20,6 +20,8 @@ Feature: Manage sandbox tests
 # alkilnert/docassemble-SoleRepoWithNoCollaborator
 # alkilnert/docassemble-SoleRepoWithCollaborator
 
+# Error screen id: show_errors
+
 @org_repo @happy @row25
 Scenario: Sandbox org admin
   And I start the interview at "main.yml&alks_test=true"
