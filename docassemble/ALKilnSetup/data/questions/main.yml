@@ -1115,15 +1115,17 @@ subquestion: |
   :warning: You have both organization-level secrets and repository-level secrets. We recommend picking just one of those. Repository-level secrets override organization-level secrets and that can get confusing. This form is currently unable to help with removing GitHub secrets. You can still change the values of the existing secrets if you want, though.
   % endif
 
+  What do you need to do?
+
 fields:
   # 💡 Author may want to set both org and repo secrets. For example, they have incorrect repo secrets and can't delete them _&_ they want to use org secrets in future repos
-  - Do you need to **change** the values of the standard ALKiln **repository-level** secrets?: the_coveted_secrets['repo']
-    datatype: yesnoradio
+  - "**Change** the values of the standard ALKiln **repository-level** secrets": the_coveted_secrets['repo']
+    datatype: yesno
     show if:
       code: |
         gh_repo_holder.has_alkiln_secrets__repo
-  - Do you need to create the standard ALKiln **repository-level** GitHub secrets?: the_coveted_secrets['repo'] 
-    datatype: yesnoradio
+  - "Create the standard ALKiln **repository-level** GitHub secrets": the_coveted_secrets['repo'] 
+    datatype: yesno
     # TODO MVP: Test whether this default Mako works correctly
     default: ${ (not 'org' in task_type and not the_coveted_secrets['org']) or None }
     show if:
@@ -1131,13 +1133,13 @@ fields:
         not gh_repo_holder.has_alkiln_secrets__repo
 
 
-  - Do you need to **change** the values of your **organization-level** ALKiln secrets?: the_coveted_secrets['org']
-    datatype: yesnoradio
+  - "**Change** the values of your **organization-level** ALKiln secrets": the_coveted_secrets['org']
+    datatype: yesno
     show if:
       code: |
         'org' in task_type and 'admin:org' in installer.github.oauth_scopes and gh_org_holder.user_role == 'admin' and gh_org_holder.has_alkiln_secrets__org
-  - Do you need to create the standard ALKiln **organization-level** secrets?: the_coveted_secrets['org']
-    datatype: yesnoradio
+  - "Create the standard ALKiln **organization-level** secrets": the_coveted_secrets['org']
+    datatype: yesno
     default: True
     show if:
       code: |

@@ -1,5 +1,5 @@
 @gh_n_y @sole_repo @org_secrets
-Feature: Manage sandbox tests
+Feature: Manage sole repos and org secrets for github_n_you tests
 
 # ALKILN_ALKS_GH_ADMIN_ADMINORG_TOKEN
 # ALKILN_ALKS_GH_ADMIN_WORKFLOW_TOKEN
