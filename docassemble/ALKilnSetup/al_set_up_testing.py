@@ -26,7 +26,10 @@ class TestInstaller(DAObject):
     """Use the interview url to get the user's Playground id."""
     # Start clean (idempotent for da's loops).
     self.errors = []
-    self.server_url = self.server_url_input.rstrip('/')
+    self.server_url = showifdef(
+      self.attr_name('server_url'),
+      self.server_url_input.rstrip('/')
+    )
     
     try:
       # https://docassemble.org/docs/api.html#user
@@ -396,9 +399,7 @@ class TestInstaller(DAObject):
     Returns
       [{"path": str, "msg": str, "contents": str }]
     """
-    self.envrionments = environments
     self.interviews_to_test = interviews_to_test
-
     self.files_to_push = self.get_workflow_file_dicts( environments )
 
     if len( interviews_to_test ) > 0:

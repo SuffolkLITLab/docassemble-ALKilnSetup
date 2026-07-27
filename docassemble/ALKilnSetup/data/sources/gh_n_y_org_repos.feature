@@ -33,7 +33,7 @@ Scenario: G_n_Y org repo admin
   And I tap to continue
   And I set the var "installer.token" to the GitHub secret "ALKILN_ALKS_GH_ADMIN_ADMINORG_TOKEN"
   # And I get to any of the question ids ["da server info"] with this data:
-  And I get to any of the question ids ["tester api key"] with this data:
+  And I get to any of the question ids ["tester account api key"] with this data:
     | var | value |
     | gh_org_holder_name | ALKilnland |
     | wait_for_repos_list_warning | True |
@@ -46,10 +46,10 @@ Scenario: G_n_Y org repo admin
     | the_coveted_secrets['org'] | True |
     | covets_all_secrets | True |
     | will_test_on_this_server | True |
-    # | installer.server_url_input | https://apps-dev.suffolklitlab.org/ |
+    # | server_url_input | https://apps-dev.suffolklitlab.org/ |
     # Change the below for all other tests
     | wants_more_API_key_info | True |
-  And I set the var "installer.da_api_key" to the GitHub secret "ALKILN_ALKS_VALID_DA_API_KEY"
+  And I set the var "da_api_key" to the GitHub secret "ALKILN_ALKS_VALID_DA_API_KEY"
   And I get to any of the question ids ["final review"] with this data:
     | var | value |
     | wants_workflow_files | True |
@@ -66,7 +66,6 @@ Scenario: G_n_Y org repo admin
 #  And I tap to continue
 #  And I set the var "task_type" to "org_repo"
 #  And I set the var "wants_more_PAT_info" to "False"
-#  And I set the var "installer.token" to the GitHub secret ""
 #  And I set the var "installer.token" to the GitHub secret ""
 #  And I tap to continue
 #
@@ -146,7 +145,7 @@ Scenario: G_n_Y org repo admin with only repo secrets
     | the_coveted_secrets['org'] | False |
     #| covets_all_secrets | True |
   And I set the var "will_test_on_this_server" to "True"
-  And I set the var "installer.da_api_key" to the GitHub secret "ALKILN_ALKS_VALID_DA_API_KEY"
+  And I set the var "da_api_key" to the GitHub secret "ALKILN_ALKS_VALID_DA_API_KEY"
   And I get to any of the question ids ["final review"] with this data:
     | var | value |
     | wants_workflow_files | True |
@@ -177,7 +176,7 @@ Scenario: G_n_Y org repo admin with only org secrets
     | the_coveted_secrets['org'] | True |
     # | covets_all_secrets | True |
   And I set the var "will_test_on_this_server" to "True"
-  And I set the var "installer.da_api_key" to the GitHub secret "ALKILN_ALKS_VALID_DA_API_KEY"
+  And I set the var "da_api_key" to the GitHub secret "ALKILN_ALKS_VALID_DA_API_KEY"
   And I get to any of the question ids ["final review"] with this data:
     | var | value |
     | wants_workflow_files | True |
@@ -221,7 +220,7 @@ Scenario: G_n_Y org repo member and writer
   And I tap to continue
   And I set the var "task_type" to "org_repo"
   And I set the var "installer.token" to the GitHub secret "ALKILN_ALKS_GH_MEMBER_ADMINORG_TOKEN"
-  And I get to any of the question ids ["get the repo"] with this data:
+  And I get to any of the question ids ["github repo"] with this data:
     | var | value |
     | gh_org_holder_name | ALKilnland |
     | wait_for_repos_list_warning | True |
@@ -239,7 +238,7 @@ Scenario: G_n_Y org repo member and writer
     # TODO: Check that this field is hidden
     #| the_coveted_secrets['org'] | False |
   And I set the var "will_test_on_this_server" to "True"
-  And I set the var "installer.da_api_key" to the GitHub secret "ALKILN_ALKS_VALID_DA_API_KEY"
+  And I set the var "da_api_key" to the GitHub secret "ALKILN_ALKS_VALID_DA_API_KEY"
   And I get to any of the question ids ["final review"] with this data:
     | var | value |
     | wants_workflow_files | True |
@@ -257,7 +256,7 @@ Scenario: G_n_Y org repo member and writer
 #   And I tap to continue
 #   And I set the var "task_type" to "org_repo"
 #   And I set the var "installer.token" to the GitHub secret "ALKILN_ALKS_GH_MEMBER_WORKFLOW_TOKEN"
-#   And I get to any of the question ids ["get the repo"] with this data:
+#   And I get to any of the question ids ["github repo"] with this data:
 #     | gh_org_holder_name | ALKilnland |
 #     | wait_for_repos_list_warning | True |
 #   And I should NOT see the phrase "OrgRepoWithReadOnlyMembers"
@@ -305,7 +304,7 @@ Scenario: G_n_Y org repo member non-org-secret scopes
     # TODO: Check that this field is hidden
     #| the_coveted_secrets['org'] | False |
   And I set the var "will_test_on_this_server" to "True"
-  And I set the var "installer.da_api_key" to the GitHub secret "ALKILN_ALKS_VALID_DA_API_KEY"
+  And I set the var "da_api_key" to the GitHub secret "ALKILN_ALKS_VALID_DA_API_KEY"
   And I get to any of the question ids ["final review"] with this data:
     | var | value |
     | wants_workflow_files | True |
@@ -335,7 +334,7 @@ Scenario: G_n_Y org repo admin non-org-secret scopes
     # TODO: Check that this field is hidden
     #| the_coveted_secrets['org'] | False |
   And I set the var "will_test_on_this_server" to "True"
-  And I set the var "installer.da_api_key" to the GitHub secret "ALKILN_ALKS_VALID_DA_API_KEY"
+  And I set the var "da_api_key" to the GitHub secret "ALKILN_ALKS_VALID_DA_API_KEY"
   And I get to any of the question ids ["final review"] with this data:
     | var | value |
     | wants_workflow_files | True |

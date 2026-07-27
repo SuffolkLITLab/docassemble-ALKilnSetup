@@ -41,7 +41,7 @@ Scenario: G_n_Y & sandbox files for org repo admin
     | secrets_to_pre_set['None'] | True |
     | the_coveted_secrets['org'] | True |
   And I set the var "will_test_on_this_server" to "True"
-  And I set the var "installer.da_api_key" to the GitHub secret "ALKILN_ALKS_VALID_DA_API_KEY"
+  And I set the var "da_api_key" to the GitHub secret "ALKILN_ALKS_VALID_DA_API_KEY"
   And I get to any of the question ids ["final review"] with this data:
     | var | value |
     | wants_workflow_files | True |

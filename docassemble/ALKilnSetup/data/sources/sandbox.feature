@@ -1,7 +1,6 @@
 @sandbox
 Feature: Manage sandbox tests
 
-
 # ALKILN_ALKS_GH_ADMIN_ADMINORG_TOKEN
 # ALKILN_ALKS_GH_ADMIN_WORKFLOW_TOKEN
 # ALKILN_ALKS_GH_ADMIN_GIST_TOKEN
@@ -34,12 +33,7 @@ Scenario: Sandbox org admin
   And I tap to continue
   And I get to any of the question ids ["final review"] with this data:
   | var | value |
-  | which_secrets_to_pre_set['repo'] | False |
-  | which_secrets_to_pre_set['org'] | False |
-  | environments['sandbox'] | True |
-  | task_type | org_repo |
   | wants_more_PAT_info |  False |
-  | installer.token | ALKILN_ALKS_GH_ADMIN_WORKFLOW_TOKEN |
   | gh_org_holder_name | ALKilnland |
   | wait_for_repos_list_warning | True |
   | wants_custom_repo | False |
@@ -61,15 +55,8 @@ Scenario: Sandbox org member
   And I tap to continue
   And I get to any of the question ids ["final review"] with this data:
   | var | value |
-  | which_secrets_to_pre_set['repo'] | False |
-  | which_secrets_to_pre_set['org'] | False |
-  | environments['sandbox'] | True |
-  | task_type | org_repo |
-  | wants_more_PAT_info |  |
-  | installer.token | ALKILN_ALKS_GH_MEMBER_WORKFLOW_TOKEN |
   | gh_org_holder_name | ALKilnland |
   | wait_for_repos_list_warning | True |
-  | wants_custom_repo | False |
   | gh_repo_holder_name | ALKilnland/docassemble-OrgRepoWithMember |
   | wants_workflow_files | True |
   | wants_feature_file | True |
@@ -88,14 +75,7 @@ Scenario: Sandbox sole owner 2 files
   And I tap to continue
   And I get to any of the question ids ["final review"] with this data:
   | var | value |
-  | which_secrets_to_pre_set['repo'] | False |
-  | which_secrets_to_pre_set['org'] | False |
-  | environments['sandbox'] | True |
-  | task_type | sole_repo |
-  | wants_more_PAT_info |  |
-  | installer.token | ALKILN_ALKS_GH_ADMIN_WORKFLOW_TOKEN |
   | wait_for_repos_list_warning | True |
-  | wants_custom_repo | False |
   | gh_repo_holder_name | alkilnert/docassemble-SoleRepoWithCollaborator |
   | wants_workflow_files | True |
   | wants_feature_file | True |
