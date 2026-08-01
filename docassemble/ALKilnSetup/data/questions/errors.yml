@@ -63,7 +63,9 @@ code: |
 ---
 template: github_pat_scopes_error
 content: |
-  Your [GitHub Personal Access Token (PAT)](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) ending in **\*\*\*${ installer.token[-4:] }** is **missing these scopes: ${ comma_and_list( missing_scopes ) }**. If you can still copy the token, you can try copying and pasting the token again, or you can try [making a new token](https://github.com/settings/tokens).
+  Your [GitHub Personal Access Token (PAT)](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) ending in **\*\*\*${ installer.token[-4:] }** is missing these scopes:[BR]
+  **${ comma_and_list(  showifdef('missing_scopes', ['unknown']) ) }**[BR]
+  You can try [making a new token](https://github.com/settings/tokens). If you no longer need this token, delete it.
 ---
 depends on: github_url_error
 code: |
@@ -138,7 +140,7 @@ code: |
 ---
 template: github_branch_name_error
 content: |
-  It looks like all the allowed branch names are taken. To solve this, delete some of the branches that start with "${ installer.default_branch_name }".
+  This ALKiln setup tool was unable to create a unique branch name in your GitHub repo on which to store the new code. The last one it tried was "${ installer.branch_name }". To solve this, delete some of the branches that start with "${ installer.default_branch_name }".
 ---
 depends on: admins_0_orgs
 code: |

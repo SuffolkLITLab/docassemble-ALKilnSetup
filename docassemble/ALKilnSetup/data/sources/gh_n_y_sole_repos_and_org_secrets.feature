@@ -1,4 +1,4 @@
-@gh_n_y @sole_repo @org_secrets
+@gh_n_y
 Feature: Manage sole repos and org secrets for github_n_you tests
 
 # ALKILN_ALKS_GH_ADMIN_ADMINORG_TOKEN

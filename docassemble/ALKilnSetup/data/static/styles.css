@@ -66,6 +66,10 @@ ul {
   translate: 0;
 }
 
+.alk_icon_group.superscript {
+  font-size: .3em;
+}
+
 .daterm, .daterm:hover {
   text-decoration: underline dashed;
   text-underline-offset: 2px;

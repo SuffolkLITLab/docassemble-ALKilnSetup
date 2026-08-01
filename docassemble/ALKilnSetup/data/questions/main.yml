@@ -72,13 +72,16 @@
 # code
 # file-code
 ---
+# 🧠
+# DA functions models: 1. DAList of DAObject(s) with property to trigger and, possibly, a `description`/`name`. 2. Unique prop names to trigger.
+---
 include:
   - al_set_up_testing.yml
   - al_testing_files_to_push.yml
   - errors.yml
 ---
 metadata:
-  title: Manage or set up ALKiln automated GitHub tests
+  title: Manage or set up ALKiln automated tests
   short title: Manage ALKiln tests
   description: Manage or set up ALKiln automated testing GitHub for docassemble interviews. This tool was created in collaboration with the Document Assembly Line project.
 ---
@@ -192,8 +195,7 @@ code: |
     original_alkiln_setup_interview
   
   secret_type_wanted = None
-
-  # set_parts( pre=info_so_far.content )
+  wants_to_set_up_tests = False
   
   # #### Blockers ####
   # show errors first thing on each loop
@@ -211,7 +213,8 @@ code: |
   task_type
   installer.token
 
-  prep_github_auth  # need to organize the auth stuff
+  get_gh_user
+  missing_scopes
   
   # ## Neutralize unwanted vars ##
   if task_type == 'org_secrets':
@@ -227,9 +230,10 @@ code: |
     gh_org_holders.gathered
     # Unnecessary check?
     if gh_org_holders.number_gathered() == 0:
-      installer.errors.clear()
-      no_orgs_err = ErrorLikeObject( message='No organizations found', status=status, alk_details='This tool is unable to find any organizations where you have an "admin" role. You might try using a different GitHub Personal Access Token.' )
+      installer.errors = []
+      no_orgs_err = ErrorLikeObject( message='No organizations found', status=status, log_code='ALKiS0001', alk_details='This tool is unable to find any organizations where you have an "admin" role. You might try using a different GitHub Personal Access Token.' )
       installer.errors.append( no_orgs_err )
+      show_errors
     gh_org_holder
     set_installer_gh_org_info
 
@@ -263,10 +267,11 @@ code: |
       neutralize_ALL_SECRETS_vars
 
   # ## Interviews ##
-  if wants_feature_file or wants_workflow_files:
+  if wants_workflow_files or wants_feature_file:
+    wants_to_set_up_tests = True
     interviews_to_test
     prepare_file_data
-    installer.files_to_push
+    final_files_to_push
   
   wrap_it_up
 ---
@@ -275,9 +280,14 @@ code: |
   # Review/confirm
   is_ready
 
-  # Send desired items to github
+  # Change GitHub
   set_github_auth
-  update_github
+  if the_coveted_secrets.any_true():
+    # Secrets first so actions will be more likely to pass
+    send_secrets
+  if wants_workflow_files or wants_feature_file:
+    create_branch
+    make_pull_request
   
   # End
   force_ask('next_steps')  # prevent going back
@@ -294,7 +304,9 @@ code: |
 id: environments
 sets:
   - environments
-question: Welcome!
+pre: ''
+question: |
+  Welcome! :hat-wizard:
 subquestion: |
   This tool can help you set up [ALKiln](https://assemblyline.suffolklitlab.org/docs/components/ALKiln/intro) automated integrated testing for docassemble packages that have a GitHub repository. Specifically, this tool can help you:
 
@@ -325,9 +337,14 @@ fields:
 # GitHub questions
 # ##############################
 ---
+template: key_icon
+content: |
+  <div markdown=1 class='alk_icon_group superscript'><div markdown=1 class='icon'>:key:</div></div>
+---
 id: purpose
 sets: task_type
-question: GitHub authorization ${ gh_icon__repo }
+question: |
+  GitHub authorization ${ gh_icon__repo } ${ key_icon }
 subquestion: |
   What you want to do and what you can do will depend on your relationship to the GitHub repository or organization.
 fields:
@@ -356,7 +373,8 @@ validation code: |  # Sets values
 ---
 id: github token with explanation
 sets: installer.token
-question: GitHub authorization info ${ gh_icon__repo }
+question: |
+  GitHub authorization info ${ gh_icon__repo } :key:
 subquestion: |
   Tricky part here, sorry. We need this authorization no matter what, and doing it now will make everything else easier.
   
@@ -377,7 +395,8 @@ fields:
 ---
 id: github org
 sets: gh_org_holder_name
-question: GitHub organization
+question: |
+  GitHub organization ${ gh_icon__repo }
 subquestion: |
   % if task_type == 'org_secrets':
   These are the organizations you are an admin of.
@@ -391,23 +410,20 @@ fields:
 id: long time to get repositories
 continue button field: wait_for_repos_list_warning
 question: |
-  % if 'org' in task_type:
-  Press continue to choose from a list of repositories ${ gh_org_holder.org.login } owns ${ gh_icon__org }
-  % else:
-  Press continue to choose from a list of all repositories where you are an owner or collaborator ${ gh_icon__repo }
-  % endif
-# question: |
-#   % if 'org' in task_type:
-#   Press continue to choose from a list of repositories ${ gh_org_holder.org.login } owns ${ gh_icon__org }
-#   % else:
-#   Press continue to choose from a list of all repositories where you are an owner or collaborator ${ gh_icon__repo }
-#   % endif
+  Repositories incoming... :hourglass-half:
 subquestion: |
-  If there are a lot of repositories, it may take some time to get them all.
+  % if 'org' in task_type:
+  Press continue to choose from a list of repositories ${ gh_org_holder.org.login } owns
+  % else:
+  Press continue to choose from a list of all repositories where you are an owner or collaborator
+  % endif
+  
+  :clock: If there are a lot of repositories, it may take a few seconds to get them all.
 ---
 id: github repo
 if: not defined('gh_repo_holder_name')
-question: The repository
+question: |
+  The repository ${ gh_icon__repo }
 subquestion: |
   You can pick a repository from the list or write in your own repository name. The format of the custom name should be `example-da-org/docassemble-ExamplePackage`.
 fields:
@@ -454,7 +470,9 @@ need:
   - installer.github.oauth_scopes
   - gh_repo_holder.has_alkiln_secrets__repo
   - about_secrets
-question: GitHub secrets ${ gh_icon__repo } ${ gh_icon__org }
+# Need to make spy bigger to be recognizable
+question: |
+  GitHub secrets :user-secret:
 # question: Which secrets do you covet? ${ gh_icon__repo } ${ gh_icon__org }
 help:
   label: About GitHub secrets
@@ -477,7 +495,7 @@ subquestion: |
   % for s_name in secrets_names:
   <div markdown=1 class='d-flex justify-content-between'>
   <dt class='fw-normal'>${ s_name }</dt>
-  <dd class='mb-0'>${ 'Found' if s_name in installer.alkiln_secrets__repo else 'Not found' }</dd>
+  <dd class='mb-0'>${ 'Found' if showifdef('secrets_names__repo', []) and s_name in secrets_names__repo else 'Not found' }</dd>
   </div>
   % endfor
   </dl>
@@ -497,7 +515,7 @@ subquestion: |
       % for s_name in secrets_names:
   <div markdown=1 class='d-flex justify-content-between'>
   <dt class='fw-normal'>${ s_name }</dt>
-  <dd class='mb-0'>${ 'Found' if s_name in installer.alkiln_secrets__org else 'Not found' }</dd>
+  <dd class='mb-0'>${ 'Found' if showifdef('secrets_names__org', []) and s_name in secrets_names__org else 'Not found' }</dd>
   </div>
       % endfor
   </dl>
@@ -526,8 +544,7 @@ fields:
         gh_repo_holder.has_alkiln_secrets__repo
   - "Create the standard ALKiln **repository-level** GitHub secrets": the_coveted_secrets['repo'] 
     datatype: yesno
-    # TODO MVP: Test whether this default Mako works correctly
-    default: ${ (not 'org' in task_type and not the_coveted_secrets['org']) or None }
+    default: ${ (not 'org' in task_type and not the_coveted_secrets['org']) or False }
     show if:
       code: |
         not gh_repo_holder.has_alkiln_secrets__repo
@@ -753,7 +770,7 @@ content: |
 # Discuss: Detect wheter feature and workflow files already exist in the repo?
 id: feature file
 question: |
-  Files <div markdown=1>:files:</div>
+  Files :file:
 subquestion: |
   Almost there!
 
@@ -793,11 +810,15 @@ id: final review
 continue button field: is_ready
 continue button label: Send to GitHub
 question: |
-  Is this information correct?
+  Is this information correct? :glasses:
 subquestion: |
   <div class='alert alert-warning' style='margin-left: -1em; margin-right: -1em;'>
   You will not be able to come back here after continuing.
   </div>
+pre: |
+  % if False:
+  No contents
+  % endif
 
 review:
   # TODO post MVP: Replace lists with definitions/terms
@@ -860,23 +881,23 @@ review:
       ##### Files you want
 
       <div markdown=1 class='alk_value_block'>
-      % if wants_feature_file:
       * The first tests (the `.feature` file), that will have tests to load these interviews:
+      % if wants_feature_file:
         % if len( interviews_to_test.true_values() ) > 0:
           % for test_file in interviews_to_test.true_values():
           * ${ test_file }[BR]
           % endfor
         % else:
-      No feature file
+          * None
         % endif
       % endif
-      % if wants_workflow_files:
       * Files that trigger tests on GitHub. Specifically:
+      % if wants_workflow_files:
         % for environment in environments.true_values():
           * The ${ 'Sandbox™' if environment == 'sandbox' else 'GitHub+You™'} workflow file
         % endfor
       % else:
-      No workflow files
+          * None
       % endif
       </div>
       
@@ -1161,7 +1182,7 @@ content: |
   ${ summary_row_end }
   % endif
   
-  % if showifdef('gh_repo_holder'):
+  % if showifdef('gh_repo_holder') and showifdef( gh_repo_holder.attr_name('repo')):
   ${ summary_row_start } Repository
   ${ summary_row_middle } ${ gh_repo_holder.repo.full_name }
   ${ summary_row_end }
@@ -1181,38 +1202,39 @@ content: |
   
   </dl>
 
-comment: |
-  % if 'org' in showifdef('task_type', ''):
-  
-    % if not defined('the_coveted_secrets["org"]') and showifdef('gh_org_holder') and showifdef( gh_org_holder.attr_name('has_alkiln_secrets__org') ):
-  ${ summary_row_start } GitHub org is hoarding secrets
-  ${ summary_row_middle } ${ gh_org_holder.has_alkiln_secrets__org }
-  ${ summary_row_end }
-    % endif
-  
-    % if defined('the_coveted_secrets["org"]'):
-  ${ summary_row_start } Author will set GitHub org secrets
-  ${ summary_row_middle } ${ the_coveted_secrets['org'] }
-  ${ summary_row_end }
-    % endif
-  
-  % endif
+  <hr/>
 
-  % if 'repo' in showifdef('task_type', ''):
+#   % if 'org' in showifdef('task_type', ''):
   
-    % if not defined('the_coveted_secrets["repo"]') and defined( gh_repo_holder.attr_name('has_alkiln_secrets__repo') ):
-  ${ summary_row_start } Repo holds many secrets
-  ${ summary_row_middle } ${ gh_repo_holder.has_alkiln_secrets__repo }
-  ${ summary_row_end }
-    % endif
+#     % if not defined('the_coveted_secrets["org"]') and showifdef('gh_org_holder') and showifdef( gh_org_holder.attr_name('has_alkiln_secrets__org') ):
+#   ${ summary_row_start } GitHub org is hoarding secrets
+#   ${ summary_row_middle } ${ gh_org_holder.has_alkiln_secrets__org }
+#   ${ summary_row_end }
+#     % endif
   
-    % if defined('the_coveted_secrets["repo"]'):
-  ${ summary_row_start } Author will set GitHub repo secrets
-  ${ summary_row_middle } ${ the_coveted_secrets['repo'] }
-  ${ summary_row_end }
-    % endif
+#     % if defined('the_coveted_secrets["org"]'):
+#   ${ summary_row_start } Author will set GitHub org secrets
+#   ${ summary_row_middle } ${ the_coveted_secrets['org'] }
+#   ${ summary_row_end }
+#     % endif
   
-  % endif
+#   % endif
+
+#   % if 'repo' in showifdef('task_type', ''):
+  
+#     % if not defined('the_coveted_secrets["repo"]') and defined( gh_repo_holder.attr_name('has_alkiln_secrets__repo') ):
+#   ${ summary_row_start } Repo holds many secrets
+#   ${ summary_row_middle } ${ gh_repo_holder.has_alkiln_secrets__repo }
+#   ${ summary_row_end }
+#     % endif
+  
+#     % if defined('the_coveted_secrets["repo"]'):
+#   ${ summary_row_start } Author will set GitHub repo secrets
+#   ${ summary_row_middle } ${ the_coveted_secrets['repo'] }
+#   ${ summary_row_end }
+#     % endif
+  
+#   % endif
 ---
 id: summary rows html
 code: |
@@ -1238,9 +1260,9 @@ id: PAT token auth
 need:
   - installer.token
 
-# ####
+# ###
 # Check token credentials and set initial token-based values
-# ####
+# ###
 code: |
   collected = []
   try:
@@ -1254,11 +1276,11 @@ code: |
     # github.GithubException.BadCredentialsException (401, 403)
     collected.append('error')
     # This error may be missing status and data and message
-    log('0500', 'console')
-    log( setup_err.__dict__, 'console' )
-    setup_error_faux = ErrorLikeObject( message='Incorrect Personal Access Token', alk_details=installer.github_token_error )
+    setup_error_faux = ErrorLikeObject( error=setup_err, message='Incorrect Personal Access Token', log_code='ALKiS0002', alk_details=installer.github_token_error )
     installer.errors.append( setup_error_faux )
+    show_errors
 
+  # Research: Find ways to cause these situations:
   if not 'login' in collected:
     installer.user_name = None
   if not 'user' in collected:
@@ -1266,136 +1288,41 @@ code: |
   if not 'github' in collected:
     installer.github = None
   
-  if 'error' in collected:
-    installer.missing_scopes = ['Found no permission scopes for this GitHub Personal Access Token.']
-  else:
-    installer.missing_scopes  # Watch out for review blocks
-  
-  prep_github_auth = True
----
-id: get org obj
-need:
-  - gh_org_holder_name
-code: |
-  try:
-    gh_org_holder = gh_org_holders_dict[ gh_org_holder_name ]
-  
-  except Exception as org_by_name_err:
-    log('🤕 Error getting org', 'console')
-    log( vars(org_by_name_err), 'console')
-    message = 'Unable to find organization'
-    status = 0
-    try:
-      message = org_by_name_err.data['message']
-      status = org_by_name_err.data['status']
-    except Exception as _ignore1:
-      log( _ignore1, 'console')
-      try:
-        message = org_by_name_err.message
-        status = org_by_name_err.status
-      except Exception as _ignore2:
-        log( _ignore2, 'console')
-        try:
-          message = org_by_name_err.msg
-        except Exception as _ignore3:
-          log( _ignore3, 'console')
-          pass
-    org_by_name_err_faux = ErrorLikeObject(
-      status=status,
-      message=message,
-      alk_details=f'Unable to find a organization called "{ gh_org_holder_name }".',
-    )
-    gh_org_holder = None  # Research: Why is this necessary?
-    installer.errors.append( org_by_name_err_faux )
----
-id: get repo obj
-if: defined('gh_repo_holder_name')
-sets: gh_repo_holder
-need:
-  - gh_repo_holder_name
-code: |
-  gh_repo_holder_temp = DAObject()
-  
-  try:
-    gh_repo_holder_temp.repo = installer.github.get_repo( gh_repo_holder_name )
-    gh_repo_holder = DAObject(
-      'gh_repo_holder',
-      repo=gh_repo_holder_temp.repo,
-      full_name=gh_repo_holder_temp.repo.full_name
-    )
-  
-  except Exception as repo_by_name_err:
-    log( vars(repo_by_name_err), 'console')
-    message = 'Unable to find repository'
-    status = 0
-    try:
-      message = repo_by_name_err.data['message']
-      status = repo_by_name_err.data['status']
-    except Exception as _ignore1:
-      log( _ignore1, 'console')
-      try:
-        message = repo_by_name_err.message
-        status = repo_by_name_err.status
-      except Exception as _ignore2:
-        log( _ignore2, 'console')
-        try:
-          message = repo_by_name_err.msg
-        except Exception as _ignore3:
-          log( _ignore3, 'console')
-          pass
-    repo_by_name_err_faux = ErrorLikeObject(
-      status=status,
-      message=message,
-      alk_details=f'Unable to find a repository at [https://github.com/{ gh_repo_holder_name }](https://github.com/{ gh_repo_holder_name }).',
-    )
-    gh_repo_holder = None  # Research: Why is this necessary?
-    installer.errors.append( repo_by_name_err_faux )
----
-id: check github auth and get values
-code: |
-  installer.set_github_auth()
-  set_github_auth = True
----
-id: send all to github
-code: |
-  # Legacy code mixed with new code
-  installer.update_github(
-    wants_to_set_up_tests,
-    desires_secrets=( the_coveted_secrets['org'] or the_coveted_secrets['repo'] )
-  )
-  update_github = True
+  get_gh_user = True
 ---
 id: has_scopes
 # Discuss: We could make scope requirements much more fine-grained. That is, setting secrets doesn't need 'workflow'. Do we want to make it that complicated?
 need:
   - installer.github
 
-# ####
+# ###
 # Make sure the developer gave the token the right token scopes
-# ####
+# ###
 code: |
-  missing_scopes = []
+  missing_scopes_temp = []
   if not 'repo' in installer.github.oauth_scopes:
-    missing_scopes.append('"repo"')
+    missing_scopes_temp.append('"repo"')
   if not 'workflow' in installer.github.oauth_scopes:
-    missing_scopes.append('"workflow"')
+    missing_scopes_temp.append('"workflow"')
   if task_type == 'org_secrets':
     if not 'admin:org' in installer.github.oauth_scopes:
-      missing_scopes.append('"admin:org"')
-
-  if len( missing_scopes ) > 0:
-    scopes_err = ErrorLikeObject( message='Incorrect Personal Access Token scopes', alk_details=github_pat_scopes_error )
-    installer.errors.append( scopes_err )
+      missing_scopes_temp.append('"admin:org"')
+  
+  if len( missing_scopes_temp ) > 0:
+    missing_scopes = missing_scopes_temp
+    scopes_err_faux = ErrorLikeObject( message='Incorrect Personal Access Token settings (called "scopes")', log_code='ALKiS0003', alk_details=github_pat_scopes_error )
+    installer.errors.append( scopes_err_faux )
+    show_errors
     
-  installer.missing_scopes = missing_scopes
+  missing_scopes = missing_scopes_temp
 ---
 need:
   - installer.user
   - gh_org_holders
 
-# ####
+# ###
 # Get regular list of all author's orgs. If wants org secrets, ensure author is admin.
-# ####
+# ###
 code: |
   import traceback
 
@@ -1408,18 +1335,9 @@ code: |
     org_pages = installer.user.get_orgs()
     ok = True
   except Exception as err_orgs:
-    err_orgs.alk_details = 'We had a problem getting the GitHub organizations whose repositories you are able to edit.'
-    if not hasattr( err_orgs, 'status' ):
-      err_orgs.status = 0
-    if not hasattr( err_orgs, 'message'):
-      if hasattr( err_orgs, 'msg'):
-        err_orgs.message = err_orgs.msg
-      else:
-        err_orgs.message = '\n'.join(traceback.format_exception(err_orgs))
-    if not hasattr( err_orgs, 'data'):
-      err_orgs.data = { 'message': err_orgs.message }
-      
-    installer.errors.append( err_orgs )
+    err_orgs_faux = ErrorLikeObject(error=err_orgs, message='', log_code='ALKiS0004', alk_details='This ALKiln setup tool had a problem getting the GitHub organizations whose repositories you are able to edit.')
+    installer.errors.append( err_orgs_faux )
+    show_errors
 
   if ok:
     for org in org_pages:
@@ -1432,7 +1350,7 @@ code: |
       new_org_holder = gh_org_holders.appendObject(
         org=org, login=org.login, user_role=membership.role
       )
-      # ⚠️ Unable to use `new_org_holder` - a previously intialized DAObject - as the second argument to DADict
+      # ⬆️🖊️ Unable to use `new_org_holder` - a previously intialized DAObject - as the second argument to DADict
       gh_org_holders_dict.initializeObject(
         org.login, DAObject.using(
           org=org, login=org.login, user_role=membership.role
@@ -1442,7 +1360,8 @@ code: |
     if gh_org_holders.number_gathered() == 0:
       gh_org_holders.gathered = True
       gh_org_holders_dict.gathered = True
-      installer.errors.append( ErrorLikeObject( message='Unable to find GitHub organizations', status=0, alk_details=installer.admins_0_orgs ) )
+      installer.errors.append( ErrorLikeObject( message='Unable to find GitHub organizations', log_code='ALKiS0005', alk_details=installer.admins_0_orgs ) )
+      show_errors
 
     gh_org_holders.sort_elements( key=lambda holder : (holder.org.login).casefold() )
     
@@ -1465,9 +1384,9 @@ need:
   - installer.user_name
   - repo_holders
 
-# ####
+# ###
 # Get list of all relevant and accessible repos. Should show private repos.
-# ####
+# ###
 code: |
   repo_holders.clear()
   gh_repos_data = []
@@ -1482,17 +1401,18 @@ code: |
 
     # Iterate using i and prepend?
     for repo in gh_repos_data:
+      # Ambiguous findings from different sources
       # https://docs.github.com/en/rest/repos/repos?apiVersion=2026-03-10#list-repositories-for-the-authenticated-user--parameters
       # "permissions": { "admin": false, "push": false, "pull": true }
-      # Permissions(triage=True, push=True, pull=True, maintain=False, admin=False)
+      # Permissions(triage=True, push=True, pull=True, maintain=False, admin=False)  # (pygithub?)
       # TODO: Look into getting team repos too, which might be separate - https://docs.github.com/en/rest/repos/repos?apiVersion=2026-03-10#list-repository-teams
       if repo.permissions.admin or repo.permissions.push or repo.permissions.maintain:
-        # object_checkboxes can only use a DAObject
+        # ⬆️🖊️ object_checkboxes can only use a DAObject
         repo_holders.appendObject(
           repo=repo, full_name=repo.full_name
         )
   except Exception as get_repos_err:
-    log('🖊️ ALKiS0050', 'console')
+    log('🖊️ NOTE ALKiS0006', 'console')
     log( get_repos_err, 'console' )
     # Any empty list will just show a text field for a custom repo
     pass
@@ -1500,9 +1420,58 @@ code: |
   repo_holders.gathered = True
   get_repos = True
 ---
-# What datastructure do we want?
+id: get org obj
+need:
+  - gh_org_holder_name
+code: |
+  try:
+    gh_org_holder = gh_org_holders_dict[ gh_org_holder_name ]
+  
+  except Exception as org_by_name_err:
+    org_by_name_err_faux = ErrorLikeObject(
+      error=org_by_name_err,
+      message='Unable to find organization',  # Fallback
+      log_code='ALKiS0007',
+      alk_details=f'Unable to find a organization called "{ gh_org_holder_name }".',
+    )
+    gh_org_holder = None  # Research: Why is this necessary?
+    installer.errors.append( org_by_name_err_faux )
+    show_errors
+---
+id: get repo obj
+if: defined('gh_repo_holder_name')
+sets: gh_repo_holder
+need:
+  - gh_repo_holder_name
+code: |
+  gh_repo_holder_temp = DAObject()
+  
+  try:
+    gh_repo_holder_temp.repo = installer.github.get_repo( gh_repo_holder_name )
+    gh_repo_holder = DAObject(
+      'gh_repo_holder',
+      repo=gh_repo_holder_temp.repo,
+      full_name=gh_repo_holder_temp.repo.full_name
+    )
+  
+  except Exception as repo_by_name_err:
+    repo_by_name_err_faux = ErrorLikeObject(
+      error=repo_by_name_err,
+      message='Unable to find repository',  # Fallback
+      log_code='ALKiS0008',
+      alk_details=f'Unable to find a repository at [https://github.com/{ gh_repo_holder_name }](https://github.com/{ gh_repo_holder_name }).',
+    )
+    gh_repo_holder = None  # Research: Why is this necessary?
+    installer.errors.append( repo_by_name_err_faux )
+    show_errors
+---
+id: check and set github auth values
+code: |
+  installer.set_github_auth()
+  set_github_auth = True
+---
 objects:
-  - alkiln_secrets: DAObject.using(gathered='True', there_are_any='False', there_is_another='False')
+  - alkiln_secrets: DAObject.using(auto_gather=False)
 ---
 # https://pygithub.readthedocs.io/en/stable/github_objects/Organization.html#github.Organization.Organization.get_secrets
 id: existing org secrets
@@ -1511,15 +1480,16 @@ need:
   - alkiln_secrets
 generic object: DAObject
 
-# ####
-# Check for existing ALKiln org-level secrets
-# ####
+# ###
+# Check for existing ALKiln org-level secrets.
+#   x is a gh_org_holder
+# ###
 code: |
   from github import GithubException  # PyGithub
-  org_alk_secrets_names = []
+  secrets_names__org = []
   try:
   
-    org_secrets = list(showifdef('gh_org_holder', None).org.get_secrets())
+    org_secrets = list(x.org.get_secrets())
     alkiln_secrets.org = [
       org_secret for org_secret in org_secrets
       if org_secret.name == 'SERVER_URL'
@@ -1527,29 +1497,20 @@ code: |
     if len( alkiln_secrets.org ) > 0:
       alkiln_secrets.there_are_any = True
   
-    alkiln_secrets.org
-    org_alk_secrets_names = [ secret.name for secret in alkiln_secrets.org ]
+    # Discuss: Replace `secrets_names__org` with alkiln_secrets.org? Name checking would be more difficult.
+    secrets_names__org = [ secret.name for secret in alkiln_secrets.org ]
 
   except GithubException as org_secrets_err:
-    log('🖊️ org_secrets_err', 'console')
+    log('🖊️ NOTE ALKiS0009 org_secrets_err', 'console')
     log( org_secrets_err, 'console')
 
-  alkiln_secrets.org = org_alk_secrets_names
-  # Discuss: Replace `installer.alkiln_secrets__org` with alkiln_secrets.org?
-  installer.alkiln_secrets__org = org_alk_secrets_names
-
   # TODO: See if we can replace x.has_alkiln_secrets__org with alkiln_secrets.org and list secrets instead of counting them. If we're able to do that, change the format to a dict with secrets' names as keys and values of (True|False|'Unknown')
-  if len( org_alk_secrets_names ) == 2:
+  if len( secrets_names__org ) == 2:
     x.has_alkiln_secrets__org = True
   else:
     x.has_alkiln_secrets__org = False
 ---
-# Get repository's org secrets. org secrets of a repository.
-# https://docs.github.com/en/rest/actions/secrets?apiVersion=2026-03-10#list-repository-organization-secrets
-# https://pygithub.readthedocs.io/en/stable/github_objects/Repository.html#github.Repository.Repository.organization
----
-# 🧠
-# DA functions models: 1. DAList of DAObject(s) with property to trigger and, possibly, a `description`/`name`. 2. Unique prop names to trigger.
+# TODO: Get repository's org secrets. See https://docs.github.com/en/rest/actions/secrets?apiVersion=2026-03-10#list-repository-organization-secrets and https://pygithub.readthedocs.io/en/stable/github_objects/Repository.html#github.Repository.Repository.organization
 ---
 # https://pygithub.readthedocs.io/en/stable/github_objects/Repository.html#github.Repository.Repository.get_secrets
 id: repo secrets
@@ -1557,59 +1518,168 @@ need:
   - installer.user
 generic object: DAObject
 
-# ####
-# Check for existing ALKiln repo-level GitHub secrets
-# ####
+# ###
+# Check for existing ALKiln repo-level GitHub secrets.
+#   x is a gh_repo_holder
+# ###
 code: |
   from github import GithubException  # PyGithub
   secrets_names__repo = []
   alkiln_secrets_found__repo = []
   try:
-    alkiln_secrets.repo
+  
+    repo_secrets = list(x.repo.get_secrets())
+    alkiln_secrets.repo = [
+      repo_secret for repo_secret in repo_secrets
+      if repo_secret.name == 'SERVER_URL'
+      or repo_secret.name == 'DOCASSEMBLE_DEVELOPER_API_KEY' ]
+    if len( alkiln_secrets.repo ) > 0:
+      alkiln_secrets.there_are_any = True
+
     secrets_names__repo = [ secret.name for secret in alkiln_secrets.repo ]
   
   except GithubException as secrets_err__repo:
-    message = secrets_err__repo
-    try:
-      message = secrets_err__repo.data['message']
-    except Exception as _ignore:
-      try:
-        message = secrets_err__repo.message
-      except Exception as _ignore:
-        try:
-          message = secrets_err__repo.msg
-        except Exception as _ignore:
-          pass
-    secrets_err_faux = ErrorLikeObject( message=message, alk_details='The GitHub Personal Access Token (PAT) you gave does not have permission to look for the repository\'s existing GitHub secrets. You will also be unable to set the repository-level GitHub secrets.' )
+    secrets_err_faux = ErrorLikeObject(
+      error=secrets_err__repo,
+      log_code='ALKiS0010',
+      alk_details='The GitHub Personal Access Token (PAT) you gave does not have permission to look for the repository\'s existing GitHub secrets. You will also be unable to set the repository-level GitHub secrets.' )
     installer.errors.append( secrets_err_faux )
-
-  installer.alkiln_secrets__repo = secrets_names__repo
+    show_errors
   
   if len( secrets_names__repo ) == 2:
     x.has_alkiln_secrets__repo = True
   else:
     x.has_alkiln_secrets__repo = False
 ---
-id: repo alkiln secrets
-need:
-  - alkiln_secrets
+# id: repo alkiln secrets
+# need:
+#   - alkiln_secrets
 
-# ####
-# Add repo secrets to alkiln_secrets
-# ####
-code: |
-  repo_secrets = list(showifdef('gh_repo_holder', None ).repo.get_secrets())
-  alkiln_secrets.repo = [
-    repo_secret for repo_secret in repo_secrets
-    if repo_secret.name == 'SERVER_URL'
-    or repo_secret.name == 'DOCASSEMBLE_DEVELOPER_API_KEY' ]
-  if len( alkiln_secrets.repo ) > 0:
-    alkiln_secrets.there_are_any = True
+# # ###
+# # Add repo secrets to alkiln_secrets
+# # ###
+# code: |
+#   repo_secrets = list(showifdef('gh_repo_holder', None ).repo.get_secrets())
+#   alkiln_secrets.repo = [
+#     repo_secret for repo_secret in repo_secrets
+#     if repo_secret.name == 'SERVER_URL'
+#     or repo_secret.name == 'DOCASSEMBLE_DEVELOPER_API_KEY' ]
+#   if len( alkiln_secrets.repo ) > 0:
+#     alkiln_secrets.there_are_any = True
 ---
-id: repo push vals
+id: send secrets to GitHub
+need:
+  - the_coveted_secrets
+  - gh_repo_holder
+  - gh_org_holder
+
+# ###
+# Set the GitHub repo secrets the tests need to log into the da
+# server and create projects to contain the interviews being
+# tested.
+# 
+# repo.create_secret(secret_name: str, unencrypted_value: str, secret_type: str = 'actions') → Secret
+# https://pygithub.readthedocs.io/en/stable/github_objects/Repository.html#github.Repository.Repository.create_secret
+# 
+# create_secret(secret_name: str, unencrypted_value: str, visibility: str = 'all', selected_repositories: list[Repository] | _NotSetType = NotSet, secret_type: str = 'actions') → OrganizationSecret
+# https://pygithub.readthedocs.io/en/stable/github_objects/Organization.html#github.Organization.Organization.create_secret
+# ###
+code: |
+  # First try org changes (which are more likely to fail)
+  if the_coveted_secrets.all_true('org'):
+    gh_org_holder.org.create_secret(
+      'SERVER_URL', actual_server_url, secret_type='actions' )
+    gh_org_holder.org.create_secret(
+      'DOCASSEMBLE_DEVELOPER_API_KEY', da_api_key, secret_type='actions' )
+
+  if the_coveted_secrets.all_true('repo'):
+    gh_repo_holder.repo.create_secret(
+      'SERVER_URL', actual_server_url, secret_type='actions' )
+    gh_repo_holder.repo.create_secret(
+      'DOCASSEMBLE_DEVELOPER_API_KEY', da_api_key, secret_type='actions' )
+
+  send_secrets = True
+---
+---
+# ------
+# GitHub files logic
+# ------
+---
+id: set files to push
+need:
+  - environments
+  - interviews_to_test
+  - wants_workflow_files
+  - wants_feature_file
+
+# ###
+# Set the paths and other data for the files we will push to GitHub.
+
+# Args:
+#   environments ([str]): Names of GitHub environments in which to run tests
+#   interviews_to_test ([str]): Names of interview files for which to write tests
+
+# Sets
+#   installer.files_to_push ([{"path": str, "msg": str, "contents": str }])
+#   final_files_to_push ([{"path": str, "msg": str, "contents": str }])
+# ###
+code: |
+  installer.interviews_to_test = interviews_to_test
+
+  files_to_push_temp = []
+
+  if wants_workflow_files:
+    files_to_push_temp = installer.get_workflow_file_dicts( environments )
+
+  if wants_feature_file and len( interviews_to_test ) > 0:
+    test_path = 'docassemble/' + installer.package_name + '/data/sources/interviews_run.feature'
+    test_commit_message = f'Add { test_path } for ALKiln automated tests'
+    files_to_push_temp.append({
+      "path": test_path,
+      "msg": test_commit_message,
+      "contents": installer.first_feature_file_str
+    })
+
+  installer.files_to_push = files_to_push_temp
+  final_files_to_push = files_to_push_temp
+---
+id: repo branch
+
+# ###
+# Create new branch off the default branch.
+# ###
 code: |
   installer.branch_name = installer.get_free_branch_name()
-  set_push_vals = True
+  if not installer.branch_name:
+    show_errors
+  # Get default branch
+  default_branch = gh_repo_holder.repo.get_branch( gh_repo_holder.repo.default_branch )
+  # Make new branch off of default branch
+  ref_path = "refs/heads/" + installer.branch_name
+  response = gh_repo_holder.repo.create_git_ref( ref_path, default_branch.commit.sha )
+  create_branch = True
+---
+id: make pr with files if desired
+
+# ###
+# Add test files to repo, make pull requests.
+# 
+# Based on internal class Installer .update_github()
+# ###
+need:
+  - final_files_to_push
+  - installer.push_file
+  - wants_workflow_files
+  - wants_feature_file
+  - installer.make_pull_request
+code: |
+  if wants_workflow_files or wants_feature_file:
+    for file_dict in final_files_to_push:
+      installer.push_file( file_dict )
+  
+    installer.make_pull_request()
+
+  make_pull_request = True
 ---
 ---
 # ##############################
@@ -1620,10 +1690,10 @@ id: set da info
 need:
   - actual_server_url
   - da_api_key
-# ####
+# ###
 # Validate author's docassemble account by using the give da API
 #   key and the server url to get the user's Playground email.
-# ####
+# ###
 code: |
   # Start with clean errors list (idempotent for da's loops).
   installer.errors = []
@@ -1638,24 +1708,27 @@ code: |
   
     elif status == 403:
       # 403 “Access Denied”
-      error = ErrorLikeObject( message='Access denied to the server API Key', status=status, alk_details=installer.da_access_denied_error )
+      error = ErrorLikeObject( error=response, message='Access denied to the server API Key', log_code='ALKiS0011', alk_details=installer.da_access_denied_error )
       installer.errors.append( error )
+      show_errors
   
     elif status == 400:
       # 400 “Error obtaining user information”
-      error = ErrorLikeObject( message='Error getting docassemble user info', status=status, alk_details=installer.da_user_info_error )
+      error = ErrorLikeObject( error=response, message='Error getting docassemble user info', log_code='ALKiS0012', alk_details=installer.da_user_info_error )
       installer.errors.append( error )
+      show_errors
   
     elif status == 404:
-      error = ErrorLikeObject( message=response, status=status, alk_details=f'ALKilnSetup is unable to find a docassemble server at { actual_server_url }. Are you sure you have the right url? It might help to copy it from the server\'s address bar.')
+      error = ErrorLikeObject( error=response, log_code='ALKiS0013', alk_details=f'ALKilnSetup is unable to find a docassemble server at { actual_server_url }. Are you sure you have the right url? It might help to copy it from the server\'s address bar.')
       installer.errors.append( error )
+      show_errors
   
     else:
-      # TODO post MVP: Change this to pass the response's error through
       log('🖊️ ALKilnSetup unhandled DA API key failure response. Response:', 'console')
-      log(response, 'console')
-      error = ErrorLikeObject( message=response, status=status, alk_details='ALKiln is unsure why it is unable to use the docassemble API key.' )
+      log( response, 'console')
+      error = ErrorLikeObject( error=response, log_code='ALKiS0014', alk_details='ALKiln is unsure why it is unable to use the docassemble API key.' )
       installer.errors.append( error )
+      show_errors
   
   except NameError:
     raise
@@ -1666,32 +1739,20 @@ code: |
   
   except requests.exceptions.ConnectionError as da_key_connection_err:
     # https://docs.python-requests.org/en/latest/user/quickstart/#errors-and-exceptions
-    error = ErrorLikeObject( message=da_key_connection_err, alk_details=installer.da_server_url_error )
+    error = ErrorLikeObject( error=da_key_connection_err, log_code='ALKiS0015', alk_details=installer.da_server_url_error )
     installer.errors.append( error )
+    show_errors
   
   except requests.exceptions.Timeout as da_key_timeout_err:
     # https://docs.python-requests.org/en/latest/user/quickstart/#errors-and-exceptions
-    error = ErrorLikeObject( message=da_key_timeout_err, alk_details=installer.da_server_timeout_error )
+    error = ErrorLikeObject( error=da_key_timeout_err, log_code='ALKiS0016', alk_details=installer.da_server_timeout_error )
     installer.errors.append( error )
+    show_errors
   
-  except Exception as da_api_err:
-    log('🖊️ ALKilnSetup unhandled error using the DA API key. Error:', 'console')
-    log(response, 'console')
-    status = 0
-    message = da_api_err
-    try:
-      status = da_api_err.status
-    except Exception:
-      pass
-    try:
-      message = da_api_err.message
-    except Exception:
-      try:
-        message = da_api_err.msg
-      except Exception:
-        pass
-    error = ErrorLikeObject( message=message, alk_details='Error trying to use the docassemble API key.')
+  except Exception as da_key_err:
+    error = ErrorLikeObject( error=da_key_err, log_code='ALKiS0017', alk_details='Error trying to use the docassemble API key.')
     installer.errors.append( error )
+    show_errors
 
   auth_da_info = True
 ---
@@ -1700,42 +1761,6 @@ need:
   - server_url_input
 code: |
   actual_server_url = server_url_input.rstrip('/')
----
----
-# ##############################
-# Files logic
-# ##############################
----
-id: set files to push
-need:
-  - environments
-  - interviews_to_test
-
-# ###
-# Set the paths and other data for the files we will push to GitHub.
-
-# Args:
-#   environments ([str]): Names of GitHub environments in which to run tests
-#   interviews_to_test ([str]): Names of interview files for which to write tests
-
-# Sets
-#   installer.files_to_push ([{"path": str, "msg": str, "contents": str }])
-# ###
-code: |
-  installer.interviews_to_test = interviews_to_test
-
-  files_to_push_temp = installer.get_workflow_file_dicts( environments )
-
-  if len( interviews_to_test ) > 0:
-    test_path = 'docassemble/' + installer.package_name + '/data/sources/interviews_run.feature'
-    test_commit_message = f'Add { test_path } for ALKiln automated tests'
-    files_to_push_temp.append({
-      "path": test_path,
-      "msg": test_commit_message,
-      "contents": installer.first_feature_file_str
-    })
-
-  installer.files_to_push = files_to_push_temp
 ---
 ---
 # ##############################
@@ -1755,7 +1780,7 @@ need:
   - gh_org_holder
 code: |
   installer.org = gh_org_holder.org
-  installer.owner_name = installer.org.login  # legacy
+  installer.owner_name = installer.org.login  # legacy value
   set_installer_gh_org_info = True
 ---
 id: installer github attrs for repo
@@ -1824,7 +1849,7 @@ code: |
         internal_org.create_secret('SERVER_URL', '123', secret_type='actions')
         internal_org.create_secret( 'DOCASSEMBLE_DEVELOPER_API_KEY', '456', secret_type='actions')
       except Exception as internal_testing_org_err:
-        log('🤕 internal_testing_org_err', 'console')
+        log('🤕 ERROR ALKiS0018 internal_testing_org_err', 'console')
         log( internal_testing_org_err, 'console')
         pass
     
@@ -1834,7 +1859,7 @@ code: |
         internal_repo.create_secret('SERVER_URL', '789', secret_type='actions')
         internal_repo.create_secret( 'DOCASSEMBLE_DEVELOPER_API_KEY', '000', secret_type='actions')
       except Exception as internal_testing_repo_err:
-        log('🤕 internal_testing_repo_err', 'console')
+        log('🤕 ERROR ALKiS0019 internal_testing_repo_err', 'console')
         log( internal_testing_repo_err, 'console')
         pass
 
@@ -1859,7 +1884,7 @@ code: |
           _org_secret.account_type = 'org'
           _temp_secrets.append( _org_secret )
     except Exception as internal_testing_org_secret_err:
-      log('🤕 internal_testing_org_secret_err', 'console')
+      log('🤕 ERROR ALKiS0020 internal_testing_org_secret_err', 'console')
       log( internal_testing_org_secret_err, 'console')
       pass
 
@@ -1872,7 +1897,7 @@ code: |
           _repo_secret.account_type = 'repo'
           _temp_secrets.append( _repo_secret )
     except Exception as internal_testing_repo_secret_err:
-      log('🤕 internal_testing_repo_secret_err', 'console')
+      log('🤕 ERROR ALKiS0021 internal_testing_repo_secret_err', 'console')
       log( internal_testing_repo_secret_err, 'console')
       pass
   
@@ -1884,7 +1909,7 @@ code: |
 ---
 id: internal tests delete an org secret
 
-# ####
+# ###
 # Delete a github org secret because pygithub throws an error
 # when deleting org secrets.
 # https://github.com/SuffolkLITLab/docassemble-ALKilnSetup/issues/253
@@ -1893,7 +1918,7 @@ id: internal tests delete an org secret
 #
 sets:
   - alkiln_internal_secrets[i].da_delete_org_secret
-# ####
+# ###
 code: |
   if alkiln_internal_secrets[i].secret.account_type == 'org':
     log('🖊️ Unable to delete org secret via pygithub. Using alternative.', 'console')
@@ -1913,8 +1938,8 @@ code: |
   power_token = get_config('alkiln').get('ALKILN_ALKS_GH_ADMIN_ADMINORG_TOKEN', False)
   
   if not power_token:
-    log('🖊️ No ALKilnSetup internal-testing ALKILN_ALKS_GH_ADMIN_ADMINORG_TOKEN defined in the config', 'console')
-    log('🖊️ No ALKilnSetup internal-testing ALKILN_ALKS_GH_ADMIN_ADMINORG_TOKEN defined in the config')
+    log('🖊️ No ALKilnSetup internal-testing env var ALKILN_ALKS_GH_ADMIN_ADMINORG_TOKEN defined in the config', 'console')
+    log('🖊️ No ALKilnSetup internal-testing env var ALKILN_ALKS_GH_ADMIN_ADMINORG_TOKEN defined in the config')
   
   gh_admin = Github( power_token )
 ---
@@ -1926,8 +1951,8 @@ code: |
   try:
     internal_org = gh_admin.get_organization( showifdef('gh_org_holder_name', None ))
   except Exception as internal_org_err:
-    log('🤕 internal_org_err', 'console')
-    log( internal_org_err, 'console')
+    log('🤕 ERROR ALKiS0022 internal_org_err')
+    log( internal_org_err)
     pass
   define_internal_admined_org = True
 ---

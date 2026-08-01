@@ -1,4 +1,4 @@
-@gh_n_y @org_repo
+@gh_n_y
 Feature: Manage github_n_you tests for an org repo
 
 # ALKILN_ALKS_GH_ADMIN_ADMINORG_TOKEN
@@ -22,7 +22,7 @@ Feature: Manage github_n_you tests for an org repo
 
 # Error screen id: show_errors
 
-@happy @row1
+@happy @org_repo @row1
 Scenario: G_n_Y org repo admin
   And I start the interview at "main.yml&alks_test=true"
   And the max seconds for each Step is 20
@@ -58,7 +58,7 @@ Scenario: G_n_Y org repo admin
     | interviews_to_test['choose_me_2.yml'] | True |
     | is_ready | True |
 
-#@sad @row2
+#@sad @org_repo @row2
 #Scenario: Fail g_n_Y org repo da key 403
 #  And I start the interview at "main.yml&alks_test=true"
 #  And the max seconds for each Step is 20
@@ -69,7 +69,7 @@ Scenario: G_n_Y org repo admin
 #  And I set the var "installer.token" to the GitHub secret ""
 #  And I tap to continue
 #
-#@sad @row3
+#@sad @org_repo @row3
 #Scenario: Fail g_n_Y org repo da key 400
 #  And I start the interview at "main.yml&alks_test=true"
 #  And the max seconds for each Step is 20
@@ -80,7 +80,7 @@ Scenario: G_n_Y org repo admin
 #  And I set the var "installer.token" to the GitHub secret ""
 #  And I tap to continue
 #
-#@sad @row4
+#@sad @org_repo @row4
 #Scenario: Fail g_n_Y org repo da key 404
 #  And I start the interview at "main.yml&alks_test=true"
 #  And the max seconds for each Step is 20
@@ -91,7 +91,7 @@ Scenario: G_n_Y org repo admin
 #  And I set the var "installer.token" to the GitHub secret ""
 #  And I tap to continue
 #
-#@sad @row5
+#@sad @org_repo @row5
 #Scenario: Fail g_n_Y org repo da key other 400s?
 #  And I start the interview at "main.yml&alks_test=true"
 #  And the max seconds for each Step is 20
@@ -102,7 +102,7 @@ Scenario: G_n_Y org repo admin
 #  And I set the var "installer.token" to the GitHub secret ""
 #  And I tap to continue
 #
-#@sad @row6
+#@sad @org_repo @row6
 #Scenario: Fail g_n_Y org repo da key 500s?
 #  And I start the interview at "main.yml&alks_test=true"
 #  And the max seconds for each Step is 20
@@ -113,7 +113,7 @@ Scenario: G_n_Y org repo admin
 #  And I set the var "installer.token" to the GitHub secret ""
 #  And I tap to continue
 #
-#@sad @row7
+#@sad @org_repo @row7
 #Scenario: Fail g_n_Y org repo contradicts coveting both secrets
 #  And I start the interview at "main.yml&alks_test=true"
 #  And the max seconds for each Step is 20
@@ -124,7 +124,7 @@ Scenario: G_n_Y org repo admin
 #  And I set the var "installer.token" to the GitHub secret ""
 #  And I tap to continue
 
-@happy @row8
+@happy @org_repo @row8
 Scenario: G_n_Y org repo admin with only repo secrets
   And I start the interview at "main.yml&alks_test=true"
   And the max seconds for each Step is 20
@@ -155,7 +155,7 @@ Scenario: G_n_Y org repo admin with only repo secrets
     | is_ready | True |
 
 # May repeat row 2, just avoiding error, which is a surface difference until we can test afterwards whether we actually set secrets
-@happy @row9
+@happy @org_repo @row9
 Scenario: G_n_Y org repo admin with only org secrets
   And I start the interview at "main.yml&alks_test=true"
   And the max seconds for each Step is 20
@@ -185,7 +185,7 @@ Scenario: G_n_Y org repo admin with only org secrets
     | interviews_to_test['choose_me_2.yml'] | True |
     | is_ready | True |
 
-@happy @row10
+@happy @org_repo @row10
 Scenario: G_n_Y org repo admin with no secrets
   And I start the interview at "main.yml&alks_test=true"
   And the max seconds for each Step is 20
@@ -212,7 +212,7 @@ Scenario: G_n_Y org repo admin with no secrets
 
 # @row11 low priority. repeats r1, just with non-da-repo, which is currently valid as of 2026/07/22. TODO: Transfer non-da-repo to other row.
 
-@happy @row12
+@happy @org_repo @row12
 Scenario: G_n_Y org repo member and writer
   And I start the interview at "main.yml&alks_test=true"
   And the max seconds for each Step is 20
@@ -246,9 +246,12 @@ Scenario: G_n_Y org repo member and writer
     | interviews_to_test['choose_me_1.yml'] | True |
     | interviews_to_test['choose_me_2.yml'] | True |
     | is_ready | True |
+  And I take a screenshot
+  And I tap to continue
+  And I take a screenshot
 
 # # Phrase assertion done by 12 now
-# @medium @row13
+# @medium @org_repo @row13
 # Scenario: G_n_Y org member repo non-writer
 #   And I start the interview at "main.yml&alks_test=true"
 #   And the max seconds for each Step is 20
@@ -263,7 +266,7 @@ Scenario: G_n_Y org repo member and writer
 #   And I should NOT see the phrase "OrgRepoWithNoMembers"
 #   And I SHOULD see the phrase "OrgRepoWithMember"
 
-@sad @row14
+@sad @org_repo @row14
 Scenario: G_n_Y org repo member non-writing scopes
   And I start the interview at "main.yml&alks_test=true"
   And the max seconds for each Step is 20
@@ -283,7 +286,7 @@ Scenario: G_n_Y org repo member non-writing scopes
   Then the question id SHOULD be "show_errors"
   And I take a screenshot
 
-@happy @row15
+@happy @org_repo @row15
 Scenario: G_n_Y org repo member non-org-secret scopes
   And I start the interview at "main.yml&alks_test=true"
   And the max seconds for each Step is 20
@@ -313,7 +316,7 @@ Scenario: G_n_Y org repo member non-org-secret scopes
     | interviews_to_test['choose_me_2.yml'] | True |
     | is_ready | True |
 
-@happy @row16
+@happy @org_repo @row16
 Scenario: G_n_Y org repo admin non-org-secret scopes
   And I start the interview at "main.yml&alks_test=true"
   And the max seconds for each Step is 20

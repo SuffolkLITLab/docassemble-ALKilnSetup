@@ -656,6 +656,7 @@ review:
 id: end
 event: next_steps
 prevent going back: True
+decoration: champagne-glasses
 question: |
   Your GitHub settings should be updated!
 subquestion: |
@@ -698,8 +699,8 @@ subquestion: |
   
   1. [Follow this link to the pull request](${ installer.pull_url }) to make sure it got created.
   1. [Follow this link to your actions page](https://github.com/${ installer.owner_name }/${ installer.repo_name }/actions) to see the first test being run on the new branch. It may take a few minutes to show up, but if all the information was correct it should pass and get a green checkmark.
-  1. If the test fails with a red "x": [Follow these instructions to rerun the test](https://docs.github.com/en/actions/managing-workflow-runs/re-running-a-workflow) (a.k.a. the job). If it fails again, contact us.
-  1. If the test passes with a green checkmark, get a partner to [review it](https://docs.github.com/en/github/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/requesting-a-pull-request-review) or [follow these instructions to merge the pull request](https://docs.github.com/en/github/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/merging-a-pull-request).
+  1. If the test fails with a red "x": [Follow these instructions to rerun the test](https://docs.github.com/en/actions/managing-workflow-runs/re-running-a-workflow) (a.k.a. the "job"). If it fails again, contact us.
+  1. If the test passes with a green checkmark, get a partner to [review the code](https://docs.github.com/en/github/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/requesting-a-pull-request-review) or [follow these instructions to merge the pull request](https://docs.github.com/en/github/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/merging-a-pull-request).
   1. [Follow this link to delete the personal access token](https://github.com/settings/tokens) you created.
   
   ---
@@ -710,29 +711,37 @@ subquestion: |
   If you have some feedback, we would love to hear from you! Let the team know or [make a public "issue" in our repository](https://github.com/SuffolkLITLab/docassemble-ALKilnSetup/issues/new).
   
   ---
-# new_session isn't creating a new session
-buttons:
-  - Start new form: new_session
+action buttons:
+  - label: Set up another ALKiln test
+    action: new_session_event
     color: warning
+---
+# Currently, bug prevents special button starting new session
+event: new_session_event
+code: |
+  command('new_session')
+---
+# # TODO: Reimplement after above bug fixed
 # buttons:
-#   - Restart this form: restart
+#   - Set up another ALKiln test: new_session
 #     color: warning
-#terms:
-#  encrypted docassemble login information: ${ secrets_popover }
+# #terms:
+# #  encrypted docassemble login information: ${ secrets_popover }
 comment: |
-  TODO: Should we offer to delete their personal access token for them in the interview itself? Do we have enough authorization?
+  TODO: [Answer: No API docs talk about deleting a PAT, just revoking permissions (for only fine-grained tokens?)] Should we offer to delete their personal access token for them in the interview itself? Do we have enough authorization?
   TODO: Implement feedback form instead of linking issues. See AL core for that.
-  TODO: Add link to documentation on writing tests.
+  TODO: Add link to documentation on writing tests in the final page.
 ---
 id: show_errors
 event: show_errors
 question: |
   Sorry, something went wrong
 decoration: user-injured
+# They're not all DAObjects yet
 subquestion: |
   % for error in installer.errors:
   ${ error.alk_details }[BR]
-  **Error status and message**: ${ error.status if error.status else '' } ${ error.data.get('message', 'Error description is missing') }
+  **Error status and message**: ${ ' '.join([ msg for msg in [ ( error.status if 'status' in error else None ), error.data.get('message', 'Error description is missing')] if msg ]) }
   
   ---
   % endfor

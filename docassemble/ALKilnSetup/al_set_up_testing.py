@@ -235,20 +235,20 @@ class TestInstaller(DAObject):
     
     return valid
   
-  def get_free_branch_name( self ):
+  def get_free_branch_name( self, max=20 ):
     """Return str of valid avialable branch name or None. Add appropriate errors."""
+    self.errors = []
     branch_name = None
     # Get all branches
     all_branches = self.repo.get_branches()
     
     # Control how many times the loop will run
     count = 0
-    max_count = 20
     found_free_name = False  # Start the loop off correctly
     branch_name_base = self.default_branch_name
     branch_name = branch_name_base
     # Try every permitted new branch name until one is free
-    while ( not found_free_name and count < max_count ):
+    while ( not found_free_name and count < max ):
       count += 1  # Ensure no infinite loop
       
       found_free_name = True  # The name is free until proven otherwise
@@ -399,9 +399,9 @@ class TestInstaller(DAObject):
     Returns
       [{"path": str, "msg": str, "contents": str }]
     """
-    self.interviews_to_test = interviews_to_test
     self.files_to_push = self.get_workflow_file_dicts( environments )
-
+    
+    self.interviews_to_test = interviews_to_test
     if len( interviews_to_test ) > 0:
       test_path = 'docassemble/' + self.package_name + '/data/sources/interviews_run.feature'
       test_commit_message = f'Add { test_path } for ALKiln automated tests'
@@ -502,11 +502,75 @@ Want to disable the tests? See documentation for ALKiln tests at https://suffolk
     return self
 
 
-# Error helpers
 class ErrorLikeObject():
-  """Create object to match PyGithub data structure for errors."""
-  def __init__( self, status=0, message='Sorry, the error description is missing', alk_details='Sorry, the ALKiln description is missing.' ):
+  """
+  Create object to match PyGithub and other error data structures for errors.  
+  """
+  def __init__( self,
+                error=None,
+                status=0,
+                message='Sorry, the error message is missing',
+                alk_details='Sorry, the ALKiln error details are missing.',
+                log_code='ALKiS 0000'
+  ):
+
+    try:
+      status = error.data['status']
+    except Exception:
+      try:
+        status = error.status
+      except Exception:
+        try:
+          # Response as opposed to traditional "error"
+          status = error.status_code
+        except Exception:
+          pass
+  
+    try:
+      message = error.data['message']
+    except Exception as _ignore:
+      try:
+        message = error.message
+      except Exception as _ignore:
+        try:
+          message = error.msg
+        except Exception as _ignore:
+          if error:
+            message = error
+          
     self.status = status
-    self.alk_details = alk_details
-    self.data = { 'message': message }
-    log( self.__dict__, 'console' )
+    self.status_code = status
+    self.message = message
+    self.msg = message
+    self.alk_details = f'🤕 ERROR { log_code }: { alk_details }'
+    self.data = { 'message': message, 'status': status }
+
+    try:
+      formatted = format_error( error )
+      log( formatted )
+      log( formatted, 'console' )
+    except Exception:
+      formatted = None
+      try:
+        log( self.__dict__ )
+        log( self.__dict__, 'console' )
+      except Exception:
+        pass
+  
+    # # No traceback text for now - prev traces caused HTML problems with "<"
+    # if formatted:
+    #   self.message = formatted  # ...
+
+
+import traceback
+def format_error( error ):
+  """
+  Return a formatted string of the error's traceback
+
+  Args:
+    error (Exception): An error
+
+  Returns:
+    (str): The formatted string
+  """
+  return "\n".join(traceback.format_exception( error ))
