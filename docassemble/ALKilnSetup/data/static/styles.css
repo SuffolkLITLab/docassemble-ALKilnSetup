@@ -36,6 +36,7 @@ ul {
   display: flex;
   justify-content: space-between;
   position: relative;
+  align-items: center;
 }
 
 .alk_icon_group {
@@ -45,27 +46,31 @@ ul {
   margin-left: 1em;
   font-size: 1.5em;
   height: .8em;
+  display: flex;
+  img {
+    width: 1.5em;
+    max-width: unset !important;
+  }
+  .icon {
+    note: "1 icon";
+    position: relative;
+    translate: 0 -15%;
+  }
+  .icon.left {
+    translate: -75%;
+    position: absolute;
+  }
+  .icon.middle {
+    position: absolute;
+    translate: -40% -103%;
+    height: 50%;
+    overflow: hidden;
+  }
+  .icon.right {
+    position: relative;
+    translate: 0;
+  }
 }
-.alk_icon_group .icon {
-  note: "1 icon";
-  position: relative;
-  translate: 0 -15%;
-}
-.alk_icon_group .icon.left {
-  translate: -75%;
-  position: absolute;
-}
-.alk_icon_group .icon.middle {
-  position: absolute;
-  translate: -40% -103%;
-  height: 50%;
-  overflow: hidden;
-}
-.alk_icon_group .icon.right {
-  position: relative;
-  translate: 0;
-}
-
 .alk_icon_group.superscript {
   font-size: .3em;
 }

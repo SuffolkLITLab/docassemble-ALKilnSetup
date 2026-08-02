@@ -656,9 +656,8 @@ review:
 id: end
 event: next_steps
 prevent going back: True
-decoration: champagne-glasses
 question: |
-  Your GitHub settings should be updated!
+  Your GitHub settings should be updated! <div markdown=1 class='fs-2'>:face-smile:</div>
 subquestion: |
   **Finish setting up**
     

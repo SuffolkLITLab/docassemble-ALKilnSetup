@@ -301,12 +301,17 @@ code: |
 # ##############################
 # ##############################
 ---
+template: alkiln_setup_icon
+content: |
+  <div markdown=1 class='alk_icon_group superscript'><i markdown=1 class='icon bi bi-fire'></i><i markdown=1 class='icon bi bi-plug-fill'></i></div>
+---
 id: environments
 sets:
   - environments
 pre: ''
 question: |
-  Welcome! :hat-wizard:
+  Welcome! ${ alkiln_setup_icon }
+#  Welcome! :hat-wizard: <i class="bi bi-plug-fill"></i>
 subquestion: |
   This tool can help you set up [ALKiln](https://assemblyline.suffolklitlab.org/docs/components/ALKiln/intro) automated integrated testing for docassemble packages that have a GitHub repository. Specifically, this tool can help you:
 
@@ -337,14 +342,14 @@ fields:
 # GitHub questions
 # ##############################
 ---
-template: key_icon
+template: managment_type_icon
 content: |
-  <div markdown=1 class='alk_icon_group superscript'><div markdown=1 class='icon'>:key:</div></div>
+  <div markdown=1 class='alk_icon_group'><i markdown=1 class='icon'>:person-digging:</i></div>
 ---
 id: purpose
 sets: task_type
 question: |
-  GitHub authorization ${ gh_icon__repo } ${ key_icon }
+  GitHub authorization ${ managment_type_icon }
 subquestion: |
   What you want to do and what you can do will depend on your relationship to the GitHub repository or organization.
 fields:
@@ -371,10 +376,14 @@ validation code: |  # Sets values
     the_coveted_secrets['org'] = True
     the_coveted_secrets['repo'] = False
 ---
+template: gh_auth_icon
+content: |
+  <div markdown=1 class='alk_icon_group'><i markdown=1 class='icon bi bi-github'></i><sup markdown=1 class='icon'><i markdown=1>:key:</i></sup></div>
+---
 id: github token with explanation
 sets: installer.token
 question: |
-  GitHub authorization info ${ gh_icon__repo } :key:
+  GitHub authorization info ${ gh_auth_icon }
 subquestion: |
   Tricky part here, sorry. We need this authorization no matter what, and doing it now will make everything else easier.
   
@@ -393,10 +402,14 @@ fields:
   - code: |
       [ after_gh_owner_type['github_token_fallback'], ]
 ---
+template: gh_org_icon
+content: |
+  <div markdown=1 class='alk_icon_group'><i markdown=1 class='icon bi bi-github'></i><sup markdown=1 class='icon bi bi-building' style='transform: scaleX(.8); display: inline-block;'><i markdown=1></i></sup></div>
+---
 id: github org
 sets: gh_org_holder_name
 question: |
-  GitHub organization ${ gh_icon__repo }
+  GitHub organization ${ gh_org_icon }
 subquestion: |
   % if task_type == 'org_secrets':
   These are the organizations you are an admin of.
@@ -420,10 +433,23 @@ subquestion: |
   
   :clock: If there are a lot of repositories, it may take a few seconds to get them all.
 ---
+template: gh_org_repo_icon
+content: |
+  <div markdown=1 class='alk_icon_group'><i markdown=1 class='icon bi bi-github'></i><sup markdown=1 class='icon'><i markdown=1>:user-tie:</i></sup></div>
+---
+template: gh_user_repo_icon
+content: |
+  <div markdown=1 class='alk_icon_group'><i markdown=1 class='icon bi bi-github'></i><sup markdown=1 class='icon'><i markdown=1>:user:</i></sup></div>
+---
 id: github repo
 if: not defined('gh_repo_holder_name')
 question: |
-  The repository ${ gh_icon__repo }
+  The repository
+  % if task_type == 'org_repo':
+  ${ gh_org_repo_icon }
+  % else:
+  ${ gh_user_repo_icon }
+  % endif
 subquestion: |
   You can pick a repository from the list or write in your own repository name. The format of the custom name should be `example-da-org/docassemble-ExamplePackage`.
 fields:
@@ -461,6 +487,10 @@ fields:
       variable: wants_custom_repo
       is: False
 ---
+template: gh_secrets_icon
+content: |
+  <div markdown=1 class='alk_icon_group'><i markdown=1 class='icon bi bi-github'></i><sup markdown=1 class='icon'><i markdown=1>:lock:</i></sup></div>
+---
 # Note: (2023) anyone with 'repo' scopes was able to edit repo secrets through the GitHub classic tokens API, even if not through the UI. It may change.
 id: repo or org secrets or both
 if: |
@@ -472,8 +502,7 @@ need:
   - about_secrets
 # Need to make spy bigger to be recognizable
 question: |
-  GitHub secrets :user-secret:
-# question: Which secrets do you covet? ${ gh_icon__repo } ${ gh_icon__org }
+  GitHub secrets ${ gh_secrets_icon }
 help:
   label: About GitHub secrets
   content: ${ about_secrets }
@@ -587,14 +616,6 @@ validation code: |
 # GitHub question templates
 # ------
 ---
-template: gh_icon__org
-content: |
-  <div markdown=1 class='alk_icon_group'><div markdown=1 class='icon left'><i class="fa-brands fa-github"></i></div><div markdown=1 class='icon middle'><i class="fa-brands fa-github"></i></div><div markdown=1 class='icon right'><i class="fa-brands fa-github"></i></div></div>
----
-template: gh_icon__repo
-content: |
-  <div markdown=1 class='alk_icon_group'><div markdown=1 class='icon'><i class="fa-brands fa-github"></i></div></div>
----
 template: about_secrets
 need:
   - secrets_list
@@ -651,12 +672,23 @@ content: |
 # DA questions
 # ##############################
 ---
+image sets:
+  da:
+    attribution: |
+      Docassemble icon made by [jhpyle](https://docassemble.org)
+    images:
+      da_cat: cat-in-circle.png
+---
+template: da_icon_api_key
+content: |
+  <div markdown=1 class='alk_icon_group'><i markdown=1 class='icon'>:da_cat:</i><sup markdown=1 class='icon'><i markdown=1>:key:</i></sup></div>
+---
 id: da server info
 need:
   - default_server_url
   - about_secrets
 question: |
-  Docassemble server authentication
+  Docassemble server authentication ${ da_icon_api_key }
 # ⚠️ Must include help page with about_secrets
 help:
   label: About GitHub secrets
@@ -706,7 +738,7 @@ id: tester account api key
 need:
   - server_url_input
 question: |
-  Docassemble tester account API key
+  Docassemble tester account API key ${ da_icon_api_key }
 help:
   label: Why make a tester account?
   content: ${ why_special_account }
@@ -1812,7 +1844,8 @@ code: |
 # ##############################
 ---
 id: reset secrets for internal tests
-question: Internal testing screen
+question: |
+  Internal testing screen :flask:
 subquestion: |
   You shouldn't be seeing this. If you do, please report or ignore, and skip the question.
 fields:
