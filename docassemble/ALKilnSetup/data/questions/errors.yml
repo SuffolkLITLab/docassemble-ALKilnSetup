@@ -140,7 +140,7 @@ code: |
 ---
 template: github_branch_name_error
 content: |
-  This ALKiln setup tool was unable to create a unique branch name in your GitHub repo on which to store the new code. The last one it tried was "${ installer.branch_name }". To solve this, delete some of the branches that start with "${ installer.default_branch_name }".
+  This ALKiln setup tool was unable to create a unique branch name in your GitHub repo on which to store the new code. To solve this, delete some of the branches that start with "${ installer.default_branch_name }".
 ---
 depends on: admins_0_orgs
 code: |

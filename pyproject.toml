@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "docassemble.ALKilnSetup"
-version = "1.0.1"
+version = "2.0.0"
 description = "A docassemble extension for setting up the AssemblyLine automated integrated testing framework for your docassemble package repository."
 readme = "README.md"
 authors = [

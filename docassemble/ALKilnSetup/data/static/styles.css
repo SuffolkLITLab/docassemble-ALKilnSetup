@@ -115,3 +115,16 @@ ul {
 .callout p:last-child {
   margin-bottom: 0;
 }
+
+note {
+  note: 'Loading...';
+}
+
+@keyframes tick {
+  to { transform: rotate(360deg) }
+}
+
+.fa-spinner {
+   transform: rotate(0);
+   animation: tick 1s steps(8, end) infinite;
+}

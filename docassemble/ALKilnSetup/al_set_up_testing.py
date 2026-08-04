@@ -480,7 +480,7 @@ class TestInstaller(DAObject):
     
     return self
   
-  def make_pull_request( self ):
+  def make_pull_request( self, environments=None ):
     """Make a pull request with the new branch with changed files.
     https://pygithub.readthedocs.io/en/latest/examples/PullRequest.html"""
     # TODO: Check mergability of a PR?
@@ -488,11 +488,26 @@ class TestInstaller(DAObject):
     head_name = self.branch_name
     title = 'Add ALKiln automated tests'  # TODO: Add issue # if desired
     description = '''Added these files:'''
-    if len(self.interviews_to_test) > 0:
-      description += '''
-- tests/features/interviews_run.feature'''
+
+    for a_file in self.files_to_push:
+      description += f'''
+- { a_file.get('path', None ) }'''
+    
+#     if len(self.interviews_to_test) > 0:
+#       description += '''
+# - tests/features/interviews_run.feature'''
+#     if not environments:
+#       description += '''
+# - .github/workflows/run_form_tests.yml'''
+#     else:
+#       if environments.all_true('github_n_you'):
+#         description += '''
+# - .github/workflows/run_form_tests.yml'''
+#       if environments.all_true('sandbox'):
+#         description += '''
+# - .github/workflows/run_form_tests.yml'''
+
     description += '''
-- .github/workflows/run_form_tests.yml
 
 Want to disable the tests? See documentation for ALKiln tests at https://suffolklitlab.github.io/docassemble-AssemblyLine-documentation/docs/automated_integrated_testing.
 '''

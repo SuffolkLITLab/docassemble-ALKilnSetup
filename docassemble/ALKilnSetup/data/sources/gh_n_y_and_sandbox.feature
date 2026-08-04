@@ -33,10 +33,12 @@ Scenario: G_n_Y & sandbox files for org repo admin
   And I tap to continue
   And I set the var "task_type" to "org_repo"
   And I set the var "installer.token" to the GitHub secret "ALKILN_ALKS_GH_ADMIN_ADMINORG_TOKEN"
+  And I tap to continue
+  And I set the var "gh_org_holder_name" to "ALKilnland"
+  # Background action
+  And I tap the "#da-continue-button" element and wait 6 seconds
   And I get to any of the question ids ["da server info"] with this data:
     | var | value |
-    | gh_org_holder_name | ALKilnland |
-    | wait_for_repos_list_warning | True |
     | gh_repo_holder_name | ALKilnland/docassemble-OrgRepoWithMember |
     | secrets_to_pre_set['None'] | True |
     | the_coveted_secrets['org'] | True |
@@ -48,4 +50,5 @@ Scenario: G_n_Y & sandbox files for org repo admin
     | wants_feature_file | True |
     | interviews_to_test['choose_me_1.yml'] | True |
     | interviews_to_test['choose_me_2.yml'] | True |
-    | is_ready | True |
+    # Implement when we can make assertions and clean up branches
+    #| is_ready | True |
