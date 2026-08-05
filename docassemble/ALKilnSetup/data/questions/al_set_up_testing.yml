@@ -652,7 +652,7 @@ question: |
 subquestion: |
   **Finish setting up**
     
-  % if (showifdef('secret_type_wanted') == 'org' or showifdef('secret_type_wanted') == 'repo') or the_coveted_secrets.any_true():
+  % if showifdef('secret_type_wanted') == 'org' or showifdef('secret_type_wanted') == 'repo' or ( showifdef('the_coveted_secrets') and the_coveted_secrets.any_true()):
   ---
 
   ${ len( secrets_names ) } [encrypted GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets) were created to store the testing account's login information:
@@ -660,19 +660,19 @@ subquestion: |
   ${ secrets_list }
   % endif
   
-  % if showifdef('secret_type_wanted') == 'repo' or the_coveted_secrets.any_true('repo'):
+  % if showifdef('secret_type_wanted') == 'repo' or ( showifdef('the_coveted_secrets') and the_coveted_secrets.any_true('repo')):
   If you have enough permissions, [make sure the repository secrets got created](https://github.com/${ installer.owner_name }/${ installer.repo_name }/settings/secrets/actions).
   % endif
   
-  % if showifdef('secret_type_wanted') == 'org' or the_coveted_secrets.any_true('org'):
+  % if showifdef('secret_type_wanted') == 'org' or ( showifdef('the_coveted_secrets') and the_coveted_secrets.any_true('org')):
   [Make sure the organization secrets got created]( https://github.com/organizations/${ installer.org.login }/settings/secrets/actions).
   % endif
   
-  % if showifdef('secret_type_wanted') == 'org' or the_coveted_secrets.any_true('org'):
+  % if showifdef('secret_type_wanted') == 'org' or ( showifdef('the_coveted_secrets') and the_coveted_secrets.any_true('org')):
   Team members that are collaborators can now use this interview to set up tests for their repositories. When they ask you if organization secrets or repo secrets have been set up, you can answer "yes".
   % endif
   
-  % if not showifdef('wants_to_set_up_tests') or showifdef('wants_workflow_files') or showifdef('wants_feature_file'):
+  % if showifdef('secret_type_wanted') == 'org' or showifdef('secret_type_wanted') == 'repo' or ( showifdef('the_coveted_secrets') and the_coveted_secrets.any_true()):
   [Follow this link to delete the personal access token](https://github.com/settings/tokens) you created.
   
   ---
