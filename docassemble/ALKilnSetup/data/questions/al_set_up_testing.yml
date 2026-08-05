@@ -550,20 +550,11 @@ subquestion: |
   <div class="alert alert-warning">
   You will not be able to come back here after continuing.
   </div>
-
-  
-#   * **Test account API key**:  \*\*\*\*${ installer.da_api_key[-4:] }
-  
-#   * **Server to test on**:[BR]
-#   ${ installer.server_url }
-  
-#   **Your answers also gave us this information:**
-  
-#   * **Test account email:**[BR]
-#   ${ installer.da_email }
-
 review:
-  - Edit: installer.server_url
+  - Edit:
+      - will_test_on_this_server
+      - server_url_input
+      - da_api_key  # Is this sufficient to invalidate this value?
     show if: showifdef( installer.attr_name('da_api_key'), False )  # the_coveted_secrets.any_true()
     button: |
       ##### Docassemble account and server:
@@ -661,7 +652,7 @@ question: |
 subquestion: |
   **Finish setting up**
     
-  % if secret_type_wanted == 'org' or secret_type_wanted == 'repo':
+  % if (showifdef('secret_type_wanted') == 'org' or showifdef('secret_type_wanted') == 'repo') or the_coveted_secrets.any_true():
   ---
 
   ${ len( secrets_names ) } [encrypted GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets) were created to store the testing account's login information:
@@ -669,19 +660,19 @@ subquestion: |
   ${ secrets_list }
   % endif
   
-  % if secret_type_wanted == 'repo':
+  % if showifdef('secret_type_wanted') == 'repo' or the_coveted_secrets.any_true('repo'):
   If you have enough permissions, [make sure the repository secrets got created](https://github.com/${ installer.owner_name }/${ installer.repo_name }/settings/secrets/actions).
   % endif
   
-  % if secret_type_wanted == 'org':
+  % if showifdef('secret_type_wanted') == 'org' or the_coveted_secrets.any_true('org'):
   [Make sure the organization secrets got created]( https://github.com/organizations/${ installer.org.login }/settings/secrets/actions).
   % endif
   
-  % if secret_type_wanted == 'org':
+  % if showifdef('secret_type_wanted') == 'org' or the_coveted_secrets.any_true('org'):
   Team members that are collaborators can now use this interview to set up tests for their repositories. When they ask you if organization secrets or repo secrets have been set up, you can answer "yes".
   % endif
   
-  % if not wants_to_set_up_tests:
+  % if not showifdef('wants_to_set_up_tests') or showifdef('wants_workflow_files') or showifdef('wants_feature_file'):
   [Follow this link to delete the personal access token](https://github.com/settings/tokens) you created.
   
   ---

@@ -82,7 +82,7 @@ include:
   - errors.yml
 ---
 metadata:
-  title: Manage or set up ALKiln automated tests
+  title: Manage or set up ALKiln GitHub automated tests
   short title: Manage ALKiln tests
   description: Manage or set up ALKiln automated testing GitHub for docassemble interviews. This tool was created in collaboration with the Document Assembly Line project.
 ---
@@ -221,7 +221,6 @@ code: |
   if not environments.all_true('github_n_you'):
     neutralize_ALL_SECRETS_vars  # assignments block
 
-  the_coveted_secrets  # Define object before validation code
   task_type
   installer.token
 
@@ -360,6 +359,8 @@ content: |
   <div markdown=1 class='alk_icon_group'><i markdown=1 class='icon'>:person-digging:</i></div>
 ---
 id: purpose
+need:
+  - the_coveted_secrets  # Define object before validation code
 sets: task_type
 question: |
   GitHub authorization ${ managment_type_icon }
@@ -388,6 +389,8 @@ validation code: |  # Sets values
   if task_type == 'org_secrets':
     the_coveted_secrets['org'] = True
     the_coveted_secrets['repo'] = False
+  undefine('repos_list_task_done')
+  undefine('repos_list_task')
 ---
 template: gh_auth_icon
 content: |
@@ -1311,6 +1314,8 @@ code: |
 id: PAT token auth
 need:
   - installer.token
+depends on:
+  - installer.token
 
 # ###
 # Check token credentials and set initial token-based values
@@ -1346,6 +1351,9 @@ id: has_scopes
 # Discuss: We could make scope requirements much more fine-grained. That is, setting secrets doesn't need 'workflow'. Do we want to make it that complicated?
 need:
   - installer.github
+depends on:
+  - installer.github
+  - installer.github.oauth_scopes
 
 # ###
 # Make sure the developer gave the token the right token scopes
@@ -1368,9 +1376,14 @@ code: |
     
   missing_scopes = missing_scopes_temp
 ---
+# TODO post MVP: Presentation on depends on, need, on change, reset, reconsider, recompute. Anything else?
+---
 need:
   - installer.user
   - gh_org_holders
+depends on:
+  - installer
+  - installer.user
 
 # ###
 # Get regular list of all author's orgs. If wants org secrets, ensure author is admin.
@@ -1381,6 +1394,7 @@ code: |
   gh_org_holders.clear()
   gh_org_holders_dict.clear()
   temp_orgs = []
+  org_pages = []
 
   ok = False
   try:
@@ -1399,10 +1413,10 @@ code: |
   
       # Object checkboxes breaks if don't use a DAObject, which was once a consideration and should be again.
       # Can I find what this used to be?
-      new_org_holder = gh_org_holders.appendObject(
+      gh_org_holders.appendObject(
         org=org, login=org.login, user_role=membership.role
       )
-      # ⬆️🖊️ Unable to use `new_org_holder` - a previously intialized DAObject - as the second argument to DADict
+      # ⬆️🖊️ Unable to use this new object - a previously intialized DAObject - as the second argument to DADict
       gh_org_holders_dict.initializeObject(
         org.login, DAObject.using(
           org=org, login=org.login, user_role=membership.role
@@ -1428,6 +1442,11 @@ id: repos list
 event: get_repos
 
 need:
+  - gh_org_holder
+  - installer.user
+  - installer.user_name
+  - repo_holders
+depends on:
   - gh_org_holder
   - installer.user
   - installer.user_name
@@ -1493,6 +1512,10 @@ code: |
 id: get org obj
 need:
   - gh_org_holder_name
+depends on:
+  - gh_org_holders
+  - gh_org_holders_dict
+  - gh_org_holder_name
 code: |
   try:
     gh_org_holder = gh_org_holders_dict[ gh_org_holder_name ]
@@ -1512,6 +1535,9 @@ id: get repo obj
 if: defined('gh_repo_holder_name')
 sets: gh_repo_holder
 need:
+  - gh_repo_holder_name
+depends on:
+  - installer.github
   - gh_repo_holder_name
 code: |
   gh_repo_holder_temp = DAObject()
@@ -1536,6 +1562,9 @@ code: |
     show_errors
 ---
 id: check and set github auth values
+depends_on:
+  - installer.github
+  - self.github.oauth_scopes
 code: |
   installer.set_github_auth()
   set_github_auth = True
@@ -1548,6 +1577,10 @@ id: existing org secrets
 need:
   - installer.user
   - alkiln_secrets
+depends on:
+  - installer.user
+  - alkiln_secrets
+# TODO post MVP: And on change: for x.org. Also/Alternatively, using x was necessary at one point, but we may be able to move away from it now.
 generic object: DAObject
 
 # ###
@@ -1586,6 +1619,9 @@ code: |
 id: repo secrets
 need:
   - installer.user
+depends on:
+  - installer.user
+# TODO post MVP: And on change: for x.repo. Also/Alternatively, using x was necessary at one point, but we may be able to move away from it now.
 generic object: DAObject
 
 # ###
@@ -1626,6 +1662,12 @@ need:
   - the_coveted_secrets
   - gh_repo_holder
   - gh_org_holder
+depends on:
+  - the_coveted_secrets
+  - gh_repo_holder
+  - gh_repo_holder.repo
+  - gh_org_holder
+  - gh_org_holder.org
 
 # ###
 # Set the GitHub repo secrets the tests need to log into the da
@@ -1665,6 +1707,11 @@ need:
   - interviews_to_test
   - wants_workflow_files
   - wants_feature_file
+depends on:
+  - environments
+  - interviews_to_test
+  - wants_workflow_files
+  - wants_feature_file
 
 # ###
 # Set the paths and other data for the files we will push to GitHub.
@@ -1698,6 +1745,9 @@ code: |
   final_files_to_push = files_to_push_temp
 ---
 id: repo branch
+depends on:
+  - gh_repo_holder
+  - gh_repo_holder.repo
 
 # ###
 # Create new branch off the default branch.
@@ -1714,18 +1764,22 @@ code: |
   create_branch = True
 ---
 id: make pr with files if desired
-
-# ###
-# Add test files to repo, make pull requests.
-# 
-# Based on internal class Installer .update_github()
-# ###
 need:
   - final_files_to_push
   - installer.push_file
   - wants_workflow_files
   - wants_feature_file
   - installer.make_pull_request
+depends on:
+  - wants_workflow_files
+  - wants_feature_file
+  - final_files_to_push
+
+# ###
+# Add test files to repo, make pull requests.
+# 
+# Based on internal class Installer .update_github()
+# ###
 code: |
   if wants_workflow_files or wants_feature_file:
     for file_dict in final_files_to_push:
@@ -1742,6 +1796,9 @@ code: |
 ---
 id: set da info
 need:
+  - actual_server_url
+  - da_api_key
+depends on:
   - actual_server_url
   - da_api_key
 # ###
@@ -1813,6 +1870,8 @@ code: |
 id: server url
 need:
   - server_url_input
+depends on:
+  - server_url_input
 code: |
   actual_server_url = server_url_input.rstrip('/')
 ---
@@ -1823,6 +1882,9 @@ code: |
 # Hoping to eventually remove installer class
 ---
 id: set installer da-server-related values
+depends on:
+  - actual_server_url
+  - da_api_key
 code: |
   installer.server_url = actual_server_url
   installer.da_api_key = da_api_key
@@ -1832,6 +1894,10 @@ id: installer github attrs for just org
 if: defined('gh_org_holder')
 need:
   - gh_org_holder
+depends on:
+  - gh_org_holder
+  - gh_org_holder.org
+  - gh_org_holder.org.login
 code: |
   installer.org = gh_org_holder.org
   installer.owner_name = installer.org.login  # legacy value
@@ -1841,6 +1907,13 @@ id: installer github attrs for repo
 if: defined('gh_repo_holder')
 need:
   - gh_repo_holder
+depends on:
+  - gh_repo_holder
+  - gh_repo_holder.repo
+  - gh_repo_holder.repo.name
+  - gh_repo_holder.repo.owner
+  - gh_repo_holder.repo.owner.login
+  - gh_repo_holder.repo.html_url
 code: |
   installer.repo = gh_repo_holder.repo
   installer.repo_name = gh_repo_holder.repo.name
@@ -1972,6 +2045,8 @@ id: internal tests delete an org secret
 # https://github.com/SuffolkLITLab/docassemble-ALKilnSetup/issues/253
 # 
 # :calls: `DELETE /orgs/{org}/actions/secrets/{secret_name} <https://docs.github.com/rest/actions/secrets#delete-an-organization-secret>`_
+# 
+# TODO MVP: use on change for updates (https://docassemble.org/docs/initial.html#on%20change)
 #
 sets:
   - alkiln_internal_secrets[i].da_delete_org_secret
