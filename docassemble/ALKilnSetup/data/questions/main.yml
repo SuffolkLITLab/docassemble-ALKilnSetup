@@ -367,9 +367,17 @@ question: |
 subquestion: |
   What you want to do and what you can do will depend on your relationship to the GitHub repository or organization.
 fields:
-  - code: |
-      [ alks_independent_fields['task_type'], ]
-      
+  - What do you want to manage ALKiln for on GitHub?: task_type
+    datatype: radio
+    choices:
+      - An individual repository you are able to edit: sole_repo
+      - A GitHub organization's repository you are able to edit: org_repo
+      - Organization-level **settings only** for a GitHub organization where you are an admin: org_secrets
+        # Looks like wrong syntax, but the only syntax that works
+        show if: |
+          environments.all_true('github_n_you')
+        help: |
+          If you're not sure, pick a different option. This would let you set GitHub secrets without creating any test files. This form will have more information about GitHub secrets later.
   - note: |
       This tool also needs authorization to make the right changes on GitHub. For that, it needs a GitHub Personal Access Token from your GitHub account.
     show if: task_type
@@ -1035,6 +1043,7 @@ data:
       - label: Sandbox™ tests
         value: sandbox
     minlength: 1
+  # ⚠️ If we use this data block for this field, AL's YAML checker throws an error because we use `task_type` in a `show if:` on that page.
   task_type:
     label: What do you want to manage ALKiln for on GitHub?
     field: task_type
