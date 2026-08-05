@@ -1,7 +1,7 @@
 metadata:
-  title: Set up GitHub automated interview testing
-  short title: Set up automated testing
-  description: Set up GitHub automated testing for docassemble interviews. This tool was created through the Document Assembly Line project.
+  title: Set up ALKiln GitHub automated interview testing
+  short title: Set up ALKiln testing
+  description: Set up ALKiln GitHub automated testing for docassemble interviews. This tool was created through the Document Assembly Line project.
 ---
 features:
   question back button: True
@@ -19,7 +19,6 @@ include:
   - al_testing_files_to_push.yml
 ---
 id: interview order
-mandatory: True
 code: |
   # show errors first thing on each loop
   if len( installer.errors ) > 0:
@@ -57,6 +56,8 @@ code: |
   
   #end
   force_ask( 'next_steps' )
+
+  original_alkiln_setup_interview = True
 ---
 id: faux end
 event: end
@@ -79,6 +80,7 @@ code: |
       secret_type_wanted = 'repo'
 ---
 code: |
+  # This was always a bad flow... but I'm not sure of a better one.
   if will_test_on_this_server:
     if not logged_into_test_account_on_interview_server:
       log_into_test_account
@@ -358,18 +360,18 @@ content: |
 ---
 id: on testing server
 question: |
-  Before we start
+  Where will these tests run?
 subquestion: |
-  Look at the url of this page.
+  GitHub will trigger the tests, but for the GitHub+You™ tests ALKiln will need to upload interviews to your server and run them there. You can read more in [the GitHub+You™ documentation](https://assemblyline.suffolklitlab.org/docs/components/ALKiln/setup/#githubNyou-details).
+
+  You are running this tool on ${ default_server_url }.
 fields:
-  - Is this the server where the tests will run?: will_test_on_this_server
+  - Is this the server where you need to run the GitHub+You™ tests?: will_test_on_this_server
     datatype: yesnoradio
 ---
 template: default_server_url
 content: |
-  % if will_test_on_this_server:
   ${ url_of('root', _external=True) }
-  % endif
 ---
 id: logged_into_test_account_on_interview_server
 question: |
@@ -408,7 +410,7 @@ subquestion: |
 
 continue button field: log_into_test_account
 ---
-id: da server info
+id: da server info old
 question: |
   GitHub secrets
 subquestion: |
@@ -528,35 +530,41 @@ id: first test
 question: |
   The first test
 subquestion: |
-  We can create your first tests for you if you want. From GitHub, ALKiln will automatically make a temporary Project. Then ALKiln will go to the first page of each interview and check that the interview loads. You can always edit or delete these tests in your "Sources" folder later.
+  We can create your first tests for you if you want. From GitHub, ALKiln will automatically make a temporary docassemble Project. Then ALKiln will go to the first page of each interview and check that the interview loads. You can always edit or delete these tests in your "Sources" folder later.
   
   If you want to make one later instead, save this link to [our documentation about making your first test](https://assemblyline.suffolklitlab.org/docs/components/ALKiln/setup#first-test).
 fields:
-  - Which of this package's interview files start an interview that you want to test?: interviews_to_test
+  - Which of this package's files start an interview that you want to test?: interviews_to_test
     datatype: checkboxes
     code: |
       installer.get_question_file_names()
     none of the above: Skip this
 ---
-comment: |
-  delete this
----
 id: confirm info review
+# TODO: add display choosing to skip secrets or test files
+continue button field: is_ready
+continue button label: Send to GitHub
 question: |
   Is this information correct?
 subquestion: |
+  <div class="alert alert-warning">
   You will not be able to come back here after continuing.
+  </div>
 review:
-  - Edit: installer.server_url
+  - Edit:
+      - will_test_on_this_server
+      - server_url_input
+      - da_api_key  # Is this sufficient to invalidate this value?
+    show if: showifdef( installer.attr_name('da_api_key'), False )  # the_coveted_secrets.any_true()
     button: |
-      #####Docassemble account and server:
+      ##### Docassemble account and server:
       
       * **Test account API key**:  \*\*\*\*${ installer.da_api_key[-4:] }
       
       * **Server to test on**:[BR]
       ${ installer.server_url }
       
-      ######**Your answers also gave us this information:**
+      **Your answers also gave us this information:**
       
       * **Test account email:**[BR]
       ${ installer.da_email }
@@ -564,7 +572,7 @@ review:
       ---
   - Edit: installer.token
     button: |
-      #####GitHub repo and permission
+      ##### GitHub repo and permission
       
       * **Personal access token**: \*\*\*\*${ installer.token[-4:] }
       
@@ -576,7 +584,7 @@ review:
       [https://github.com/${ installer.owner_name }/${ installer.repo_name }](https://github.com/${ installer.owner_name }/${ installer.repo_name })
       % endif
       
-      ######**Your answers also gave us this information:**
+      **Your answers also gave us this information:**
       
       * **Your GitHub username**:[BR]
       ${ installer.user_name }
@@ -589,18 +597,34 @@ review:
       % if wants_to_set_up_tests:
       * **Package name**:[BR]
       ${ installer.package_name }
+      % endif
       
-      * **Files to test that run interviews**:[BR]\
+      ---
+  - Edit: installer.interviews_to_test
+    button: |
+      ##### Files to test that run interviews
+      
       % if len(installer.interviews_to_test) > 0:
       % for test_file in installer.interviews_to_test:
-      ${ test_file }[BR]
+      * ${ test_file }[BR]
       % endfor
       % else:
       No files
       % endif
-      % endif
       
       ---
+  - note: |
+      If you continue, this test will set up these GitHub secrets for
+      % if secret_type_wanted == 'org':
+      your organization:
+      % else:
+      the repository:
+      % endif
+
+      ${ secrets_list }
+
+      ---
+    show if: secret_type_wanted != None
   - note: |
       If you continue, this setup tool will make a **new** branch called **${ installer.branch_name }**. You will be able to edit any changes in that branch before merging it with the rest of your code. On the new branch, this setup tool will create or edit ${ 'these files' if len(installer.interviews_to_test) > 0 else 'this file' }:
       
@@ -608,7 +632,7 @@ review:
       1. ${ a_file.get('path', None ) }
       % endfor
       
-      You can edit the changes before merging the branch.
+      :pen: You can edit the changes before merging the branch.
       
       ---
     show if: wants_to_set_up_tests
@@ -619,18 +643,16 @@ review:
       <div class="alert alert-warning">
       :exclamation-triangle: <strong>You will not be able to come back to this page.</strong>
       </div>
-continue button field: is_ready
-continue button label: Send to GitHub
 ---
 id: end
 event: next_steps
 prevent going back: True
 question: |
-  Your GitHub settings should be updated!
+  Your GitHub settings should be updated! <div markdown=1 class='fs-2'>:face-smile:</div>
 subquestion: |
   **Finish setting up**
     
-  % if secret_type_wanted == 'org' or secret_type_wanted == 'repo':
+  % if showifdef('secret_type_wanted') == 'org' or showifdef('secret_type_wanted') == 'repo' or ( showifdef('the_coveted_secrets') and the_coveted_secrets.any_true()):
   ---
 
   ${ len( secrets_names ) } [encrypted GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets) were created to store the testing account's login information:
@@ -638,19 +660,19 @@ subquestion: |
   ${ secrets_list }
   % endif
   
-  % if secret_type_wanted == 'repo':
+  % if showifdef('secret_type_wanted') == 'repo' or ( showifdef('the_coveted_secrets') and the_coveted_secrets.any_true('repo')):
   If you have enough permissions, [make sure the repository secrets got created](https://github.com/${ installer.owner_name }/${ installer.repo_name }/settings/secrets/actions).
   % endif
   
-  % if secret_type_wanted == 'org':
+  % if showifdef('secret_type_wanted') == 'org' or ( showifdef('the_coveted_secrets') and the_coveted_secrets.any_true('org')):
   [Make sure the organization secrets got created]( https://github.com/organizations/${ installer.org.login }/settings/secrets/actions).
   % endif
   
-  % if secret_type_wanted == 'org':
+  % if showifdef('secret_type_wanted') == 'org' or ( showifdef('the_coveted_secrets') and the_coveted_secrets.any_true('org')):
   Team members that are collaborators can now use this interview to set up tests for their repositories. When they ask you if organization secrets or repo secrets have been set up, you can answer "yes".
   % endif
   
-  % if not wants_to_set_up_tests:
+  % if showifdef('secret_type_wanted') == 'org' or showifdef('secret_type_wanted') == 'repo' or ( showifdef('the_coveted_secrets') and the_coveted_secrets.any_true()):
   [Follow this link to delete the personal access token](https://github.com/settings/tokens) you created.
   
   ---
@@ -667,8 +689,8 @@ subquestion: |
   
   1. [Follow this link to the pull request](${ installer.pull_url }) to make sure it got created.
   1. [Follow this link to your actions page](https://github.com/${ installer.owner_name }/${ installer.repo_name }/actions) to see the first test being run on the new branch. It may take a few minutes to show up, but if all the information was correct it should pass and get a green checkmark.
-  1. If the test fails with a red "x": [Follow these instructions to rerun the test](https://docs.github.com/en/actions/managing-workflow-runs/re-running-a-workflow) (a.k.a. the job). If it fails again, contact us.
-  1. If the test passes with a green checkmark, get a partner to [review it](https://docs.github.com/en/github/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/requesting-a-pull-request-review) or [follow these instructions to merge the pull request](https://docs.github.com/en/github/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/merging-a-pull-request).
+  1. If the test fails with a red "x": [Follow these instructions to rerun the test](https://docs.github.com/en/actions/managing-workflow-runs/re-running-a-workflow) (a.k.a. the "job"). If it fails again, contact us.
+  1. If the test passes with a green checkmark, get a partner to [review the code](https://docs.github.com/en/github/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/requesting-a-pull-request-review) or [follow these instructions to merge the pull request](https://docs.github.com/en/github/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/merging-a-pull-request).
   1. [Follow this link to delete the personal access token](https://github.com/settings/tokens) you created.
   
   ---
@@ -679,24 +701,37 @@ subquestion: |
   If you have some feedback, we would love to hear from you! Let the team know or [make a public "issue" in our repository](https://github.com/SuffolkLITLab/docassemble-ALKilnSetup/issues/new).
   
   ---
-buttons:
-  - Start again: restart
-#terms:
-#  encrypted docassemble login information: ${ secrets_popover }
+action buttons:
+  - label: Set up another ALKiln test
+    action: new_session_event
+    color: warning
+---
+# Currently, bug prevents special button starting new session
+event: new_session_event
+code: |
+  command('new_session')
+---
+# # TODO: Reimplement after above bug fixed
+# buttons:
+#   - Set up another ALKiln test: new_session
+#     color: warning
+# #terms:
+# #  encrypted docassemble login information: ${ secrets_popover }
 comment: |
-  TODO: Should we offer to delete their personal access token for them in the interview itself? Do we have enough permissions?
+  TODO: [Answer: No API docs talk about deleting a PAT, just revoking permissions (for only fine-grained tokens?)] Should we offer to delete their personal access token for them in the interview itself? Do we have enough authorization?
   TODO: Implement feedback form instead of linking issues. See AL core for that.
-  TODO: Add link to documentation on writing tests.
+  TODO: Add link to documentation on writing tests in the final page.
 ---
 id: show_errors
 event: show_errors
 question: |
   Sorry, something went wrong
 decoration: user-injured
+# They're not all DAObjects yet
 subquestion: |
   % for error in installer.errors:
   ${ error.alk_details }[BR]
-  **Error status and message**: ${ error.status if error.status else '' } ${ error.data.get('message', 'Error description is missing') }
+  **Error status and message**: ${ ' '.join([ msg for msg in [ ( error.status if 'status' in error else None ), error.data.get('message', 'Error description is missing')] if msg ]) }
   
   ---
   % endfor

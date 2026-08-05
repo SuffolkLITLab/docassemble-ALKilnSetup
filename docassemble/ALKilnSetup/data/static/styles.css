@@ -1,5 +1,5 @@
 body {
-  font-family: Helvetica;
+  /* font-family: Helvetica; */
 }
 
 /* https://www.cssportal.com/blog/numbered-lists-with-css/ */
@@ -32,15 +32,99 @@ ul {
   padding-inline-start: 1em;
 }
 
+#daMainQuestion {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  align-items: center;
+}
+
+.alk_icon_group {
+  position: relative;
+}
+#daMainQuestion .alk_icon_group {
+  margin-left: 1em;
+  font-size: 1.5em;
+  height: .8em;
+  display: flex;
+  img {
+    width: 1.5em;
+    max-width: unset !important;
+  }
+  .icon {
+    note: "1 icon";
+    position: relative;
+    translate: 0 -15%;
+  }
+  .icon.left {
+    translate: -75%;
+    position: absolute;
+  }
+  .icon.middle {
+    position: absolute;
+    translate: -40% -103%;
+    height: 50%;
+    overflow: hidden;
+  }
+  .icon.right {
+    position: relative;
+    translate: 0;
+  }
+}
+.alk_icon_group.superscript {
+  font-size: .3em;
+}
+
 .daterm, .daterm:hover {
   text-decoration: underline dashed;
   text-underline-offset: 2px;
-  /* Increases the contrast so it doesn't fail. */
+  note: "Increases the contrast so it doesn't fail.";
   color: #3b842c;
 }
 
-.da-review ul {
-  list-style: none;
+.alk_value_block {
+  note: "Work on the border color. Text emphasis seems fragile as border and text may be different colors completely on someone else's server. Darkening won't work in dark mode and I'm reluctant to mess with dark and light modes.";
+  border: 4px solid color-mix(in hsl, var(--bs-secondary-border-subtle), var(--bs-secondary-text-emphasis) 20%);
+  margin-bottom: 1em;
   padding: .5em;
-  border: 4px solid #55555555;
+}
+
+.alk_value_block *:last-child {
+  margin-bottom: 0;
+}
+
+.callout {
+  padding: .5em;
+  border-left: 4px solid;
+  border-radius: var(--bs-border-radius-lg);
+  margin-bottom: 1em;
+  overflow-y: scroll;
+}
+
+.callout.secondary {
+  background: var(--bs-secondary-bg-subtle);
+  border-color: var(--bs-secondary-border-subtle);
+  color: var(--bs-secondary-color);
+}
+
+.callout.info {
+  background: var(--bs-info-bg-subtle);
+  border-color: var(--bs-info);
+}
+
+.callout p:last-child {
+  margin-bottom: 0;
+}
+
+note {
+  note: 'Loading...';
+}
+
+@keyframes tick {
+  to { transform: rotate(360deg) }
+}
+
+.fa-spinner {
+   transform: rotate(0);
+   animation: tick 1s steps(8, end) infinite;
 }

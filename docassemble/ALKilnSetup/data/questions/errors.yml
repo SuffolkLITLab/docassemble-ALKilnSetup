@@ -1,0 +1,151 @@
+---
+id: show_errors
+event: show_errors
+question: |
+  Sorry, something went wrong
+decoration: user-injured
+subquestion: |
+  % for error in installer.errors:
+  ${ error.alk_details }
+  
+  **Error status and message**:
+  
+  <pre><code>${ error.status if error.status else '' } ${ error.data.get('message', 'Error description is missing') }</code></pre>
+  
+  ---
+  % endfor
+  
+  If you cannot find a way to fix the problem, contact us in chat or [file a public issue](https://github.com/SuffolkLITLab/docassemble-ALKilnSetup/issues/new).
+---
+depends on: da_server_url_error
+code: |
+  installer.da_server_url_error = da_server_url_error.content
+---
+template: da_server_url_error
+content: |
+  **${ installer.server_url }** returned a network error. Does the url have a typo? Is the server having trouble?
+---
+depends on: da_server_timeout_error
+code: |
+  installer.da_server_timeout_error = da_server_timeout_error.content
+---
+template: da_server_timeout_error
+content: |
+  It took to long to connect to **${ installer.server_url }**. Is the server having trouble?
+---
+depends on: da_access_denied_error
+code: |
+  installer.da_access_denied_error = da_access_denied_error.content
+---
+template: da_access_denied_error
+content: |
+  The server **${ installer.server_url }** did not accept the docassemble API key **\*\*\*\*${ installer.da_api_key[-4:] }**. Double check that it is the right API key for the right server.
+---
+depends on: da_user_info_error
+code: |
+  installer.da_user_info_error = da_user_info_error.content
+---
+template: da_user_info_error
+content: |
+  There was a problem obtaining information about the user with the API key **${ installer.da_api_key }** at **${ installer.server_url }**. That is all docassemble will say. Try logging into the account to make sure everything is ok.
+---
+depends on: github_token_error
+code: |
+  installer.github_token_error = github_token_error.content
+---
+template: github_token_error
+content: |
+  GitHub cannot find that [personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token). You can try copying and pasting it again or you can try [making a new one](https://github.com/settings/tokens).
+---
+depends on: github_pat_scopes_error
+code: |
+  installer.github_pat_scopes_error = github_pat_scopes_error.content
+---
+template: github_pat_scopes_error
+content: |
+  Your [GitHub Personal Access Token (PAT)](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) ending in **\*\*\*${ installer.token[-4:] }** is missing these scopes:[BR]
+  **${ comma_and_list(  showifdef('missing_scopes', ['unknown']) ) }**[BR]
+  You can try [making a new token](https://github.com/settings/tokens). If you no longer need this token, delete it.
+---
+depends on: github_url_error
+code: |
+  installer.github_url_error = github_url_error.content
+---
+template: github_url_error
+content: |
+  Cannot validate the GitHub URL **"${ installer.repo_url }"**. Example of a valid URL:
+  
+  **`https://github.com/example-da-org/docassemble-ExamplePackage`** (replace "example-da-org/docassemble-ExamplePackage" with the actual owner and repo names)
+---
+depends on: github_repo_not_found_error
+code: |
+  installer.github_repo_not_found_error = github_repo_not_found_error.content
+---
+template: github_repo_not_found_error
+content: |
+  GitHub cannot find the **${ installer.repo_name }** repository owned by the owner **${ installer.owner_name }**. Example of a valid URL:
+  
+  **`https://github.com/example-da-org/docassemble-ExamplePackage`** (replace "example-da-org/docassemble-ExamplePackage" with the actual user or orgnaization name and the repo name)
+  
+  You gave the repository address of **${ installer.repo_url }**. Are you sure that is correct?
+---
+depends on: not_collaborator_error
+code: |
+  installer.not_collaborator_error = not_collaborator_error.content
+---
+template: not_collaborator_error
+content: |
+  The user **${ installer.user_name }** is not a collaborator in the **${ installer.repo_name }** repository owned by the owner **${ installer.owner_name }**. You can ask the admin to give correct access.
+---
+depends on: permissions_error
+code: |
+  installer.permissions_error = permissions_error.content
+---
+template: permissions_error
+content: |
+  The user **${ installer.user_name }** has **${ installer.permissions }** permissions for the **${ installer.repo_name }** repository, but needs **write**, **maintain**, or **admin** permissions. You can ask the admin to give you correct access. **${ installer.owner_name }** is the GitHub account name of the owner of the package's repository.
+---
+depends on: org_does_not_exist_error
+code: |
+  installer.org_does_not_exist_error = org_does_not_exist_error.content
+---
+template: org_does_not_exist_error
+content: |
+  GitHub cannot find an organization called **${ installer.owner_name }**. 
+---
+depends on: not_an_org_member_error
+code: |
+  installer.not_an_org_member_error = not_an_org_member_error.content
+---
+template: not_an_org_member_error
+content: |
+  **${ installer.user_name }** might not be a **member** of **${ installer.owner_name }**. Try double checking the names.
+---
+template: x.membership_error
+generic object: DAObject
+content: |
+  Error getting **${ installer.user_name }**'s membership in **${ x.login }**. Try double checking the names.
+---
+depends on: not_org_admin_error
+code: |
+  installer.not_org_admin_error = not_org_admin_error.content
+---
+template: not_org_admin_error
+content: |
+  **${ installer.user_name }** might not be an **admin** of the organization **${ installer.owner_name }**. Try double checking the names.
+---
+depends on: github_branch_name_error
+code: |
+  installer.github_branch_name_error = github_branch_name_error.content
+---
+template: github_branch_name_error
+content: |
+  This ALKiln setup tool was unable to create a unique branch name in your GitHub repo on which to store the new code. To solve this, delete some of the branches that start with "${ installer.default_branch_name }".
+---
+depends on: admins_0_orgs
+code: |
+ installer.admins_0_orgs = admins_0_orgs.content
+---
+template: admins_0_orgs
+content: |
+  This ALKiln setup tool is unable to find any GitHub organizations where **${ installer.user_name }** is an admin.

@@ -26,7 +26,10 @@ class TestInstaller(DAObject):
     """Use the interview url to get the user's Playground id."""
     # Start clean (idempotent for da's loops).
     self.errors = []
-    self.server_url = self.server_url_input.rstrip('/')
+    self.server_url = showifdef(
+      self.attr_name('server_url'),
+      self.server_url_input.rstrip('/')
+    )
     
     try:
       # https://docassemble.org/docs/api.html#user
@@ -92,8 +95,6 @@ class TestInstaller(DAObject):
       self.org = self.get_org()
       if self.org and user:
         self.is_valid_org_admin( user, self.org.login )
-    
-    return self
   
   def has_right_scopes( self, scopes ):
     """Make sure the developer gave the token the right scopes"""
@@ -148,26 +149,54 @@ class TestInstaller(DAObject):
     return [ owner_name, repo_name, package_name ]
 
   def has_correct_permissions( self ):
-    """Return True if user has at least write permissions to the repo, else False and add error."""
+    """
+    Return True if user has at least write permissions to the repo, else False and add error.
+
+    https://pygithub.readthedocs.io/en/stable/github_objects/Repository.html#github.Repository.Repository.get_collaborator_permission
+    """
+    correct_permissions = [ 'admin', 'maintain', 'write', 'push' ]
     has_permissions = False
+    self.permissions = None
     
     # Are they even on the collaborator list
-    is_valid_collaborator = self.repo.has_in_collaborators( self.user_name )
-    if not is_valid_collaborator:
-      error1 = ErrorLikeObject( message='Must be a collaborator', alk_details=self.not_collaborator_error )
-      self.errors.append( error1 )
-      
-    else:
-      # Do they have a permission level that allows writing (pushing, etc)
-      correct_permissions = [ 'admin', 'maintain', 'write' ]
+    is_valid_collaborator = False
+    try:
+      # This sort of tests whether the person has push/write access to the repo
+      # 403 {"message": "Must have push access to view repository collaborators."...
       self.permissions = self.repo.get_collaborator_permission( self.user_name )
-      
-      has_permissions = self.permissions in correct_permissions
-      if not has_permissions:
-        error2 = ErrorLikeObject( message='Must have "write" permissions', alk_details=self.permissions_error )
-        self.errors.append( error2 )
+      is_valid_collaborator = True
+    except GithubException as no_write_perms_err:
+      write_perms_err_faux = ErrorLikeObject(
+        message=no_write_perms_err.data['message'],
+        status=no_write_perms_err.data['status'],
+        alk_details='You must have the ability to edit files in the repository "push" access) to continue. You might want to try to create a GitHub Personal Access Token with the settings ("scopes") this tool described earlier, or you can try using a different GitHub user account. Note that this tool accepts only classic GitHub Personal Access Tokens. Fine-grained tokens won\'t work.' )
+      self.errors.append( write_perms_err_faux )
+      return is_valid_collaborator
+
+    # Do they have a permission level that allows writing (pushing, etc)
+    has_permissions = self.permissions in correct_permissions
+    if not has_permissions:
+      perms_err_faux = ErrorLikeObject( message='The GitHub user must have at least "write" permissions in the repository. That is, the user must be able to edit the files in the repository.', alk_details=self.permissions_error )
+      self.errors.append( perms_err_faux )
     
     return is_valid_collaborator
+  
+  def get_orgs( self ):
+    """
+    Return all organizations the user belongs to. See
+    https://pygithub.readthedocs.io/en/stable/github_objects/AuthenticatedUser.html#github.AuthenticatedUser.AuthenticatedUser.get_orgs
+    """
+    # Check if org exists
+    try:
+      return self.github.get_orgs()
+    except Exception as err_orgs:
+      log('🍕 100')
+      log( err_orgs.__dict__, 'console' )
+      err_orgs.alk_details = 'We had a problem getting the GitHub organizations you belong to.'
+      if not err_orgs.status:
+        err_orgs.status = 0
+      self.errors.append( err_orgs )
+      return []
   
   def get_org( self ):
     """Return org if it exists, otherwise None."""
@@ -206,20 +235,20 @@ class TestInstaller(DAObject):
     
     return valid
   
-  def get_free_branch_name( self ):
+  def get_free_branch_name( self, max=20 ):
     """Return str of valid avialable branch name or None. Add appropriate errors."""
+    self.errors = []
     branch_name = None
     # Get all branches
     all_branches = self.repo.get_branches()
     
     # Control how many times the loop will run
     count = 0
-    max_count = 20
     found_free_name = False  # Start the loop off correctly
     branch_name_base = self.default_branch_name
     branch_name = branch_name_base
     # Try every permitted new branch name until one is free
-    while ( not found_free_name and count < max_count ):
+    while ( not found_free_name and count < max ):
       count += 1  # Ensure no infinite loop
       
       found_free_name = True  # The name is free until proven otherwise
@@ -243,12 +272,14 @@ class TestInstaller(DAObject):
   # github: set secrets and create files
   # All checks should have passed at this point
   ###############################
-  def update_github( self, wants_to_set_up_tests ):
+  def update_github( self, wants_to_set_up_tests, desires_secrets=True ):
     """If desired, set repo or org secrets. If desired, add test files to repo."""
-    if value('secret_type_wanted') == 'org' or value('secret_type_wanted') == 'repo':
-      self.create_secrets()
+    if desires_secrets:  # TODO: main.yml wants just this
+      if value('secret_type_wanted') == 'org' or value('secret_type_wanted') == 'repo':
+        self.create_secrets()
     if wants_to_set_up_tests:
       self.make_new_branch()
+      # self.files_to_push is set in the yml using .set_files_to_push()
       for file_dict in self.files_to_push:
         self.push_file( file_dict )
       self.make_pull_request()
@@ -368,11 +399,9 @@ class TestInstaller(DAObject):
     Returns
       [{"path": str, "msg": str, "contents": str }]
     """
-    self.envrionments = environments
-    self.interviews_to_test = interviews_to_test
-
     self.files_to_push = self.get_workflow_file_dicts( environments )
-
+    
+    self.interviews_to_test = interviews_to_test
     if len( interviews_to_test ) > 0:
       test_path = 'docassemble/' + self.package_name + '/data/sources/interviews_run.feature'
       test_commit_message = f'Add { test_path } for ALKiln automated tests'
@@ -451,7 +480,7 @@ class TestInstaller(DAObject):
     
     return self
   
-  def make_pull_request( self ):
+  def make_pull_request( self, environments=None ):
     """Make a pull request with the new branch with changed files.
     https://pygithub.readthedocs.io/en/latest/examples/PullRequest.html"""
     # TODO: Check mergability of a PR?
@@ -459,11 +488,26 @@ class TestInstaller(DAObject):
     head_name = self.branch_name
     title = 'Add ALKiln automated tests'  # TODO: Add issue # if desired
     description = '''Added these files:'''
-    if len(self.interviews_to_test) > 0:
-      description += '''
-- tests/features/interviews_run.feature'''
+
+    for a_file in self.files_to_push:
+      description += f'''
+- { a_file.get('path', None ) }'''
+    
+#     if len(self.interviews_to_test) > 0:
+#       description += '''
+# - tests/features/interviews_run.feature'''
+#     if not environments:
+#       description += '''
+# - .github/workflows/run_form_tests.yml'''
+#     else:
+#       if environments.all_true('github_n_you'):
+#         description += '''
+# - .github/workflows/run_form_tests.yml'''
+#       if environments.all_true('sandbox'):
+#         description += '''
+# - .github/workflows/run_form_tests.yml'''
+
     description += '''
-- .github/workflows/run_form_tests.yml
 
 Want to disable the tests? See documentation for ALKiln tests at https://suffolklitlab.github.io/docassemble-AssemblyLine-documentation/docs/automated_integrated_testing.
 '''
@@ -473,11 +517,75 @@ Want to disable the tests? See documentation for ALKiln tests at https://suffolk
     return self
 
 
-# Error helpers
 class ErrorLikeObject():
-  """Create object to match PyGithub data structure for errors."""
-  def __init__( self, status=0, message='Sorry, the error description is missing', alk_details='Sorry, the ALKiln description is missing.' ):
+  """
+  Create object to match PyGithub and other error data structures for errors.  
+  """
+  def __init__( self,
+                error=None,
+                status=0,
+                message='Sorry, the error message is missing',
+                alk_details='Sorry, the ALKiln error details are missing.',
+                log_code='ALKiS 0000'
+  ):
+
+    try:
+      status = error.data['status']
+    except Exception:
+      try:
+        status = error.status
+      except Exception:
+        try:
+          # Response as opposed to traditional "error"
+          status = error.status_code
+        except Exception:
+          pass
+  
+    try:
+      message = error.data['message']
+    except Exception as _ignore:
+      try:
+        message = error.message
+      except Exception as _ignore:
+        try:
+          message = error.msg
+        except Exception as _ignore:
+          if error:
+            message = error
+          
     self.status = status
-    self.alk_details = alk_details
-    self.data = { 'message': message }
-    log( self.__dict__, 'console' )
+    self.status_code = status
+    self.message = message
+    self.msg = message
+    self.alk_details = f'🤕 ERROR { log_code }: { alk_details }'
+    self.data = { 'message': message, 'status': status }
+
+    try:
+      formatted = format_error( error )
+      log( formatted )
+      log( formatted, 'console' )
+    except Exception:
+      formatted = None
+      try:
+        log( self.__dict__ )
+        log( self.__dict__, 'console' )
+      except Exception:
+        pass
+  
+    # # No traceback text for now - prev traces caused HTML problems with "<"
+    # if formatted:
+    #   self.message = formatted  # ...
+
+
+import traceback
+def format_error( error ):
+  """
+  Return a formatted string of the error's traceback
+
+  Args:
+    error (Exception): An error
+
+  Returns:
+    (str): The formatted string
+  """
+  return "\n".join(traceback.format_exception( error ))
