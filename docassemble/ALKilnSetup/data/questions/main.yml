@@ -213,6 +213,21 @@ code: |
   # show errors first thing on each loop
   if len( installer.errors ) > 0:
     show_errors
+
+  # Author wants nothing
+  
+  try:
+    if (
+      the_coveted_secrets.all_false()
+      and defined('wants_workflow_files')
+      and not wants_workflow_files
+      and defined('wants_feature_file')
+      and not wants_feature_file ):
+        endless_void
+  except NameError:
+    raise
+  except Exception:
+    pass
   
   # #### Questions ####
 
@@ -282,13 +297,17 @@ code: |
   if wants_workflow_files or wants_feature_file:
     wants_to_set_up_tests = True
     interviews_to_test
-    prepare_file_data
-    final_files_to_push
   
   wrap_it_up
 ---
 id: review + github commands + end
 code: |
+  # Data to review
+  if wants_workflow_files or wants_feature_file:
+    prepare_file_data
+    final_files_to_push
+    get_new_branch_name
+  
   # Review/confirm
   is_ready
 
@@ -312,6 +331,35 @@ code: |
 # `question` blocks
 # ##############################
 # ##############################
+---
+event: endless_void
+question: You looked into the abyss and...
+subquestion: |
+  ...you found you already have everything you need.
+  
+  You want nothing offered here.
+  
+  You may go.
+
+  <div style='font-size: 5em;'>
+  <i class="fa-solid fa-face-meh-blank"></i>
+  </div>
+css: |
+  <style>
+  * {
+    text-align: center;
+    items-align: center;
+  }
+  </style>
+comment: |
+  <i class='bi bi-emoji-expressionless-fill'></i>
+  <i class="bi bi-emoji-neutral-fill"></i>
+  css: |
+    <style>
+    i {
+      position: absolute;
+    }
+    </style>
 ---
 template: alkiln_setup_icon
 content: |
@@ -972,13 +1020,13 @@ review:
       ---
     show if: the_coveted_secrets.any_true()
   - note: |
-      If you continue, this setup tool will make a **new** branch called **${ installer.branch_name }**. You will be able to edit any changes in that branch before merging it with the rest of your code. On the new branch, this setup tool will create or edit ${ 'these files' if len(installer.interviews_to_test) > 0 else 'this file' }:
+      If you continue, this setup tool will make a **new** branch called **${ installer.branch_name }**. You will be able to edit any changes in that branch before merging it with the rest of your code. On the new branch, this setup tool will create or edit ${ 'these files' if len( installer.files_to_push ) > 0 else 'this file' }:
       
       % for a_file in installer.files_to_push:
       1. ${ a_file.get('path', None ) }
       % endfor
       
-      :pen: You can edit the changes before merging the branch.
+      :pen: You can edit the changes on GitHub or in your Playground before merging the new branch.
       
       ---
     show if: wants_feature_file or wants_workflow_files
@@ -1169,6 +1217,20 @@ content: |
   <br/>
 
   <dl markdown=1 class='callout secondary' style='max-height: 10.5em; display: flex; flex-direction: column;'>
+
+  <div markdown=1 class='void_info'>
+  % if the_coveted_secrets.all_false() and defined('wants_workflow_files') and not wants_workflow_files and defined('wants_feature_file') and not wants_feature_file:
+
+  ${ summary_row_start } You want
+  ${ summary_row_middle }
+  **0** secrets[BR]
+  **0** workflow files[BR]
+  **No** feature files to test[BR]
+  ${ summary_row_end }
+  </div>
+  
+  % else:
+
   
   % if defined('task_type'):
   ${ summary_row_start } You are filling this out for
@@ -1256,6 +1318,9 @@ content: |
   ${ summary_row_start } GitHub Personal Access Token
   ${ summary_row_middle } ****${ installer.token[-4:] }
   ${ summary_row_end }
+  % endif
+
+  
   % endif
   
   </dl>
@@ -1753,18 +1818,26 @@ code: |
   installer.files_to_push = files_to_push_temp
   final_files_to_push = files_to_push_temp
 ---
+id: new branch name
+depends on:
+  - gh_repo_holder
+  - gh_repo_holder.repo
+code: |
+  installer.branch_name = installer.get_free_branch_name()
+  if not installer.branch_name:
+    show_errors
+  get_new_branch_name = True
+---
 id: repo branch
 depends on:
   - gh_repo_holder
   - gh_repo_holder.repo
+  - installer.branch_name
 
 # ###
 # Create new branch off the default branch.
 # ###
 code: |
-  installer.branch_name = installer.get_free_branch_name()
-  if not installer.branch_name:
-    show_errors
   # Get default branch
   default_branch = gh_repo_holder.repo.get_branch( gh_repo_holder.repo.default_branch )
   # Make new branch off of default branch
