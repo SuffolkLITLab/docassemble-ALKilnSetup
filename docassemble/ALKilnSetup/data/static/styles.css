@@ -116,8 +116,53 @@ ul {
   margin-bottom: 0;
 }
 
+.question-desires-nothing {
+
+  text-align: center;
+  * {
+    text-align: center;
+  }
+  
+  .void_info {
+    text-align: left;
+    * {
+      text-align: left;
+    }
+  }
+
+  .da-page-header {
+    border-bottom: 1px solid #ccc;
+  }
+  
+  #daMainQuestion {
+    justify-content: center;
+    font-family: 'Segoe Print', 'Bradley Hand', Chilanka, TSCu_Comic, casual, cursive;
+  }
+
+  #daMainQuestion {
+    scale: 2.2;
+    rotate: 3deg;
+    translate: 0 .5em;
+  }
+    
+  #daMainQuestion::before {
+    /* content: attr(data-text); */
+    position: absolute;
+    transform: skewX(69deg) translate(-1.5em, .5em) scaleY(0.5) scaleX(1.04);
+    opacity: .3;
+  }
+  
+  .da-subquestion p:nth-child(2) {
+    opacity: .7;
+  }
+  
+  .da-subquestion p:nth-child(3) {
+    opacity: .5;
+  }
+}
+
 note {
-  note: 'Loading...';
+  note: 'Loading screen';
 }
 
 @keyframes tick {

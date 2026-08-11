@@ -1,5 +1,3 @@
-# Co-authors: Will, fractal, JF, CaroRob
----
 # 🖊️ Terms
 # "assignments block": Only assigns primitives
 # "referring block": Uses any name exceptions at all (trigger block?)
@@ -332,6 +330,7 @@ code: |
 # ##############################
 # ##############################
 ---
+id: desires nothing
 event: endless_void
 question: You looked into the abyss and...
 subquestion: |
@@ -344,22 +343,6 @@ subquestion: |
   <div style='font-size: 5em;'>
   <i class="fa-solid fa-face-meh-blank"></i>
   </div>
-css: |
-  <style>
-  * {
-    text-align: center;
-    items-align: center;
-  }
-  </style>
-comment: |
-  <i class='bi bi-emoji-expressionless-fill'></i>
-  <i class="bi bi-emoji-neutral-fill"></i>
-  css: |
-    <style>
-    i {
-      position: absolute;
-    }
-    </style>
 ---
 template: alkiln_setup_icon
 content: |
@@ -371,16 +354,15 @@ sets:
 pre: ''
 question: |
   Welcome! ${ alkiln_setup_icon }
-#  Welcome! :hat-wizard: <i class="bi bi-plug-fill"></i>
 subquestion: |
   This tool can help you set up [ALKiln](https://assemblyline.suffolklitlab.org/docs/components/ALKiln/intro) automated integrated testing for docassemble packages that have a GitHub repository. Specifically, this tool can help you:
 
-  - Create workflow files for a repository that will trigger your tests on GitHub
+  - Create workflow and feature files for a repository that will trigger your tests on GitHub
   - Create or change GitHub secrets for your repository or organization to provide necessary secure information for the tests
   
   :clock: With experience, setup can take about 5 minutes. It can take a while longer if you are unfamiliar with GitHub or docassemble details, or if you need to contact administrators.
   
-  We recommend that people using this tool are administrators for the docassemble server and for the necessary GitHub organization or repository, but this tool will make sure you have correct authorization along the way.
+  We recommend that people using this tool are administrators for the docassemble server and for the necessary GitHub organization or repository, but anyone with correct permissions can use this tool. This tool will make sure you have correct authorization along the way.
 
   First, choose your testing environments.
 
@@ -987,14 +969,12 @@ review:
 
       <div markdown=1 class='alk_value_block'>
       * The first tests (the `.feature` file), that will have tests to load these interviews:
-      % if wants_feature_file:
-        % if len( interviews_to_test.true_values() ) > 0:
-          % for test_file in interviews_to_test.true_values():
+      % if wants_feature_file and len( interviews_to_test.true_values() ) > 0:
+        % for test_file in interviews_to_test.true_values():
           * ${ test_file }[BR]
-          % endfor
-        % else:
+        % endfor
+      % else:
           * None
-        % endif
       % endif
       * Files that trigger tests on GitHub. Specifically:
       % if wants_workflow_files:
@@ -1213,15 +1193,16 @@ need:
   - summary_row_middle
   - summary_row_end
 content: |
+  <div class='void_info'>
   Information based on your answers so far:
-  <br/>
+  </div>
 
   <dl markdown=1 class='callout secondary' style='max-height: 10.5em; display: flex; flex-direction: column;'>
 
   <div markdown=1 class='void_info'>
   % if the_coveted_secrets.all_false() and defined('wants_workflow_files') and not wants_workflow_files and defined('wants_feature_file') and not wants_feature_file:
 
-  ${ summary_row_start } You want
+  ${ summary_row_start } You want nothing
   ${ summary_row_middle }
   **0** secrets[BR]
   **0** workflow files[BR]
