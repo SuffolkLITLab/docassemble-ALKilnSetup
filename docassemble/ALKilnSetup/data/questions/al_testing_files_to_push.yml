@@ -41,6 +41,15 @@ template: installer.github_n_you
 content: |
   name: ALKiln v5 GitHub+You tests
   # See https://assemblyline.suffolklitlab.org/docs/components/ALKiln/setup#githubNyou-details
+
+  # Avoid running/triggering multiple workflows at a time within a single repository.
+  # This helps reduce the chances of multiple test runs causing multiple bogus test failures.
+  # See an overview at https://docs.github.com/en/actions/concepts/workflows-and-actions/concurrency
+  # See specifics at https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#concurrency
+  concurrency:
+    group: "ALKiln_github_n_you"
+    # Delete previously running and pending workflows with the same group name
+    cancel-in-progress: true
   
   on:
     push:

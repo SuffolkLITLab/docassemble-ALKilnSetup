@@ -647,12 +647,14 @@ review:
 id: end
 event: next_steps
 prevent going back: True
+decoration: face-smile-beam
 question: |
-  Your GitHub settings should be updated! <div markdown=1 class='fs-2'>:face-smile:</div>
+  Your GitHub settings should be updated!
 subquestion: |
   **Finish setting up**
     
   % if showifdef('secret_type_wanted') == 'org' or showifdef('secret_type_wanted') == 'repo' or ( showifdef('the_coveted_secrets') and the_coveted_secrets.any_true()):
+  
   ---
 
   ${ len( secrets_names ) } [encrypted GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets) were created to store the testing account's login information:

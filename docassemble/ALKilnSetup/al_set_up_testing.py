@@ -425,20 +425,20 @@ class TestInstaller(DAObject):
       [{"path": str, "msg": str, "contents": str }]
     """
     file_dicts = []
-    if 'github_n_you' in environments:
-      file_dicts.append({
-        "path": '.github/workflows/alkiln_github_n_you_tests.yml',
-        "msg": 'Add .github/workflows/alkiln_github_n_you_tests.yml for ALKiln automated tests',
-        "contents": self.github_n_you_str
-      })
-      
-    if 'sandbox' in environments:
+    if environments.all_true('sandbox'):
       file_dicts.append({
         "path": '.github/workflows/alkiln_sandbox_tests.yml',
         "msg": 'Add .github/workflows/alkiln_sandbox_tests.yml for ALKiln isolated GitHub tests',
         "contents": self.sandbox_str
       })
-      
+
+    if environments.all_true('github_n_you'):
+      file_dicts.append({
+        "path": '.github/workflows/alkiln_github_n_you_tests.yml',
+        "msg": 'Add .github/workflows/alkiln_github_n_you_tests.yml for ALKiln automated tests',
+        "contents": self.github_n_you_str
+      })
+
     return file_dicts
   
   def push_file( self, file_dict ):
