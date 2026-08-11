@@ -1617,7 +1617,7 @@ code: |
     show_errors
 ---
 id: check and set github auth values
-depends_on:
+depends on:
   - installer.github
   - self.github.oauth_scopes
 code: |
