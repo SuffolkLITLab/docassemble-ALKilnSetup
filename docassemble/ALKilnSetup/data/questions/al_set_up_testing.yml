@@ -652,51 +652,70 @@ question: |
   Your GitHub settings should be updated!
 subquestion: |
   **Finish setting up**
-    
-  % if showifdef('secret_type_wanted') == 'org' or showifdef('secret_type_wanted') == 'repo' or ( showifdef('the_coveted_secrets') and the_coveted_secrets.any_true()):
-  
+
+  To maintain healthy security, we recommend you [follow this link to delete the GitHub Personal Access Token (PAT)](https://github.com/settings/tokens) you created.
+
+  % if defined('the_coveted_secrets') and the_coveted_secrets.any_true():
   ---
 
-  ${ len( secrets_names ) } [encrypted GitHub secrets](https://docs.github.com/en/actions/reference/encrypted-secrets) were created to store the testing account's login information:
+  This tool created ${ len( secrets_names ) } [encrypted GitHub secret(s)](https://docs.github.com/en/actions/reference/encrypted-secrets) to store the testing account's login information:
   
   ${ secrets_list }
   % endif
   
-  % if showifdef('secret_type_wanted') == 'repo' or ( showifdef('the_coveted_secrets') and the_coveted_secrets.any_true('repo')):
-  If you have enough permissions, [make sure the repository secrets got created](https://github.com/${ installer.owner_name }/${ installer.repo_name }/settings/secrets/actions).
-  % endif
+  % if defined('the_coveted_secrets') and the_coveted_secrets.any_true('org'):
+
+    % if defined('the_coveted_secrets') and the_coveted_secrets.any_true('repo'):
+  [Make sure the repository secrets got created](https://github.com/${ installer.owner_name }/${ installer.repo_name }/settings/secrets/actions).
+    % endif
   
-  % if showifdef('secret_type_wanted') == 'org' or ( showifdef('the_coveted_secrets') and the_coveted_secrets.any_true('org')):
   [Make sure the organization secrets got created]( https://github.com/organizations/${ installer.org.login }/settings/secrets/actions).
+
+  Organization members that are collaborators can now use this interview to set up tests for organization repositories without having to create new secrets.
+  
+  % elif defined('the_coveted_secrets') and the_coveted_secrets.any_true('repo'):
+  
+  You or someone else might [make sure the repository secrets got created](https://github.com/${ installer.owner_name }/${ installer.repo_name }/settings/secrets/actions).
+  
   % endif
   
-  % if showifdef('secret_type_wanted') == 'org' or ( showifdef('the_coveted_secrets') and the_coveted_secrets.any_true('org')):
-  Team members that are collaborators can now use this interview to set up tests for their repositories. When they ask you if organization secrets or repo secrets have been set up, you can answer "yes".
+  % if wants_workflow_files or wants_feature_file:
+  ---
+  
+  This tool should have created a new branch in the GitHub repository named **${ installer.branch_name }**. These files should be on the new branch:
+
+  % for file in final_files_to_push:
+  * ${ file['path'] }
+  % endfor
+
+  % if wants_workflow_files:
+  Workflow `.yml` files trigger GitHub to run the tests at the right times.
+  % endif
+
+  % if wants_feature_file:
+  The `.feature` file will test whether these interview files load without errors:
+  
+    % for test_file in interviews_to_test.true_values():
+  * ${ test_file }
+    % endfor
   % endif
   
-  % if showifdef('secret_type_wanted') == 'org' or showifdef('secret_type_wanted') == 'repo' or ( showifdef('the_coveted_secrets') and the_coveted_secrets.any_true()):
-  [Follow this link to delete the personal access token](https://github.com/settings/tokens) you created.
-  
-  ---
-  % else:
-  ---
-  
-  This tool should have created a new branch in the GitHub repository named **${ installer.branch_name }**. On that branch, these new folders and files should have been generated:
-  
-  ${ files_list }
-  
-  This tool should also have made a new pull request for you with those files. Note that new files in `.github/workflows/` will only run once you have merged them into your default branch (usually called `main`).
+  This tool should also have made a new pull request with those files.
   
   To finish, follow these instructions regarding that pull request.
   
   1. [Follow this link to the pull request](${ installer.pull_url }) to make sure it got created.
-  1. [Follow this link to your actions page](https://github.com/${ installer.owner_name }/${ installer.repo_name }/actions) to see the first test being run on the new branch. It may take a few minutes to show up, but if all the information was correct it should pass and get a green checkmark.
-  1. If the test fails with a red "x": [Follow these instructions to rerun the test](https://docs.github.com/en/actions/managing-workflow-runs/re-running-a-workflow) (a.k.a. the "job"). If it fails again, contact us.
+  1. [Follow this link to your actions page](https://github.com/${ installer.owner_name }/${ installer.repo_name }/actions) to see the first test being run on the new branch[^1]. The test may take a few minutes to show up.
+  1. If the test fails with a red "x": [Follow these instructions to rerun the test](https://docs.github.com/en/actions/managing-workflow-runs/re-running-a-workflow) (a.k.a. the "job"). If it fails again, [the ALKiln setup documentation](https://assemblyline.suffolklitlab.org/docs/components/ALKiln/setup) for your test type may help. Also feel free to contact us for help.
   1. If the test passes with a green checkmark, get a partner to [review the code](https://docs.github.com/en/github/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/requesting-a-pull-request-review) or [follow these instructions to merge the pull request](https://docs.github.com/en/github/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/merging-a-pull-request).
-  1. [Follow this link to delete the personal access token](https://github.com/settings/tokens) you created.
+
+  [^1]: Note that you will onlty be able to trigger workflows *manually* once you have merged them into your default branch (usually called `main`).
   
-  ---
   % endif
+
+  ---
+
+  **More resources**
   
   See ALKiln's documentation if you want to [disable the tests](https://assemblyline.suffolklitlab.org/docs/components/ALKiln/security#disable) or to [learn more about ALKiln tests in general](https://assemblyline.suffolklitlab.org/docs/components/ALKiln/intro).
   
