@@ -671,7 +671,7 @@ subquestion: |
   
   [Make sure the organization secrets got created]( https://github.com/organizations/${ installer.org.login }/settings/secrets/actions).
 
-  Organization members that are collaborators can now use this interview to set up tests for organization repositories without having to create new secrets.
+  Organization members that are GitHub collaborators on a repository can now use this interview to set up tests for organization repositories without having to create new secrets.
   
   % elif defined('the_coveted_secrets') and the_coveted_secrets.any_true('repo'):
   
@@ -706,10 +706,10 @@ subquestion: |
   
   1. [Follow this link to the pull request](${ installer.pull_url }) to make sure it got created.
   1. [Follow this link to your actions page](https://github.com/${ installer.owner_name }/${ installer.repo_name }/actions) to see the first test being run on the new branch[^1]. The test may take a few minutes to show up.
-  1. If the test fails with a red "x": [Follow these instructions to rerun the test](https://docs.github.com/en/actions/managing-workflow-runs/re-running-a-workflow) (a.k.a. the "job"). If it fails again, [the ALKiln setup documentation](https://assemblyline.suffolklitlab.org/docs/components/ALKiln/setup) for your test type may help. Also feel free to contact us for help.
+  1. If the test fails with a red "x" follow these instructions to rerun the test](https://docs.github.com/en/actions/managing-workflow-runs/re-running-a-workflow) (a.k.a. the "job"). If it fails again, [the ALKiln setup documentation](https://assemblyline.suffolklitlab.org/docs/components/ALKiln/setup) for your test type may help. Also feel free to contact us for help.
   1. If the test passes with a green checkmark, get a partner to [review the code](https://docs.github.com/en/github/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/requesting-a-pull-request-review) or [follow these instructions to merge the pull request](https://docs.github.com/en/github/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/merging-a-pull-request).
 
-  [^1]: Note that you will onlty be able to trigger workflows *manually* once you have merged them into your default branch (usually called `main`).
+  [^1]: Note that you will only be able to trigger workflows *manually* once you have merged them into your default branch (usually called `main`).
   
   % endif
 
