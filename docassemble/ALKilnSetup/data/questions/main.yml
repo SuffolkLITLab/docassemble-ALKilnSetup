@@ -968,15 +968,7 @@ review:
       ##### Files you want
 
       <div markdown=1 class='alk_value_block'>
-      * The first tests (the `.feature` file), that will have tests to load these interviews:
-      % if wants_feature_file and len( interviews_to_test.true_values() ) > 0:
-        % for test_file in interviews_to_test.true_values():
-          * ${ test_file }[BR]
-        % endfor
-      % else:
-          * None
-      % endif
-      * Files that trigger tests on GitHub. Specifically:
+      * Workflow `.yml` files that trigger tests on GitHub. Specifically:
       % if wants_workflow_files:
         % for environment in environments.true_values():
           * The ${ 'Sandbox™' if environment == 'sandbox' else 'GitHub+You™'} workflow file
@@ -984,9 +976,18 @@ review:
       % else:
           * None
       % endif
+      * A `.feature` file, containing tests that will check whether these interview files load without errors:
+      % if wants_feature_file and len( interviews_to_test.true_values() ) > 0:
+        % for test_file in interviews_to_test.true_values():
+          * ${ test_file }[BR]
+        % endfor
+      % else:
+          * None
+      % endif
       </div>
       
       ---
+      
   - note: |
       If you continue, this test will set up these GitHub secrets for
       % if the_coveted_secrets.all_true('org'):
